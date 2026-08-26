@@ -91,6 +91,7 @@ class AgentApplication {
       this.setupAutoStart();
 
       if (this.currentUser && (this.syncService as any).token) {
+        console.log('🚀 Found existing session for:', this.currentUser.name);
         this.startTracking();
       } else {
         this.createLoginWindow();
@@ -281,8 +282,9 @@ class AgentApplication {
     if (this.isTracking) return;
     this.isTracking = true;
     this.updateTrayMenu();
+    console.log('🟢 Tracking started for:', this.currentUser?.name);
 
-    // 1. Poll Native Tracker every 5 seconds
+    // 1. Poll Native Tracker every 3 seconds for fast window response
     this.activeWindowTimer = setInterval(async () => {
       const sample = await this.tracker.getSample();
       this.lastSample = sample;
@@ -293,7 +295,7 @@ class AgentApplication {
         windowTitle: sample.windowTitle,
         domain: sample.domain,
         url: null,
-        durationSeconds: 5,
+        durationSeconds: 3,
         mouseClicks: sample.clicks,
         keystrokes: sample.keys,
         isIdle: sample.isIdle,
@@ -301,9 +303,9 @@ class AgentApplication {
       });
 
       this.updateTrayMenu();
-    }, 5000);
+    }, 3000);
 
-    // 2. Flush telemetry batch every 15-30 seconds
+    // 2. Flush telemetry batch every 10 seconds for real-time live dashboard sync
     this.telemetryTimer = setInterval(async () => {
       if (this.activityBuffer.length === 0) return;
 
@@ -318,32 +320,36 @@ class AgentApplication {
       const keysPerMinute = Math.round((totalKeys / totalSecs) * 60);
       const currentStatus = this.lastSample?.isIdle ? 'IDLE' : 'ONLINE';
 
+      console.log(`📡 Sending telemetry: ${batch.length} logs | App: ${this.lastSample?.appName} | Clicks: ${totalClicks} | Keys: ${totalKeys}`);
+
       await this.syncService.sendActivityBatch(
         batch,
         clicksPerMinute,
         keysPerMinute,
         currentStatus
       );
-    }, 15000);
+    }, 10000);
 
-    // 3. Screenshot Capture Interval
+    // 3. Screenshot Capture Interval (every 10 minutes)
     const msInterval = this.screenshotIntervalMinutes * 60 * 1000;
     this.screenshotTimer = setInterval(async () => {
       await this.performScreenshotCapture();
     }, msInterval);
 
-    // Capture first screenshot 3 seconds after connect
+    // Capture initial screenshot 2 seconds after connect
     setTimeout(() => {
       this.performScreenshotCapture();
-    }, 3000);
+    }, 2000);
   }
 
   private async performScreenshotCapture() {
     try {
+      console.log('📸 Taking screen capture...');
       const screens = await this.screenshotEngine.captureAllScreens();
       const sample = this.lastSample || await this.tracker.getSample();
 
       for (const screen of screens) {
+        console.log('📤 Uploading screenshot:', screen.filePath);
         await this.syncService.uploadScreenshot(screen.filePath, {
           displayIndex: screen.displayIndex,
           appName: sample.appName,
