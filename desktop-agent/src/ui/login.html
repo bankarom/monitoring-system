@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Improx Monitoring Agent</title>
+  <link rel="stylesheet" href="login.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="window-container">
+    <div class="titlebar">
+      <div class="brand-title">
+        <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <path d="m9 12 2 2 4-4"/>
+        </svg>
+        <span>Improx Agent</span>
+      </div>
+      <div class="window-controls">
+        <button id="btnMinimize" class="control-btn">—</button>
+        <button id="btnClose" class="control-btn close">✕</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="header">
+        <h2>Employee Sign In</h2>
+        <p>Log in with your company credentials to begin tracking</p>
+      </div>
+
+      <div id="errorBox" class="alert-box error hidden"></div>
+      <div id="successBox" class="alert-box success hidden"></div>
+
+      <form id="loginForm">
+        <div class="input-group">
+          <label>Server Endpoint</label>
+          <input type="text" id="serverUrl" value="http://200.141.2.53:4000" placeholder="http://200.141.2.53:4000" required>
+        </div>
+
+        <div class="input-group">
+          <label>Work Email</label>
+          <input type="email" id="email" placeholder="employee@improx.com" required>
+        </div>
+
+        <div class="input-group">
+          <label>Password</label>
+          <input type="password" id="password" placeholder="••••••••" required>
+        </div>
+
+        <button type="submit" id="btnSubmit" class="btn-primary">
+          <span id="btnText">Connect & Start Tracking</span>
+          <div id="btnSpinner" class="spinner hidden"></div>
+        </button>
+      </form>
+
+      <div class="footer-note">
+        <span>Running silently in system tray upon connection</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="login.js"></script>
+</body>
+</html>
