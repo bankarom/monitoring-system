@@ -83,7 +83,7 @@ export const Dashboard: React.FC = () => {
         <StatCard
           title="Away / Idle"
           value={stats.headcount.idle}
-          subtitle="Inactive > 5 mins"
+          subtitle="Inactive > 3 mins"
           icon={Coffee}
           color="amber"
         />
