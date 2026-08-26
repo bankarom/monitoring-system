@@ -40,7 +40,7 @@ export const Dashboard: React.FC = () => {
 
   useEffect(() => {
     fetchStats();
-    const interval = setInterval(fetchStats, 15000); // 15s auto-refresh
+    const interval = setInterval(fetchStats, 15000);
     return () => clearInterval(interval);
   }, []);
 
@@ -57,8 +57,8 @@ export const Dashboard: React.FC = () => {
       {/* Top Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-white tracking-tight">Organization Overview</h1>
-          <p className="text-xs text-slate-400 mt-1">Live productivity intelligence and attendance summary</p>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Organization Overview</h1>
+          <p className="text-xs text-slate-500 mt-1 font-medium">Live productivity intelligence and attendance summary</p>
         </div>
       </div>
 
@@ -98,11 +98,11 @@ export const Dashboard: React.FC = () => {
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* 7-Day Trend Chart */}
-        <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg">
+        <div className="lg:col-span-2 bg-white border border-slate-200 rounded-2xl p-5 shadow-xs">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-sky-400" />
-              <h3 className="text-sm font-bold text-slate-200">7-Day Productivity Curve (Hours)</h3>
+              <TrendingUp className="w-5 h-5 text-sky-600" />
+              <h3 className="text-sm font-bold text-slate-800">7-Day Productivity Curve (Hours)</h3>
             </div>
           </div>
 
@@ -111,54 +111,54 @@ export const Dashboard: React.FC = () => {
               <AreaChart data={stats.productivityTrend}>
                 <defs>
                   <linearGradient id="activeGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#0284c7" stopOpacity={0.4} />
+                    <stop offset="5%" stopColor="#0284c7" stopOpacity={0.3} />
                     <stop offset="95%" stopColor="#0284c7" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                <XAxis dataKey="date" stroke="#64748b" fontSize={11} />
-                <YAxis stroke="#64748b" fontSize={11} unit="h" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                <XAxis dataKey="date" stroke="#94a3b8" fontSize={11} fontStyle="bold" />
+                <YAxis stroke="#94a3b8" fontSize={11} unit="h" />
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '0.75rem', fontSize: '12px' }}
+                  contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', borderRadius: '0.75rem', fontSize: '12px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}
                 />
-                <Area type="monotone" dataKey="activeHours" stroke="#0284c7" strokeWidth={2} fillOpacity={1} fill="url(#activeGrad)" name="Active Hours" />
-                <Area type="monotone" dataKey="idleHours" stroke="#f59e0b" strokeWidth={2} fill="#f59e0b" fillOpacity={0.1} name="Idle Hours" />
+                <Area type="monotone" dataKey="activeHours" stroke="#0284c7" strokeWidth={2.5} fillOpacity={1} fill="url(#activeGrad)" name="Active Hours" />
+                <Area type="monotone" dataKey="idleHours" stroke="#f59e0b" strokeWidth={2} fill="#f59e0b" fillOpacity={0.08} name="Idle Hours" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         {/* Top Apps Today Bar Chart */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg flex flex-col justify-between">
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <PieIcon className="w-5 h-5 text-sky-400" />
-              <h3 className="text-sm font-bold text-slate-200">Top Software Today</h3>
+              <PieIcon className="w-5 h-5 text-sky-600" />
+              <h3 className="text-sm font-bold text-slate-800">Top Software Today</h3>
             </div>
 
             <div className="h-48 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={stats.topApps} layout="vertical">
-                  <XAxis type="number" stroke="#64748b" fontSize={10} unit="m" />
-                  <YAxis type="category" dataKey="name" stroke="#94a3b8" fontSize={11} width={80} tickFormatter={(val) => val.length > 10 ? val.substring(0, 10) + '...' : val} />
+                  <XAxis type="number" stroke="#94a3b8" fontSize={10} unit="m" />
+                  <YAxis type="category" dataKey="name" stroke="#64748b" fontSize={11} width={80} tickFormatter={(val) => val.length > 10 ? val.substring(0, 10) + '...' : val} />
                   <Tooltip
-                    contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '0.75rem', fontSize: '12px' }}
+                    contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', borderRadius: '0.75rem', fontSize: '12px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}
                   />
-                  <Bar dataKey="durationMinutes" fill="#0284c7" radius={[0, 4, 4, 0]} name="Minutes" />
+                  <Bar dataKey="durationMinutes" fill="#0284c7" radius={[0, 6, 6, 0]} name="Minutes" />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
 
-          <div className="pt-4 border-t border-slate-800">
-            <h4 className="text-xs font-semibold text-slate-400 mb-2 flex items-center gap-1.5">
-              <Globe className="w-3.5 h-3.5 text-indigo-400" /> Top Visited Domains
+          <div className="pt-4 border-t border-slate-100">
+            <h4 className="text-xs font-bold text-slate-700 mb-2 flex items-center gap-1.5">
+              <Globe className="w-3.5 h-3.5 text-indigo-600" /> Top Visited Domains
             </h4>
             <div className="space-y-1.5">
               {stats.topWebsites.slice(0, 3).map((w, idx) => (
-                <div key={idx} className="flex items-center justify-between text-xs bg-slate-950/60 px-2.5 py-1.5 rounded-lg border border-slate-800">
-                  <span className="text-slate-300 font-medium truncate">{w.domain}</span>
-                  <span className="text-sky-400 font-bold">{w.durationMinutes}m</span>
+                <div key={idx} className="flex items-center justify-between text-xs bg-slate-50 px-2.5 py-1.5 rounded-xl border border-slate-200">
+                  <span className="text-slate-800 font-semibold truncate">{w.domain}</span>
+                  <span className="text-sky-600 font-extrabold">{w.durationMinutes}m</span>
                 </div>
               ))}
             </div>

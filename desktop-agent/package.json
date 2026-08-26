@@ -2,6 +2,7 @@
   "name": "improx-monitor-agent",
   "version": "1.0.0",
   "description": "Silent Enterprise Background Agent for Improx Monitoring System",
+  "author": "Improx Group",
   "main": "dist/main/main.js",
   "scripts": {
     "dev": "tsc && electron .",
@@ -12,12 +13,10 @@
     "active-win": "^7.0.1",
     "axios": "^1.7.2",
     "form-data": "^4.0.0",
-    "screenshot-desktop": "^1.15.0",
-    "sqlite3": "^5.1.7"
+    "screenshot-desktop": "^1.15.0"
   },
   "devDependencies": {
     "@types/node": "^20.14.9",
-    "@types/sqlite3": "^3.1.11",
     "electron": "^31.0.2",
     "electron-builder": "^24.13.3",
     "typescript": "^5.5.2"

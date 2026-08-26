@@ -27,17 +27,17 @@ const navigation = [
 
 export const Sidebar: React.FC = () => {
   return (
-    <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col h-screen select-none shrink-0">
+    <aside className="w-64 bg-white border-r border-slate-200 flex flex-col h-screen select-none shrink-0 shadow-sm">
       {/* Brand Header */}
-      <div className="h-16 flex items-center px-6 border-b border-slate-800 gap-3">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-sky-500/20">
+      <div className="h-16 flex items-center px-6 border-b border-slate-200 gap-3">
+        <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-600 to-indigo-600 flex items-center justify-center shadow-md shadow-sky-500/20">
           <ShieldCheck className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h1 className="font-bold text-base tracking-wide text-white flex items-center gap-1.5">
-            IMPROX <span className="text-sky-400 font-semibold text-xs px-1.5 py-0.5 rounded bg-sky-950/80 border border-sky-800/50">PRO</span>
+          <h1 className="font-bold text-base tracking-tight text-slate-900 flex items-center gap-1.5">
+            IMPROX <span className="text-sky-600 font-semibold text-xs px-1.5 py-0.5 rounded bg-sky-50 border border-sky-200">PRO</span>
           </h1>
-          <p className="text-[11px] text-slate-400 font-medium">Enterprise Monitoring</p>
+          <p className="text-[11px] text-slate-500 font-medium">Enterprise Monitoring</p>
         </div>
       </div>
 
@@ -51,10 +51,10 @@ export const Sidebar: React.FC = () => {
               to={item.href}
               end={item.href === '/'}
               className={({ isActive }) =>
-                `flex items-center justify-between px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
+                `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
                   isActive
-                    ? 'bg-sky-600/15 text-sky-400 border border-sky-500/30 shadow-sm'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                    ? 'bg-sky-50 text-sky-700 font-bold border border-sky-200 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                 }`
               }
             >
@@ -63,7 +63,7 @@ export const Sidebar: React.FC = () => {
                 <span>{item.name}</span>
               </div>
               {item.badge && (
-                <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 animate-pulse">
+                <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-emerald-100 text-emerald-700 border border-emerald-300 animate-pulse">
                   {item.badge}
                 </span>
               )}
@@ -73,9 +73,9 @@ export const Sidebar: React.FC = () => {
       </nav>
 
       {/* Footer Info */}
-      <div className="p-4 border-t border-slate-800 text-center">
-        <p className="text-[11px] text-slate-400 font-medium">Improx Monitoring v1.0.0</p>
-        <p className="text-[10px] text-slate-400 mt-0.5">Proprietary Clean Engine</p>
+      <div className="p-4 border-t border-slate-200 text-center bg-slate-50/50">
+        <p className="text-[11px] text-slate-600 font-semibold">Improx Monitoring v1.0.0</p>
+        <p className="text-[10px] text-slate-400 mt-0.5">Proprietary Enterprise Engine</p>
       </div>
     </aside>
   );

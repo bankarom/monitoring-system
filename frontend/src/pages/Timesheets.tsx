@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { api, API_BASE_URL } from '../services/api';
 import { TimesheetRecord } from '../types';
-import { CalendarCheck, Download, Search, RefreshCw, LogIn, LogOut } from 'lucide-react';
+import { CalendarCheck, Download, RefreshCw } from 'lucide-react';
 
 export const Timesheets: React.FC = () => {
   const [timesheets, setTimesheets] = useState<TimesheetRecord[]>([]);
@@ -45,10 +45,10 @@ export const Timesheets: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <CalendarCheck className="w-5 h-5 text-sky-400" />
-            <h1 className="text-2xl font-extrabold text-white tracking-tight">Timesheets & Attendance</h1>
+            <CalendarCheck className="w-5 h-5 text-sky-600" />
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Timesheets & Attendance</h1>
           </div>
-          <p className="text-xs text-slate-400 mt-1">Official daily clock-in/out timestamps, hours, and payroll exports</p>
+          <p className="text-xs text-slate-500 mt-1 font-medium">Official daily clock-in/out timestamps, hours, and payroll exports</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
@@ -56,20 +56,20 @@ export const Timesheets: React.FC = () => {
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-200 focus:outline-none focus:border-sky-500"
+            className="bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-800 font-medium focus:outline-none focus:border-sky-500 shadow-xs"
           />
 
           <button
             onClick={handleExportCSV}
             disabled={timesheets.length === 0}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-emerald-600/20 disabled:opacity-50 transition-all"
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-600/20 disabled:opacity-50 transition-all"
           >
             <Download className="w-4 h-4" /> Export CSV / Payroll
           </button>
 
           <button
             onClick={fetchTimesheets}
-            className="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white rounded-xl transition-colors"
+            className="p-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 hover:text-slate-900 rounded-xl transition-colors shadow-xs"
           >
             <RefreshCw className="w-4 h-4" />
           </button>
@@ -77,17 +77,17 @@ export const Timesheets: React.FC = () => {
       </div>
 
       {/* Table */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-lg">
+      <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
         {loading ? (
           <div className="flex items-center justify-center p-12">
             <div className="w-8 h-8 border-4 border-sky-500 border-t-transparent rounded-full animate-spin" />
           </div>
         ) : filtered.length === 0 ? (
-          <div className="p-12 text-center text-slate-500 text-xs">No timesheets recorded for this date.</div>
+          <div className="p-12 text-center text-slate-400 text-xs">No timesheets recorded for this date.</div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-300">
-              <thead className="bg-slate-950/60 text-slate-400 font-semibold border-b border-slate-800 uppercase tracking-wider">
+            <table className="w-full text-left text-xs text-slate-600">
+              <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200 uppercase tracking-wider">
                 <tr>
                   <th className="px-5 py-3.5">Employee</th>
                   <th className="px-5 py-3.5">Department</th>
@@ -100,23 +100,23 @@ export const Timesheets: React.FC = () => {
                   <th className="px-5 py-3.5">Productivity</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60">
+              <tbody className="divide-y divide-slate-100">
                 {filtered.map((t) => (
-                  <tr key={t.id} className="hover:bg-slate-800/40">
-                    <td className="px-5 py-3.5 font-bold text-slate-100">{t.employeeName}</td>
-                    <td className="px-5 py-3.5 text-slate-400">{t.department}</td>
-                    <td className="px-5 py-3.5 text-slate-400">{t.shift}</td>
-                    <td className="px-5 py-3.5 font-mono text-emerald-400">
+                  <tr key={t.id} className="hover:bg-slate-50">
+                    <td className="px-5 py-3.5 font-bold text-slate-900">{t.employeeName}</td>
+                    <td className="px-5 py-3.5 text-slate-600 font-medium">{t.department}</td>
+                    <td className="px-5 py-3.5 text-slate-500 font-medium">{t.shift}</td>
+                    <td className="px-5 py-3.5 font-mono font-bold text-emerald-700">
                       {t.clockInAt ? new Date(t.clockInAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}
                     </td>
-                    <td className="px-5 py-3.5 font-mono text-rose-400">
+                    <td className="px-5 py-3.5 font-mono font-bold text-rose-700">
                       {t.clockOutAt ? new Date(t.clockOutAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Active'}
                     </td>
-                    <td className="px-5 py-3.5 font-bold text-slate-200">{t.activeHours}h</td>
-                    <td className="px-5 py-3.5 text-amber-400">{t.idleHours}h</td>
-                    <td className="px-5 py-3.5 font-bold text-sky-400">{t.totalHours}h</td>
+                    <td className="px-5 py-3.5 font-black text-slate-900">{t.activeHours}h</td>
+                    <td className="px-5 py-3.5 text-amber-700 font-bold">{t.idleHours}h</td>
+                    <td className="px-5 py-3.5 font-black text-sky-700">{t.totalHours}h</td>
                     <td className="px-5 py-3.5">
-                      <span className="px-2.5 py-0.5 rounded-full font-bold bg-sky-500/10 text-sky-400 border border-sky-500/30">
+                      <span className="px-2.5 py-0.5 rounded-full font-bold bg-sky-50 text-sky-700 border border-sky-200">
                         {t.productivityScore}%
                       </span>
                     </td>

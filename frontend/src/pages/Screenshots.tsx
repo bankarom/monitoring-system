@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { api, API_BASE_URL } from '../services/api';
 import { ScreenshotItem, Employee } from '../types';
 import { ScreenshotModal } from '../components/ScreenshotModal';
-import { Image as ImageIcon, Calendar, Download, User, Filter, RefreshCw, AppWindow } from 'lucide-react';
+import { Image as ImageIcon, Download, User, RefreshCw, AppWindow } from 'lucide-react';
 
 export const Screenshots: React.FC = () => {
   const [screenshots, setScreenshots] = useState<ScreenshotItem[]>([]);
@@ -58,20 +58,19 @@ export const Screenshots: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <ImageIcon className="w-5 h-5 text-sky-400" />
-            <h1 className="text-2xl font-extrabold text-white tracking-tight">Screenshots Gallery</h1>
+            <ImageIcon className="w-5 h-5 text-sky-600" />
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Screenshots Gallery</h1>
           </div>
-          <p className="text-xs text-slate-400 mt-1">Multi-monitor screen captures taken automatically every 10 minutes</p>
+          <p className="text-xs text-slate-500 mt-1 font-medium">Multi-monitor screen captures taken automatically every 10 minutes</p>
         </div>
 
         {/* Filters & Export */}
         <div className="flex flex-wrap items-center gap-3">
-          {/* Employee Dropdown */}
           <div className="relative">
             <select
               value={selectedUserId}
               onChange={(e) => setSelectedUserId(e.target.value)}
-              className="bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-200 focus:outline-none focus:border-sky-500"
+              className="bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-800 font-medium focus:outline-none focus:border-sky-500 shadow-xs"
             >
               <option value="">All Employees</option>
               {employees.map((e) => (
@@ -82,28 +81,26 @@ export const Screenshots: React.FC = () => {
             </select>
           </div>
 
-          {/* Date Picker */}
           <div className="relative flex items-center">
             <input
               type="date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className="bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-200 focus:outline-none focus:border-sky-500"
+              className="bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-800 font-medium focus:outline-none focus:border-sky-500 shadow-xs"
             />
           </div>
 
-          {/* Download All ZIP */}
           <button
             onClick={handleDownloadZip}
             disabled={screenshots.length === 0}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-emerald-600/20 disabled:opacity-50 transition-all"
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-600/20 disabled:opacity-50 transition-all"
           >
             <Download className="w-4 h-4" /> Download All (ZIP)
           </button>
 
           <button
             onClick={fetchScreenshots}
-            className="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white rounded-xl transition-colors"
+            className="p-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 hover:text-slate-900 rounded-xl transition-colors shadow-xs"
           >
             <RefreshCw className="w-4 h-4" />
           </button>
@@ -116,10 +113,10 @@ export const Screenshots: React.FC = () => {
           <div className="w-8 h-8 border-4 border-sky-500 border-t-transparent rounded-full animate-spin" />
         </div>
       ) : screenshots.length === 0 ? (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center">
-          <ImageIcon className="w-12 h-12 text-slate-700 mx-auto mb-3" />
-          <h3 className="text-base font-bold text-slate-300">No screenshots found</h3>
-          <p className="text-xs text-slate-500 mt-1">Try selecting a different date or employee.</p>
+        <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center shadow-xs">
+          <ImageIcon className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+          <h3 className="text-base font-bold text-slate-700">No screenshots found</h3>
+          <p className="text-xs text-slate-400 mt-1">Try selecting a different date or employee.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -129,26 +126,26 @@ export const Screenshots: React.FC = () => {
               <div
                 key={s.id}
                 onClick={() => setActiveModalIndex(index)}
-                className="group bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden cursor-pointer hover:border-sky-500/50 hover:shadow-xl hover:shadow-sky-500/10 transition-all flex flex-col justify-between"
+                className="group bg-white border border-slate-200 rounded-2xl overflow-hidden cursor-pointer hover:border-sky-400 hover:shadow-lg transition-all flex flex-col justify-between shadow-xs"
               >
-                <div className="relative aspect-video bg-slate-950 overflow-hidden">
+                <div className="relative aspect-video bg-slate-100 overflow-hidden">
                   <img
                     src={fullUrl}
                     alt={s.appName || 'Screen capture'}
                     className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
-                  <div className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-md bg-slate-950/80 backdrop-blur text-[10px] font-mono text-slate-300 border border-slate-800">
+                  <div className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-md bg-slate-900/80 backdrop-blur text-[10px] font-mono text-white">
                     {new Date(s.takenAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </div>
                 </div>
 
-                <div className="p-3 bg-slate-900 border-t border-slate-800/80">
-                  <p className="text-xs font-bold text-slate-200 truncate flex items-center gap-1.5">
-                    <User className="w-3 h-3 text-sky-400 shrink-0" />
+                <div className="p-3 bg-white border-t border-slate-100">
+                  <p className="text-xs font-bold text-slate-900 truncate flex items-center gap-1.5">
+                    <User className="w-3 h-3 text-sky-600 shrink-0" />
                     {s.user.name}
                   </p>
-                  <p className="text-[11px] text-slate-400 truncate mt-1 flex items-center gap-1.5">
-                    <AppWindow className="w-3 h-3 text-slate-500 shrink-0" />
+                  <p className="text-[11px] text-slate-500 truncate mt-1 flex items-center gap-1.5 font-medium">
+                    <AppWindow className="w-3 h-3 text-slate-400 shrink-0" />
                     {s.appName || 'Desktop'}
                   </p>
                 </div>

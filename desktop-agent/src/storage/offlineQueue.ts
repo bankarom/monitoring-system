@@ -1,10 +1,23 @@
-import sqlite3 from 'sqlite3';
 import path from 'path';
 import fs from 'fs';
 import { app } from 'electron';
 
+export interface QueuedActivity {
+  id: number;
+  data: any;
+  createdAt: string;
+}
+
+export interface QueuedScreenshot {
+  id: number;
+  imagePath: string;
+  metadata: any;
+  createdAt: string;
+}
+
 export class OfflineQueue {
-  private db: sqlite3.Database;
+  private queueFilePath: string;
+  private screensQueueFilePath: string;
 
   constructor() {
     const userDataPath = app ? app.getPath('userData') : path.join(process.env.APPDATA || '.', 'ImproxAgent');
@@ -12,101 +25,87 @@ export class OfflineQueue {
       fs.mkdirSync(userDataPath, { recursive: true });
     }
 
-    const dbPath = path.join(userDataPath, 'improx_offline.db');
-    this.db = new sqlite3.Database(dbPath);
-    this.initTables();
+    this.queueFilePath = path.join(userDataPath, 'activities_queue.json');
+    this.screensQueueFilePath = path.join(userDataPath, 'screenshots_queue.json');
+
+    if (!fs.existsSync(this.queueFilePath)) {
+      fs.writeFileSync(this.queueFilePath, JSON.stringify([]));
+    }
+    if (!fs.existsSync(this.screensQueueFilePath)) {
+      fs.writeFileSync(this.screensQueueFilePath, JSON.stringify([]));
+    }
   }
 
-  private initTables() {
-    this.db.serialize(() => {
-      this.db.run(`
-        CREATE TABLE IF NOT EXISTS activities (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          data TEXT NOT NULL,
-          createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-      `);
-
-      this.db.run(`
-        CREATE TABLE IF NOT EXISTS screenshots (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          imagePath TEXT NOT NULL,
-          metadata TEXT NOT NULL,
-          createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-      `);
-    });
+  private readActivities(): QueuedActivity[] {
+    try {
+      if (fs.existsSync(this.queueFilePath)) {
+        return JSON.parse(fs.readFileSync(this.queueFilePath, 'utf-8'));
+      }
+    } catch (e) {}
+    return [];
   }
 
-  public enqueueActivity(activity: any): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const stmt = this.db.prepare('INSERT INTO activities (data) VALUES (?)');
-      stmt.run(JSON.stringify(activity), (err) => {
-        if (err) reject(err);
-        else resolve();
-      });
-      stmt.finalize();
-    });
+  private writeActivities(items: QueuedActivity[]) {
+    try {
+      fs.writeFileSync(this.queueFilePath, JSON.stringify(items, null, 2));
+    } catch (e) {}
   }
 
-  public getPendingActivities(limit = 100): Promise<{ id: number; data: any }[]> {
-    return new Promise((resolve, reject) => {
-      this.db.all('SELECT id, data FROM activities ORDER BY id ASC LIMIT ?', [limit], (err, rows: any[]) => {
-        if (err) reject(err);
-        else {
-          const parsed = rows.map((r) => ({ id: r.id, data: JSON.parse(r.data) }));
-          resolve(parsed);
-        }
-      });
-    });
+  private readScreenshots(): QueuedScreenshot[] {
+    try {
+      if (fs.existsSync(this.screensQueueFilePath)) {
+        return JSON.parse(fs.readFileSync(this.screensQueueFilePath, 'utf-8'));
+      }
+    } catch (e) {}
+    return [];
   }
 
-  public removeActivities(ids: number[]): Promise<void> {
-    if (ids.length === 0) return Promise.resolve();
-    return new Promise((resolve, reject) => {
-      const placeholders = ids.map(() => '?').join(',');
-      this.db.run(`DELETE FROM activities WHERE id IN (${placeholders})`, ids, (err) => {
-        if (err) reject(err);
-        else resolve();
-      });
-    });
+  private writeScreenshots(items: QueuedScreenshot[]) {
+    try {
+      fs.writeFileSync(this.screensQueueFilePath, JSON.stringify(items, null, 2));
+    } catch (e) {}
   }
 
-  public enqueueScreenshot(imagePath: string, metadata: any): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const stmt = this.db.prepare('INSERT INTO screenshots (imagePath, metadata) VALUES (?, ?)');
-      stmt.run(imagePath, JSON.stringify(metadata), (err) => {
-        if (err) reject(err);
-        else resolve();
-      });
-      stmt.finalize();
+  public async enqueueActivity(activity: any): Promise<void> {
+    const list = this.readActivities();
+    list.push({
+      id: Date.now() + Math.floor(Math.random() * 1000),
+      data: activity,
+      createdAt: new Date().toISOString()
     });
+    this.writeActivities(list);
   }
 
-  public getPendingScreenshots(limit = 10): Promise<{ id: number; imagePath: string; metadata: any }[]> {
-    return new Promise((resolve, reject) => {
-      this.db.all('SELECT id, imagePath, metadata FROM screenshots ORDER BY id ASC LIMIT ?', [limit], (err, rows: any[]) => {
-        if (err) reject(err);
-        else {
-          const parsed = rows.map((r) => ({
-            id: r.id,
-            imagePath: r.imagePath,
-            metadata: JSON.parse(r.metadata)
-          }));
-          resolve(parsed);
-        }
-      });
-    });
+  public async getPendingActivities(limit = 100): Promise<QueuedActivity[]> {
+    const list = this.readActivities();
+    return list.slice(0, limit);
   }
 
-  public removeScreenshots(ids: number[]): Promise<void> {
-    if (ids.length === 0) return Promise.resolve();
-    return new Promise((resolve, reject) => {
-      const placeholders = ids.map(() => '?').join(',');
-      this.db.run(`DELETE FROM screenshots WHERE id IN (${placeholders})`, ids, (err) => {
-        if (err) reject(err);
-        else resolve();
-      });
+  public async removeActivities(ids: number[]): Promise<void> {
+    const idSet = new Set(ids);
+    const list = this.readActivities().filter((item) => !idSet.has(item.id));
+    this.writeActivities(list);
+  }
+
+  public async enqueueScreenshot(imagePath: string, metadata: any): Promise<void> {
+    const list = this.readScreenshots();
+    list.push({
+      id: Date.now() + Math.floor(Math.random() * 1000),
+      imagePath,
+      metadata,
+      createdAt: new Date().toISOString()
     });
+    this.writeScreenshots(list);
+  }
+
+  public async getPendingScreenshots(limit = 10): Promise<QueuedScreenshot[]> {
+    const list = this.readScreenshots();
+    return list.slice(0, limit);
+  }
+
+  public async removeScreenshots(ids: number[]): Promise<void> {
+    const idSet = new Set(ids);
+    const list = this.readScreenshots().filter((item) => !idSet.has(item.id));
+    this.writeScreenshots(list);
   }
 }

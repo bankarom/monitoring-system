@@ -12,7 +12,6 @@ export const LiveGrid: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
   const [loading, setLoading] = useState(true);
 
-  // Lightbox Modal state
   const [selectedScreenshot, setSelectedScreenshot] = useState<{
     url: string;
     title: string;
@@ -36,7 +35,6 @@ export const LiveGrid: React.FC = () => {
     fetchLiveGrid();
   }, []);
 
-  // Listen to live WebSocket telemetry broadcasts
   useEffect(() => {
     if (!socket) return;
 
@@ -114,34 +112,34 @@ export const LiveGrid: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <Radio className="w-5 h-5 text-emerald-400 animate-pulse" />
-            <h1 className="text-2xl font-extrabold text-white tracking-tight">Real-Time Monitor Grid</h1>
+            <Radio className="w-5 h-5 text-emerald-600 animate-pulse" />
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Real-Time Monitor Grid</h1>
           </div>
-          <p className="text-xs text-slate-400 mt-1">Live active applications, keyboard/mouse meters, and screen previews</p>
+          <p className="text-xs text-slate-500 mt-1 font-medium">Live active applications, keyboard/mouse meters, and screen previews</p>
         </div>
 
         {/* Search & Filter Bar */}
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative">
-            <Search className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search by name, app..."
-              className="bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-3.5 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-sky-500 w-48 sm:w-64"
+              className="bg-white border border-slate-200 rounded-xl pl-9 pr-3.5 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-sky-500 w-48 sm:w-64 shadow-xs"
             />
           </div>
 
-          <div className="flex items-center gap-1.5 bg-slate-900 border border-slate-800 rounded-xl p-1 text-xs">
+          <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-xl p-1 text-xs shadow-xs">
             {['ALL', 'ONLINE', 'IDLE', 'OFFLINE'].map((status) => (
               <button
                 key={status}
                 onClick={() => setFilterStatus(status)}
-                className={`px-3 py-1.5 rounded-lg font-semibold transition-all ${
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
                   filterStatus === status
-                    ? 'bg-sky-600 text-white shadow-sm'
-                    : 'text-slate-400 hover:text-slate-200'
+                    ? 'bg-sky-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 {status}
@@ -151,7 +149,7 @@ export const LiveGrid: React.FC = () => {
 
           <button
             onClick={fetchLiveGrid}
-            className="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white rounded-xl transition-colors"
+            className="p-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 hover:text-slate-900 rounded-xl transition-colors shadow-xs"
             title="Refresh Grid"
           >
             <RefreshCw className="w-4 h-4" />
@@ -165,10 +163,10 @@ export const LiveGrid: React.FC = () => {
           <div className="w-8 h-8 border-4 border-sky-500 border-t-transparent rounded-full animate-spin" />
         </div>
       ) : filteredEmployees.length === 0 ? (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center">
-          <Filter className="w-12 h-12 text-slate-700 mx-auto mb-3" />
-          <h3 className="text-base font-bold text-slate-300">No employees match this filter</h3>
-          <p className="text-xs text-slate-500 mt-1">Try clearing your search query or selecting ALL statuses.</p>
+        <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center shadow-xs">
+          <Filter className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+          <h3 className="text-base font-bold text-slate-700">No employees match this filter</h3>
+          <p className="text-xs text-slate-400 mt-1">Try clearing your search query or selecting ALL statuses.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { Employee, ActivityBlock } from '../types';
 import { TimelineBar } from '../components/TimelineBar';
-import { Clock, User, Calendar, LogIn, LogOut, CheckCircle2, Coffee } from 'lucide-react';
+import { Clock, LogIn, LogOut, CheckCircle2, Coffee } from 'lucide-react';
 
 export const Timeline: React.FC = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -50,17 +50,17 @@ export const Timeline: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <Clock className="w-5 h-5 text-sky-400" />
-            <h1 className="text-2xl font-extrabold text-white tracking-tight">24-Hour Activity Timeline</h1>
+            <Clock className="w-5 h-5 text-sky-600" />
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight">24-Hour Activity Timeline</h1>
           </div>
-          <p className="text-xs text-slate-400 mt-1">Granular step-by-step application usage and attendance tracking</p>
+          <p className="text-xs text-slate-500 mt-1 font-medium">Granular step-by-step application usage and attendance tracking</p>
         </div>
 
         <div className="flex items-center gap-3">
           <select
             value={selectedUserId}
             onChange={(e) => setSelectedUserId(e.target.value)}
-            className="bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-200 focus:outline-none focus:border-sky-500"
+            className="bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-800 font-medium focus:outline-none focus:border-sky-500 shadow-xs"
           >
             {employees.map((e) => (
               <option key={e.id} value={e.id}>
@@ -73,7 +73,7 @@ export const Timeline: React.FC = () => {
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-200 focus:outline-none focus:border-sky-500"
+            className="bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-800 font-medium focus:outline-none focus:border-sky-500 shadow-xs"
           />
         </div>
       </div>
@@ -86,13 +86,13 @@ export const Timeline: React.FC = () => {
         <>
           {/* Attendance Summary Strip */}
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-            <div className="p-4 bg-slate-900 border border-slate-800 rounded-2xl flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+            <div className="p-4 bg-white border border-slate-200 rounded-2xl flex items-center gap-3 shadow-xs">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600">
                 <LogIn className="w-5 h-5" />
               </div>
               <div>
                 <p className="text-[10px] uppercase font-bold text-slate-400">Clock In</p>
-                <p className="text-sm font-bold text-slate-200">
+                <p className="text-sm font-black text-slate-900">
                   {timelineData.attendance.clockInAt
                     ? new Date(timelineData.attendance.clockInAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                     : 'Not Recorded'}
@@ -100,13 +100,13 @@ export const Timeline: React.FC = () => {
               </div>
             </div>
 
-            <div className="p-4 bg-slate-900 border border-slate-800 rounded-2xl flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
+            <div className="p-4 bg-white border border-slate-200 rounded-2xl flex items-center gap-3 shadow-xs">
+              <div className="w-10 h-10 rounded-xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-600">
                 <LogOut className="w-5 h-5" />
               </div>
               <div>
                 <p className="text-[10px] uppercase font-bold text-slate-400">Clock Out</p>
-                <p className="text-sm font-bold text-slate-200">
+                <p className="text-sm font-black text-slate-900">
                   {timelineData.attendance.clockOutAt
                     ? new Date(timelineData.attendance.clockOutAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                     : 'Active / None'}
@@ -114,43 +114,41 @@ export const Timeline: React.FC = () => {
               </div>
             </div>
 
-            <div className="p-4 bg-slate-900 border border-slate-800 rounded-2xl flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
+            <div className="p-4 bg-white border border-slate-200 rounded-2xl flex items-center gap-3 shadow-xs">
+              <div className="w-10 h-10 rounded-xl bg-sky-50 border border-sky-200 flex items-center justify-center text-sky-600">
                 <CheckCircle2 className="w-5 h-5" />
               </div>
               <div>
                 <p className="text-[10px] uppercase font-bold text-slate-400">Active Work</p>
-                <p className="text-sm font-bold text-slate-200">
+                <p className="text-sm font-black text-slate-900">
                   {(timelineData.attendance.totalActiveSeconds / 3600).toFixed(2)} hrs
                 </p>
               </div>
             </div>
 
-            <div className="p-4 bg-slate-900 border border-slate-800 rounded-2xl flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+            <div className="p-4 bg-white border border-slate-200 rounded-2xl flex items-center gap-3 shadow-xs">
+              <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600">
                 <Coffee className="w-5 h-5" />
               </div>
               <div>
                 <p className="text-[10px] uppercase font-bold text-slate-400">Idle Breaks</p>
-                <p className="text-sm font-bold text-slate-200">
+                <p className="text-sm font-black text-slate-900">
                   {(timelineData.attendance.totalIdleSeconds / 3600).toFixed(2)} hrs
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Timeline Heatmap */}
           <TimelineBar activityBlocks={timelineData.activityBlocks} date={selectedDate} />
 
-          {/* Activity Log Table */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-lg">
-            <div className="px-5 py-3.5 border-b border-slate-800 font-bold text-sm text-slate-200">
+          <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
+            <div className="px-5 py-3.5 border-b border-slate-100 font-bold text-sm text-slate-900 bg-slate-50">
               Detailed Activity Log Entries ({timelineData.activityBlocks.length})
             </div>
 
             <div className="overflow-x-auto max-h-96">
-              <table className="w-full text-left text-xs text-slate-300">
-                <thead className="bg-slate-950/60 text-slate-400 font-semibold border-b border-slate-800 uppercase tracking-wider sticky top-0">
+              <table className="w-full text-left text-xs text-slate-600">
+                <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200 uppercase tracking-wider sticky top-0">
                   <tr>
                     <th className="px-5 py-3">Time</th>
                     <th className="px-5 py-3">Application</th>
@@ -161,22 +159,22 @@ export const Timeline: React.FC = () => {
                     <th className="px-5 py-3">Keys</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60">
+                <tbody className="divide-y divide-slate-100">
                   {timelineData.activityBlocks.map((block) => (
-                    <tr key={block.id} className="hover:bg-slate-800/40">
-                      <td className="px-5 py-3 font-mono text-slate-400">
+                    <tr key={block.id} className="hover:bg-slate-50">
+                      <td className="px-5 py-3 font-mono text-slate-500">
                         {new Date(block.recordedAt).toLocaleTimeString()}
                       </td>
-                      <td className="px-5 py-3 font-bold text-slate-200">{block.appName}</td>
-                      <td className="px-5 py-3 text-slate-400 max-w-xs truncate">{block.windowTitle || '—'}</td>
+                      <td className="px-5 py-3 font-bold text-slate-900">{block.appName}</td>
+                      <td className="px-5 py-3 text-slate-500 max-w-xs truncate">{block.windowTitle || '—'}</td>
                       <td className="px-5 py-3">
-                        <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-800 text-slate-300 border border-slate-700">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
                           {block.category}
                         </span>
                       </td>
-                      <td className="px-5 py-3">{block.durationSeconds}s</td>
-                      <td className="px-5 py-3 text-emerald-400 font-medium">{block.mouseClicks}</td>
-                      <td className="px-5 py-3 text-amber-400 font-medium">{block.keystrokes}</td>
+                      <td className="px-5 py-3 font-medium">{block.durationSeconds}s</td>
+                      <td className="px-5 py-3 text-emerald-600 font-bold">{block.mouseClicks}</td>
+                      <td className="px-5 py-3 text-amber-600 font-bold">{block.keystrokes}</td>
                     </tr>
                   ))}
                 </tbody>

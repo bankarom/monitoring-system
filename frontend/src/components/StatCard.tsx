@@ -11,19 +11,19 @@ interface StatCardProps {
 }
 
 const colorMap = {
-  sky: 'from-sky-500/10 to-sky-600/5 text-sky-400 border-sky-500/20 shadow-sky-500/5',
-  emerald: 'from-emerald-500/10 to-emerald-600/5 text-emerald-400 border-emerald-500/20 shadow-emerald-500/5',
-  amber: 'from-amber-500/10 to-amber-600/5 text-amber-400 border-amber-500/20 shadow-amber-500/5',
-  rose: 'from-rose-500/10 to-rose-600/5 text-rose-400 border-rose-500/20 shadow-rose-500/5',
-  indigo: 'from-indigo-500/10 to-indigo-600/5 text-indigo-400 border-indigo-500/20 shadow-indigo-500/5',
+  sky: 'border-slate-200 text-sky-600',
+  emerald: 'border-slate-200 text-emerald-600',
+  amber: 'border-slate-200 text-amber-600',
+  rose: 'border-slate-200 text-rose-600',
+  indigo: 'border-slate-200 text-indigo-600',
 };
 
 const iconBgMap = {
-  sky: 'bg-sky-500/20 text-sky-400 border-sky-500/30',
-  emerald: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
-  amber: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-  rose: 'bg-rose-500/20 text-rose-400 border-rose-500/30',
-  indigo: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30',
+  sky: 'bg-sky-50 text-sky-600 border-sky-200',
+  emerald: 'bg-emerald-50 text-emerald-600 border-emerald-200',
+  amber: 'bg-amber-50 text-amber-600 border-amber-200',
+  rose: 'bg-rose-50 text-rose-600 border-rose-200',
+  indigo: 'bg-indigo-50 text-indigo-600 border-indigo-200',
 };
 
 export const StatCard: React.FC<StatCardProps> = ({
@@ -35,23 +35,23 @@ export const StatCard: React.FC<StatCardProps> = ({
   badge
 }) => {
   return (
-    <div className={`p-5 rounded-2xl bg-gradient-to-br border ${colorMap[color]} shadow-lg relative overflow-hidden backdrop-blur-sm`}>
+    <div className={`p-5 rounded-2xl bg-white border ${colorMap[color]} shadow-xs hover:shadow-md transition-shadow relative overflow-hidden`}>
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{title}</p>
-          <h3 className="text-2xl sm:text-3xl font-extrabold text-white mt-1.5">{value}</h3>
-          {subtitle && <p className="text-xs text-slate-400 mt-1 font-medium">{subtitle}</p>}
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">{title}</p>
+          <h3 className="text-2xl sm:text-3xl font-black text-slate-900 mt-1.5">{value}</h3>
+          {subtitle && <p className="text-xs text-slate-500 mt-1 font-medium">{subtitle}</p>}
         </div>
 
-        <div className={`w-11 h-11 rounded-xl flex items-center justify-center border ${iconBgMap[color]}`}>
+        <div className={`w-11 h-11 rounded-xl flex items-center justify-center border ${iconBgMap[color]} shadow-xs`}>
           <Icon className="w-5 h-5" />
         </div>
       </div>
 
       {badge && (
-        <div className="mt-3 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs">
-          <span className="text-slate-400">Status</span>
-          <span className="font-semibold text-slate-300">{badge}</span>
+        <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+          <span className="text-slate-500 font-medium">Status</span>
+          <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">{badge}</span>
         </div>
       )}
     </div>
