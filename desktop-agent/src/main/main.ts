@@ -4,8 +4,7 @@ import fs from 'fs';
 import { OfflineQueue } from '../storage/offlineQueue';
 import { SyncService } from '../api/syncService';
 import { ScreenshotEngine } from '../tracking/screenshotEngine';
-import { InputTracker } from '../tracking/inputTracker';
-import { getActiveWindowInfo } from '../tracking/activeWindow';
+import { NativeTrackerSupervisor, TrackerSample } from '../tracking/activeWindow';
 
 class AgentApplication {
   private mainWindow: BrowserWindow | null = null;
@@ -13,7 +12,7 @@ class AgentApplication {
   private offlineQueue: OfflineQueue;
   private syncService: SyncService;
   private screenshotEngine: ScreenshotEngine;
-  private inputTracker: InputTracker;
+  private tracker: NativeTrackerSupervisor;
 
   private isTracking = false;
   private currentUser: any = null;
@@ -27,12 +26,13 @@ class AgentApplication {
 
   private screenshotIntervalMinutes = 10;
   private idleThresholdMinutes = 5;
+  private lastSample: TrackerSample | null = null;
 
   constructor() {
     this.offlineQueue = new OfflineQueue();
     this.syncService = new SyncService(this.serverUrl, this.offlineQueue);
     this.screenshotEngine = new ScreenshotEngine();
-    this.inputTracker = new InputTracker(this.idleThresholdMinutes);
+    this.tracker = new NativeTrackerSupervisor(this.idleThresholdMinutes);
 
     const userDataPath = app ? app.getPath('userData') : path.join(process.env.APPDATA || '.', 'ImproxAgent');
     if (!fs.existsSync(userDataPath)) {
@@ -101,6 +101,7 @@ class AgentApplication {
       if (this.isTracking) {
         await this.syncService.logout().catch(() => {});
       }
+      this.tracker.destroy();
     });
 
     powerMonitor.on('shutdown', async () => {
@@ -187,7 +188,7 @@ class AgentApplication {
     const statusText = !this.currentUser
       ? 'Offline'
       : this.isTracking
-      ? this.inputTracker.checkIdleState()
+      ? this.lastSample?.isIdle
         ? '🟡 Away (Idle)'
         : '🟢 Tracking (Active)'
       : '🔴 Paused';
@@ -259,7 +260,7 @@ class AgentApplication {
         }
         if (data.settings?.idleThreshold) {
           this.idleThresholdMinutes = data.settings.idleThreshold;
-          this.inputTracker.setIdleThreshold(this.idleThresholdMinutes);
+          this.tracker.setIdleThreshold(this.idleThresholdMinutes);
         }
 
         this.saveConfig();
@@ -281,51 +282,49 @@ class AgentApplication {
     this.isTracking = true;
     this.updateTrayMenu();
 
-    // 1. Poll active window every 5 seconds
+    // 1. Poll Native Tracker every 5 seconds
     this.activeWindowTimer = setInterval(async () => {
-      const windowInfo = await getActiveWindowInfo();
-      const isIdle = this.inputTracker.checkIdleState();
+      const sample = await this.tracker.getSample();
+      this.lastSample = sample;
 
       this.activityBuffer.push({
-        appName: windowInfo.appName,
-        processName: windowInfo.processName,
-        windowTitle: windowInfo.windowTitle,
-        domain: windowInfo.domain,
-        url: windowInfo.url,
+        appName: sample.appName,
+        processName: sample.processName,
+        windowTitle: sample.windowTitle,
+        domain: sample.domain,
+        url: null,
         durationSeconds: 5,
-        mouseClicks: 0,
-        keystrokes: 0,
-        isIdle,
+        mouseClicks: sample.clicks,
+        keystrokes: sample.keys,
+        isIdle: sample.isIdle,
         recordedAt: new Date().toISOString()
       });
 
       this.updateTrayMenu();
     }, 5000);
 
-    // 2. Flush telemetry batch every 30 seconds
+    // 2. Flush telemetry batch every 15-30 seconds
     this.telemetryTimer = setInterval(async () => {
       if (this.activityBuffer.length === 0) return;
 
-      const metrics = this.inputTracker.getAndResetMetrics(30);
       const batch = [...this.activityBuffer];
       this.activityBuffer = [];
 
-      const count = batch.length || 1;
-      const clicksPerItem = Math.floor(metrics.clicks / count);
-      const keysPerItem = Math.floor(metrics.keystrokes / count);
-      batch.forEach((item, idx) => {
-        item.mouseClicks = clicksPerItem + (idx === 0 ? metrics.clicks % count : 0);
-        item.keystrokes = keysPerItem + (idx === 0 ? metrics.keystrokes % count : 0);
-      });
+      const totalClicks = batch.reduce((sum, item) => sum + item.mouseClicks, 0);
+      const totalKeys = batch.reduce((sum, item) => sum + item.keystrokes, 0);
+      const totalSecs = batch.reduce((sum, item) => sum + item.durationSeconds, 0) || 1;
 
-      const currentStatus = metrics.isIdle ? 'IDLE' : 'ONLINE';
+      const clicksPerMinute = Math.round((totalClicks / totalSecs) * 60);
+      const keysPerMinute = Math.round((totalKeys / totalSecs) * 60);
+      const currentStatus = this.lastSample?.isIdle ? 'IDLE' : 'ONLINE';
+
       await this.syncService.sendActivityBatch(
         batch,
-        metrics.clicksPerMinute,
-        metrics.keysPerMinute,
+        clicksPerMinute,
+        keysPerMinute,
         currentStatus
       );
-    }, 30000);
+    }, 15000);
 
     // 3. Screenshot Capture Interval
     const msInterval = this.screenshotIntervalMinutes * 60 * 1000;
@@ -333,7 +332,7 @@ class AgentApplication {
       await this.performScreenshotCapture();
     }, msInterval);
 
-    // Initial capture 3 seconds after start
+    // Capture first screenshot 3 seconds after connect
     setTimeout(() => {
       this.performScreenshotCapture();
     }, 3000);
@@ -342,15 +341,14 @@ class AgentApplication {
   private async performScreenshotCapture() {
     try {
       const screens = await this.screenshotEngine.captureAllScreens();
-      const windowInfo = await getActiveWindowInfo();
-      const isIdle = this.inputTracker.checkIdleState();
+      const sample = this.lastSample || await this.tracker.getSample();
 
       for (const screen of screens) {
         await this.syncService.uploadScreenshot(screen.filePath, {
           displayIndex: screen.displayIndex,
-          appName: windowInfo.appName,
-          windowTitle: windowInfo.windowTitle,
-          isIdle,
+          appName: sample.appName,
+          windowTitle: sample.windowTitle,
+          isIdle: sample.isIdle,
           takenAt: screen.takenAt
         });
         this.screenshotEngine.cleanupTempFile(screen.filePath);

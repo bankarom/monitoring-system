@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { api, API_BASE_URL } from '../services/api';
 import { TimesheetRecord } from '../types';
+import { formatHoursToTime } from '../utils/format';
 import { CalendarCheck, Download, RefreshCw } from 'lucide-react';
 
 export const Timesheets: React.FC = () => {
@@ -10,7 +11,6 @@ export const Timesheets: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   const fetchTimesheets = async () => {
-    setLoading(true);
     try {
       const res = await api.get('/admin/timesheets', {
         params: { date: selectedDate }
@@ -25,6 +25,8 @@ export const Timesheets: React.FC = () => {
 
   useEffect(() => {
     fetchTimesheets();
+    const interval = setInterval(fetchTimesheets, 10000);
+    return () => clearInterval(interval);
   }, [selectedDate]);
 
   const handleExportCSV = () => {
@@ -48,7 +50,7 @@ export const Timesheets: React.FC = () => {
             <CalendarCheck className="w-5 h-5 text-sky-600" />
             <h1 className="text-2xl font-black text-slate-900 tracking-tight">Timesheets & Attendance</h1>
           </div>
-          <p className="text-xs text-slate-500 mt-1 font-medium">Official daily clock-in/out timestamps, hours, and payroll exports</p>
+          <p className="text-xs text-slate-500 mt-1 font-medium">Official daily clock-in/out timestamps, hours, and payroll exports (Auto-refreshes every 10s)</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
@@ -94,9 +96,9 @@ export const Timesheets: React.FC = () => {
                   <th className="px-5 py-3.5">Shift</th>
                   <th className="px-5 py-3.5">Clock In</th>
                   <th className="px-5 py-3.5">Clock Out</th>
-                  <th className="px-5 py-3.5">Active Hrs</th>
-                  <th className="px-5 py-3.5">Idle Hrs</th>
-                  <th className="px-5 py-3.5">Total Hrs</th>
+                  <th className="px-5 py-3.5">Active Work</th>
+                  <th className="px-5 py-3.5">Idle Breaks</th>
+                  <th className="px-5 py-3.5">Total Time</th>
                   <th className="px-5 py-3.5">Productivity</th>
                 </tr>
               </thead>
@@ -112,9 +114,9 @@ export const Timesheets: React.FC = () => {
                     <td className="px-5 py-3.5 font-mono font-bold text-rose-700">
                       {t.clockOutAt ? new Date(t.clockOutAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Active'}
                     </td>
-                    <td className="px-5 py-3.5 font-black text-slate-900">{t.activeHours}h</td>
-                    <td className="px-5 py-3.5 text-amber-700 font-bold">{t.idleHours}h</td>
-                    <td className="px-5 py-3.5 font-black text-sky-700">{t.totalHours}h</td>
+                    <td className="px-5 py-3.5 font-black text-slate-900">{formatHoursToTime(t.activeHours)}</td>
+                    <td className="px-5 py-3.5 text-amber-700 font-bold">{formatHoursToTime(t.idleHours)}</td>
+                    <td className="px-5 py-3.5 font-black text-sky-700">{formatHoursToTime(t.totalHours)}</td>
                     <td className="px-5 py-3.5">
                       <span className="px-2.5 py-0.5 rounded-full font-bold bg-sky-50 text-sky-700 border border-sky-200">
                         {t.productivityScore}%

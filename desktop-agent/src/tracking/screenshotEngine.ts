@@ -1,9 +1,8 @@
-import screenshot from 'screenshot-desktop';
+import { desktopCapturer, app } from 'electron';
 import path from 'path';
 import fs from 'fs';
-import { app } from 'electron';
 
-export interface CapturedScreenshot {
+export interface ScreenCaptureResult {
   filePath: string;
   displayIndex: number;
   takenAt: string;
@@ -13,56 +12,42 @@ export class ScreenshotEngine {
   private tempDir: string;
 
   constructor() {
-    this.tempDir = path.join(
-      app ? app.getPath('userData') : path.join(process.env.APPDATA || '.', 'ImproxAgent'),
-      'temp_screens'
-    );
-
+    this.tempDir = app ? path.join(app.getPath('userData'), 'screenshots_cache') : path.join(process.env.APPDATA || '.', 'ImproxAgent', 'screenshots_cache');
     if (!fs.existsSync(this.tempDir)) {
       fs.mkdirSync(this.tempDir, { recursive: true });
     }
   }
 
-  public async captureAllScreens(): Promise<CapturedScreenshot[]> {
+  public async captureAllScreens(): Promise<ScreenCaptureResult[]> {
+    const results: ScreenCaptureResult[] = [];
     try {
-      const displays = await screenshot.listDisplays();
-      const results: CapturedScreenshot[] = [];
-      const timestamp = new Date().toISOString();
+      const sources = await desktopCapturer.getSources({
+        types: ['screen'],
+        thumbnailSize: { width: 1920, height: 1080 }
+      });
 
-      for (let i = 0; i < displays.length; i++) {
-        const display = displays[i];
-        const fileName = `screen-${Date.now()}-${i}.jpg`;
-        const outputPath = path.join(this.tempDir, fileName);
+      const now = new Date().toISOString();
+      let index = 0;
 
-        const imgBuffer = await screenshot({ screen: display.id, format: 'jpg' });
-        fs.writeFileSync(outputPath, imgBuffer);
+      for (const source of sources) {
+        const jpegBuffer = source.thumbnail.toJPEG(80);
+        if (jpegBuffer && jpegBuffer.length > 100) {
+          const filename = `screen_${Date.now()}_${index}.jpg`;
+          const filePath = path.join(this.tempDir, filename);
+          fs.writeFileSync(filePath, jpegBuffer);
 
-        results.push({
-          filePath: outputPath,
-          displayIndex: i,
-          takenAt: timestamp
-        });
+          results.push({
+            filePath,
+            displayIndex: index,
+            takenAt: now
+          });
+        }
+        index++;
       }
-
-      return results;
     } catch (error) {
-      console.error('Screenshot capture failed, falling back to primary display:', error);
-      try {
-        const fileName = `screen-${Date.now()}-0.jpg`;
-        const outputPath = path.join(this.tempDir, fileName);
-        const imgBuffer = await screenshot({ format: 'jpg' });
-        fs.writeFileSync(outputPath, imgBuffer);
-
-        return [{
-          filePath: outputPath,
-          displayIndex: 0,
-          takenAt: new Date().toISOString()
-        }];
-      } catch (err2) {
-        console.error('Fallback screenshot also failed:', err2);
-        return [];
-      }
+      console.error('ScreenshotEngine capture error:', error);
     }
+    return results;
   }
 
   public cleanupTempFile(filePath: string) {
@@ -70,8 +55,6 @@ export class ScreenshotEngine {
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
       }
-    } catch (e) {
-      // Ignore cleanup error
-    }
+    } catch (e) {}
   }
 }

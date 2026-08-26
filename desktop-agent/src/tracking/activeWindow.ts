@@ -1,36 +1,16 @@
-import koffi from 'koffi';
+import { spawn, ChildProcess } from 'child_process';
 import path from 'path';
+import fs from 'fs';
+import { app } from 'electron';
 
-let user32: any;
-let kernel32: any;
-let GetForegroundWindow: any;
-let GetWindowTextW: any;
-let GetWindowThreadProcessId: any;
-let OpenProcess: any;
-let QueryFullProcessImageNameW: any;
-let CloseHandle: any;
-
-try {
-  user32 = koffi.load('user32.dll');
-  kernel32 = koffi.load('kernel32.dll');
-
-  GetForegroundWindow = user32.func('intptr_t GetForegroundWindow()');
-  GetWindowTextW = user32.func('int GetWindowTextW(intptr_t hWnd, _Out_ uint16_t *lpString, int nMaxCount)');
-  GetWindowThreadProcessId = user32.func('uint32_t GetWindowThreadProcessId(intptr_t hWnd, _Out_ uint32_t *lpdwProcessId)');
-
-  OpenProcess = kernel32.func('intptr_t OpenProcess(uint32_t dwDesiredAccess, int bInheritHandle, uint32_t dwProcessId)');
-  QueryFullProcessImageNameW = kernel32.func('int QueryFullProcessImageNameW(intptr_t hProcess, uint32_t dwFlags, _Out_ uint16_t *lpExeName, _Inout_ uint32_t *lpdwSize)');
-  CloseHandle = kernel32.func('int CloseHandle(intptr_t hObject)');
-} catch (e) {
-  console.warn('Native Win32 loader warning:', e);
-}
-
-export interface ActiveWindowData {
+export interface TrackerSample {
   appName: string;
   processName: string;
   windowTitle: string;
   domain: string | null;
-  url: string | null;
+  clicks: number;
+  keys: number;
+  isIdle: boolean;
 }
 
 const BROWSER_PROCESSES = ['chrome.exe', 'msedge.exe', 'firefox.exe', 'brave.exe', 'opera.exe'];
@@ -64,78 +44,134 @@ export function extractDomainFromTitle(title: string): string | null {
   return null;
 }
 
-export async function getActiveWindowInfo(): Promise<ActiveWindowData> {
-  if (!GetForegroundWindow) {
-    return {
-      appName: 'Desktop',
-      processName: 'explorer.exe',
-      windowTitle: 'Desktop',
-      domain: null,
-      url: null
-    };
+export class NativeTrackerSupervisor {
+  private child: ChildProcess | null = null;
+  private pendingResolves: Array<(sample: TrackerSample) => void> = [];
+  private idleThresholdSeconds = 300;
+
+  constructor(idleThresholdMinutes = 5) {
+    this.idleThresholdSeconds = idleThresholdMinutes * 60;
+    this.spawnTrackerProcess();
   }
 
-  try {
-    const hwnd = GetForegroundWindow();
-    if (!hwnd || hwnd === 0) {
+  private findTrackerBinary(): string {
+    const candidates = [
+      path.join(__dirname, '../bin/tracker_engine.exe'),
+      path.join(__dirname, '../../bin/tracker_engine.exe'),
+      path.join(app ? app.getAppPath() : '.', 'dist/bin/tracker_engine.exe'),
+      path.join(app ? app.getAppPath() : '.', 'bin/tracker_engine.exe'),
+      path.join(process.resourcesPath || '.', 'bin/tracker_engine.exe')
+    ];
+
+    for (const c of candidates) {
+      if (fs.existsSync(c)) return c;
+    }
+    return candidates[0];
+  }
+
+  private spawnTrackerProcess() {
+    const binPath = this.findTrackerBinary();
+    if (!fs.existsSync(binPath)) {
+      console.warn('tracker_engine.exe not found at:', binPath);
+      return;
+    }
+
+    try {
+      this.child = spawn(binPath, [], {
+        windowsHide: true,
+        stdio: ['pipe', 'pipe', 'pipe']
+      });
+
+      let lineBuffer = '';
+      this.child.stdout?.on('data', (chunk) => {
+        lineBuffer += chunk.toString();
+        const lines = lineBuffer.split('\n');
+        lineBuffer = lines.pop() || '';
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+            try {
+              const data = JSON.parse(trimmed);
+              const processName = data.processName || 'explorer.exe';
+              const windowTitle = data.windowTitle || 'Desktop';
+              let domain: string | null = null;
+
+              if (BROWSER_PROCESSES.includes(processName.toLowerCase())) {
+                domain = extractDomainFromTitle(windowTitle);
+              }
+
+              const sample: TrackerSample = {
+                appName: processName,
+                processName,
+                windowTitle,
+                domain,
+                clicks: data.clicks || 0,
+                keys: data.keys || 0,
+                isIdle: (data.idleSeconds || 0) >= this.idleThresholdSeconds
+              };
+
+              const resolver = this.pendingResolves.shift();
+              if (resolver) resolver(sample);
+            } catch (e) {}
+          }
+        }
+      });
+
+      this.child.on('exit', () => {
+        this.child = null;
+        setTimeout(() => this.spawnTrackerProcess(), 2000);
+      });
+    } catch (e) {
+      console.warn('Failed to spawn tracker process:', e);
+    }
+  }
+
+  public setIdleThreshold(minutes: number) {
+    this.idleThresholdSeconds = minutes * 60;
+  }
+
+  public async getSample(): Promise<TrackerSample> {
+    if (!this.child || !this.child.stdin) {
       return {
         appName: 'Desktop',
         processName: 'explorer.exe',
         windowTitle: 'Desktop',
         domain: null,
-        url: null
+        clicks: 0,
+        keys: 0,
+        isIdle: false
       };
     }
 
-    // 1. Get Window Title
-    const titleBuffer = new Uint16Array(512);
-    const titleLen = GetWindowTextW(hwnd, titleBuffer, 512);
-    let windowTitle = '';
-    if (titleLen > 0) {
-      windowTitle = Buffer.from(titleBuffer.buffer, 0, titleLen * 2).toString('utf16le');
-    }
+    return new Promise((resolve) => {
+      this.pendingResolves.push(resolve);
+      this.child?.stdin?.write('sample\n');
 
-    // 2. Get Process ID & Executable Name
-    const pidBox = [0];
-    GetWindowThreadProcessId(hwnd, pidBox);
-    const pid = pidBox[0];
-
-    let processName = 'explorer.exe';
-    if (pid > 0) {
-      const PROCESS_QUERY_LIMITED_INFORMATION = 0x1000;
-      const hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, 0, pid);
-      if (hProcess && hProcess !== 0) {
-        const pathBuffer = new Uint16Array(1024);
-        const sizeBox = [1024];
-        const success = QueryFullProcessImageNameW(hProcess, 0, pathBuffer, sizeBox);
-        if (success && sizeBox[0] > 0) {
-          const fullPath = Buffer.from(pathBuffer.buffer, 0, sizeBox[0] * 2).toString('utf16le');
-          processName = path.basename(fullPath).toLowerCase();
+      setTimeout(() => {
+        const idx = this.pendingResolves.indexOf(resolve);
+        if (idx !== -1) {
+          this.pendingResolves.splice(idx, 1);
+          resolve({
+            appName: 'Desktop',
+            processName: 'explorer.exe',
+            windowTitle: 'Desktop',
+            domain: null,
+            clicks: 0,
+            keys: 0,
+            isIdle: false
+          });
         }
-        CloseHandle(hProcess);
-      }
-    }
+      }, 1000);
+    });
+  }
 
-    // 3. Extract domain if browser
-    let domain: string | null = null;
-    if (BROWSER_PROCESSES.includes(processName)) {
-      domain = extractDomainFromTitle(windowTitle);
+  public destroy() {
+    if (this.child) {
+      try {
+        this.child.stdin?.write('exit\n');
+        this.child.kill();
+      } catch (e) {}
     }
-
-    return {
-      appName: processName,
-      processName,
-      windowTitle: windowTitle || processName,
-      domain,
-      url: null
-    };
-  } catch (error) {
-    return {
-      appName: 'Desktop',
-      processName: 'explorer.exe',
-      windowTitle: 'Desktop',
-      domain: null,
-      url: null
-    };
   }
 }

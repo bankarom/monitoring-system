@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { DashboardStats } from '../types';
 import { StatCard } from '../components/StatCard';
+import { formatHoursToTime } from '../utils/format';
 import {
   Users,
   Radio,
@@ -40,7 +41,7 @@ export const Dashboard: React.FC = () => {
 
   useEffect(() => {
     fetchStats();
-    const interval = setInterval(fetchStats, 15000);
+    const interval = setInterval(fetchStats, 10000);
     return () => clearInterval(interval);
   }, []);
 
@@ -58,7 +59,7 @@ export const Dashboard: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight">Organization Overview</h1>
-          <p className="text-xs text-slate-500 mt-1 font-medium">Live productivity intelligence and attendance summary</p>
+          <p className="text-xs text-slate-500 mt-1 font-medium">Live productivity intelligence and attendance summary (Auto-refreshing every 10s)</p>
         </div>
       </div>
 
@@ -88,8 +89,8 @@ export const Dashboard: React.FC = () => {
         />
         <StatCard
           title="Total Hours Today"
-          value={`${stats.todayHours.activeHours}h`}
-          subtitle={`${stats.todayHours.idleHours}h idle breaks logged`}
+          value={formatHoursToTime(stats.todayHours.activeHours)}
+          subtitle={`${formatHoursToTime(stats.todayHours.idleHours)} idle breaks logged`}
           icon={Clock}
           color="sky"
         />

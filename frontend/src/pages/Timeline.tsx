@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { Employee, ActivityBlock } from '../types';
 import { TimelineBar } from '../components/TimelineBar';
-import { Clock, LogIn, LogOut, CheckCircle2, Coffee } from 'lucide-react';
+import { formatSecondsToTime } from '../utils/format';
+import { Clock, LogIn, LogOut, CheckCircle2, Coffee, RefreshCw } from 'lucide-react';
 
 export const Timeline: React.FC = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -27,7 +28,6 @@ export const Timeline: React.FC = () => {
 
   const fetchTimeline = async () => {
     if (!selectedUserId) return;
-    setLoading(true);
     try {
       const res = await api.get('/admin/timeline', {
         params: { userId: selectedUserId, date: selectedDate }
@@ -42,6 +42,8 @@ export const Timeline: React.FC = () => {
 
   useEffect(() => {
     fetchTimeline();
+    const interval = setInterval(fetchTimeline, 10000);
+    return () => clearInterval(interval);
   }, [selectedUserId, selectedDate]);
 
   return (
@@ -53,7 +55,7 @@ export const Timeline: React.FC = () => {
             <Clock className="w-5 h-5 text-sky-600" />
             <h1 className="text-2xl font-black text-slate-900 tracking-tight">24-Hour Activity Timeline</h1>
           </div>
-          <p className="text-xs text-slate-500 mt-1 font-medium">Granular step-by-step application usage and attendance tracking</p>
+          <p className="text-xs text-slate-500 mt-1 font-medium">Granular step-by-step application usage and attendance tracking (Auto-refreshes every 10s)</p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -75,6 +77,13 @@ export const Timeline: React.FC = () => {
             onChange={(e) => setSelectedDate(e.target.value)}
             className="bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-800 font-medium focus:outline-none focus:border-sky-500 shadow-xs"
           />
+
+          <button
+            onClick={fetchTimeline}
+            className="p-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 hover:text-slate-900 rounded-xl transition-colors shadow-xs"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
@@ -121,7 +130,7 @@ export const Timeline: React.FC = () => {
               <div>
                 <p className="text-[10px] uppercase font-bold text-slate-400">Active Work</p>
                 <p className="text-sm font-black text-slate-900">
-                  {(timelineData.attendance.totalActiveSeconds / 3600).toFixed(2)} hrs
+                  {formatSecondsToTime(timelineData.attendance.totalActiveSeconds)}
                 </p>
               </div>
             </div>
@@ -133,7 +142,7 @@ export const Timeline: React.FC = () => {
               <div>
                 <p className="text-[10px] uppercase font-bold text-slate-400">Idle Breaks</p>
                 <p className="text-sm font-black text-slate-900">
-                  {(timelineData.attendance.totalIdleSeconds / 3600).toFixed(2)} hrs
+                  {formatSecondsToTime(timelineData.attendance.totalIdleSeconds)}
                 </p>
               </div>
             </div>
@@ -142,8 +151,9 @@ export const Timeline: React.FC = () => {
           <TimelineBar activityBlocks={timelineData.activityBlocks} date={selectedDate} />
 
           <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
-            <div className="px-5 py-3.5 border-b border-slate-100 font-bold text-sm text-slate-900 bg-slate-50">
-              Detailed Activity Log Entries ({timelineData.activityBlocks.length})
+            <div className="px-5 py-3.5 border-b border-slate-100 font-bold text-sm text-slate-900 bg-slate-50 flex items-center justify-between">
+              <span>Detailed Activity Log Entries ({timelineData.activityBlocks.length})</span>
+              <span className="text-xs text-slate-500 font-normal">Real-time Windows process tracking</span>
             </div>
 
             <div className="overflow-x-auto max-h-96">
@@ -172,7 +182,7 @@ export const Timeline: React.FC = () => {
                           {block.category}
                         </span>
                       </td>
-                      <td className="px-5 py-3 font-medium">{block.durationSeconds}s</td>
+                      <td className="px-5 py-3 font-medium">{formatSecondsToTime(block.durationSeconds)}</td>
                       <td className="px-5 py-3 text-emerald-600 font-bold">{block.mouseClicks}</td>
                       <td className="px-5 py-3 text-amber-600 font-bold">{block.keystrokes}</td>
                     </tr>

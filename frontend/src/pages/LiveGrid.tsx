@@ -33,6 +33,8 @@ export const LiveGrid: React.FC = () => {
 
   useEffect(() => {
     fetchLiveGrid();
+    const interval = setInterval(fetchLiveGrid, 10000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -115,7 +117,7 @@ export const LiveGrid: React.FC = () => {
             <Radio className="w-5 h-5 text-emerald-600 animate-pulse" />
             <h1 className="text-2xl font-black text-slate-900 tracking-tight">Real-Time Monitor Grid</h1>
           </div>
-          <p className="text-xs text-slate-500 mt-1 font-medium">Live active applications, keyboard/mouse meters, and screen previews</p>
+          <p className="text-xs text-slate-500 mt-1 font-medium">Live active applications, keyboard/mouse meters, and screen previews (Auto-refreshes every 10s)</p>
         </div>
 
         {/* Search & Filter Bar */}

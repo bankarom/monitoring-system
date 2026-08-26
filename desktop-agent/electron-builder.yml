@@ -4,6 +4,7 @@ directories:
   output: release
 files:
   - dist/**/*
+  - bin/**/*
   - src/ui/**/*
   - assets/**/*
 win:

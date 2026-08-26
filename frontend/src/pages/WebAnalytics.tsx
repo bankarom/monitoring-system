@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { WebAnalyticsItem } from '../types';
+import { formatHoursToTime } from '../utils/format';
 import { Globe, ExternalLink, RefreshCw } from 'lucide-react';
 
 export const WebAnalytics: React.FC = () => {
@@ -9,7 +10,6 @@ export const WebAnalytics: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   const fetchWebAnalytics = async () => {
-    setLoading(true);
     try {
       const res = await api.get('/admin/analytics/websites', {
         params: { date: selectedDate }
@@ -24,6 +24,8 @@ export const WebAnalytics: React.FC = () => {
 
   useEffect(() => {
     fetchWebAnalytics();
+    const interval = setInterval(fetchWebAnalytics, 10000);
+    return () => clearInterval(interval);
   }, [selectedDate]);
 
   return (
@@ -34,7 +36,7 @@ export const WebAnalytics: React.FC = () => {
             <Globe className="w-5 h-5 text-indigo-600" />
             <h1 className="text-2xl font-black text-slate-900 tracking-tight">Web Browsing History</h1>
           </div>
-          <p className="text-xs text-slate-500 mt-1 font-medium">Aggregated domain visits and web productivity distribution</p>
+          <p className="text-xs text-slate-500 mt-1 font-medium">Aggregated domain visits and web productivity distribution (Auto-refreshes every 10s)</p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -89,7 +91,7 @@ export const WebAnalytics: React.FC = () => {
                     </a>
                   </td>
                   <td className="px-5 py-3.5 font-extrabold text-slate-900">
-                    {web.totalHours > 0 ? `${web.totalHours} hrs` : `${web.totalMinutes} mins`}
+                    {formatHoursToTime(web.totalHours)}
                   </td>
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-2">

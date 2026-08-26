@@ -22,7 +22,6 @@ export const Screenshots: React.FC = () => {
   };
 
   const fetchScreenshots = async () => {
-    setLoading(true);
     try {
       const params: any = { date: selectedDate };
       if (selectedUserId) params.userId = selectedUserId;
@@ -42,6 +41,8 @@ export const Screenshots: React.FC = () => {
 
   useEffect(() => {
     fetchScreenshots();
+    const interval = setInterval(fetchScreenshots, 10000);
+    return () => clearInterval(interval);
   }, [selectedUserId, selectedDate]);
 
   const handleDownloadZip = () => {
@@ -61,7 +62,7 @@ export const Screenshots: React.FC = () => {
             <ImageIcon className="w-5 h-5 text-sky-600" />
             <h1 className="text-2xl font-black text-slate-900 tracking-tight">Screenshots Gallery</h1>
           </div>
-          <p className="text-xs text-slate-500 mt-1 font-medium">Multi-monitor screen captures taken automatically every 10 minutes</p>
+          <p className="text-xs text-slate-500 mt-1 font-medium">Multi-monitor screen captures taken automatically every 10 minutes (Auto-refreshes every 10s)</p>
         </div>
 
         {/* Filters & Export */}
@@ -116,7 +117,7 @@ export const Screenshots: React.FC = () => {
         <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center shadow-xs">
           <ImageIcon className="w-12 h-12 text-slate-300 mx-auto mb-3" />
           <h3 className="text-base font-bold text-slate-700">No screenshots found</h3>
-          <p className="text-xs text-slate-400 mt-1">Try selecting a different date or employee.</p>
+          <p className="text-xs text-slate-400 mt-1">Screen captures are uploaded automatically every 10 minutes from the agent.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -135,7 +136,7 @@ export const Screenshots: React.FC = () => {
                     className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
                   <div className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-md bg-slate-900/80 backdrop-blur text-[10px] font-mono text-white">
-                    {new Date(s.takenAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {new Date(s.takenAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                   </div>
                 </div>
 

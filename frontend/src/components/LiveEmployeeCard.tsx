@@ -1,6 +1,7 @@
 import React from 'react';
 import { RealtimeEmployee } from '../types';
 import { API_BASE_URL } from '../services/api';
+import { formatHoursToTime } from '../utils/format';
 import { Monitor, MousePointer, Keyboard, Clock, Globe, AppWindow, Maximize2 } from 'lucide-react';
 
 interface LiveEmployeeCardProps {
@@ -78,7 +79,7 @@ export const LiveEmployeeCard: React.FC<LiveEmployeeCardProps> = ({ employee, on
           ) : (
             <div className="text-center p-4">
               <Monitor className="w-8 h-8 text-slate-400 mx-auto mb-1.5" />
-              <p className="text-xs text-slate-500 font-medium">Awaiting first capture...</p>
+              <p className="text-xs text-slate-500 font-medium">Capturing screen...</p>
             </div>
           )}
         </div>
@@ -105,7 +106,7 @@ export const LiveEmployeeCard: React.FC<LiveEmployeeCardProps> = ({ employee, on
           <span className="text-[10px] text-slate-400 font-medium flex items-center gap-1">
             <Clock className="w-3 h-3 text-sky-600" /> Today
           </span>
-          <span className="font-extrabold text-slate-800">{employee.activeHoursToday}h</span>
+          <span className="font-extrabold text-slate-800">{formatHoursToTime(employee.activeHoursToday)}</span>
         </div>
 
         <div className="flex flex-col">

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { AppAnalyticsItem } from '../types';
+import { formatHoursToTime } from '../utils/format';
 import { PieChart, RefreshCw, Layers } from 'lucide-react';
 
 export const AppAnalytics: React.FC = () => {
@@ -9,7 +10,6 @@ export const AppAnalytics: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   const fetchAppAnalytics = async () => {
-    setLoading(true);
     try {
       const res = await api.get('/admin/analytics/apps', {
         params: { date: selectedDate }
@@ -24,6 +24,8 @@ export const AppAnalytics: React.FC = () => {
 
   useEffect(() => {
     fetchAppAnalytics();
+    const interval = setInterval(fetchAppAnalytics, 10000);
+    return () => clearInterval(interval);
   }, [selectedDate]);
 
   return (
@@ -34,7 +36,7 @@ export const AppAnalytics: React.FC = () => {
             <PieChart className="w-5 h-5 text-sky-600" />
             <h1 className="text-2xl font-black text-slate-900 tracking-tight">Application Usage Analytics</h1>
           </div>
-          <p className="text-xs text-slate-500 mt-1 font-medium">Breakdown of software tools utilized across the team</p>
+          <p className="text-xs text-slate-500 mt-1 font-medium">Breakdown of software tools utilized across the team (Auto-refreshes every 10s)</p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -88,7 +90,7 @@ export const AppAnalytics: React.FC = () => {
                     </span>
                   </td>
                   <td className="px-5 py-3.5 font-extrabold text-slate-900">
-                    {app.totalHours > 0 ? `${app.totalHours} hrs` : `${app.totalMinutes} mins`}
+                    {formatHoursToTime(app.totalHours)}
                   </td>
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-2">

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { Employee } from '../types';
 import { AddEmployeeModal } from '../components/AddEmployeeModal';
+import { formatHoursToTime } from '../utils/format';
 import { Users, UserPlus, Search, Trash2, Mail, RefreshCw } from 'lucide-react';
 
 export const Employees: React.FC = () => {
@@ -23,6 +24,8 @@ export const Employees: React.FC = () => {
 
   useEffect(() => {
     fetchEmployees();
+    const interval = setInterval(fetchEmployees, 10000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleDelete = async (id: string, name: string) => {
@@ -51,7 +54,7 @@ export const Employees: React.FC = () => {
             <Users className="w-5 h-5 text-sky-600" />
             <h1 className="text-2xl font-black text-slate-900 tracking-tight">Employee Directory</h1>
           </div>
-          <p className="text-xs text-slate-500 mt-1 font-medium">Manage employee roster, credentials, and work schedules</p>
+          <p className="text-xs text-slate-500 mt-1 font-medium">Manage employee roster, credentials, and work schedules (Auto-refreshes every 10s)</p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -143,7 +146,7 @@ export const Employees: React.FC = () => {
                     </td>
 
                     <td className="px-5 py-3.5 font-extrabold text-slate-900">
-                      {emp.activeHoursToday}h
+                      {formatHoursToTime(emp.activeHoursToday)}
                     </td>
 
                     <td className="px-5 py-3.5 text-slate-600 font-medium truncate max-w-xs">
