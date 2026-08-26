@@ -1,0 +1,128 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  EMPLOYEE
+}
+
+enum UserStatus {
+  ONLINE
+  IDLE
+  OFFLINE
+}
+
+enum ActivityCategory {
+  WORK
+  BROWSING
+  COMMUNICATION
+  ENTERTAINMENT
+  IDLE
+  OTHER
+}
+
+model User {
+  id            String       @id @default(uuid())
+  email         String       @unique
+  password      String
+  name          String
+  role          Role         @default(EMPLOYEE)
+  department    String       @default("General")
+  shift         String       @default("09:00 - 18:00")
+  status        UserStatus   @default(OFFLINE)
+  lastActiveAt  DateTime?
+  currentApp    String?
+  currentTitle  String?
+  currentDomain String?
+  avatar        String?
+  isActive      Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  activityLogs  ActivityLog[]
+  screenshots   Screenshot[]
+  attendances   Attendance[]
+
+  @@map("users")
+}
+
+model Attendance {
+  id                 String    @id @default(uuid())
+  userId             String
+  date               String    // Format: YYYY-MM-DD
+  clockInAt          DateTime  @default(now())
+  clockOutAt         DateTime?
+  totalActiveSeconds Int       @default(0)
+  totalIdleSeconds   Int       @default(0)
+  totalWorkSeconds   Int       @default(0)
+  status             String    @default("PRESENT")
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId, date])
+  @@map("attendances")
+}
+
+model ActivityLog {
+  id              String           @id @default(uuid())
+  userId          String
+  appName         String
+  processName     String?
+  windowTitle     String?
+  domain          String?
+  url             String?
+  category        ActivityCategory @default(WORK)
+  durationSeconds Int              @default(5)
+  mouseClicks     Int              @default(0)
+  keystrokes      Int              @default(0)
+  isIdle          Boolean          @default(false)
+  recordedAt      DateTime         @default(now())
+  createdAt       DateTime         @default(now())
+
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, recordedAt])
+  @@index([userId, category])
+  @@map("activity_logs")
+}
+
+model Screenshot {
+  id           String    @id @default(uuid())
+  userId       String
+  filePath     String
+  fileSize     Int       @default(0)
+  displayIndex Int       @default(0)
+  appName      String?
+  windowTitle  String?
+  isIdle       Boolean   @default(false)
+  takenAt      DateTime  @default(now())
+  createdAt    DateTime  @default(now())
+
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, takenAt])
+  @@map("screenshots")
+}
+
+model SystemSetting {
+  id                  String   @id @default("global")
+  screenshotInterval  Int      @default(10) // in minutes
+  idleThreshold       Int      @default(5)  // in minutes
+  retentionDays       Int      @default(30) // in days
+  allowEmployeePause  Boolean  @default(false)
+  trackDomains        Boolean  @default(true)
+  companyName         String   @default("Improx Group")
+  updatedAt           DateTime @updatedAt
+
+  @@map("system_settings")
+}
