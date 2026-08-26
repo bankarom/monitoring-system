@@ -8,7 +8,19 @@ echo "=========================================================="
 APP_DIR="/root/improx-monitor"
 cd $APP_DIR
 
-# 1. Ensure PostgreSQL is installed and active
+# 1. Open Firewall Ports for HTTP (80), HTTPS (443), API (4000), Vite (5000)
+echo "🛡️ Configuring Firewall Ports (80, 443, 4000, 5000)..."
+which ufw && ufw allow 80/tcp || true
+which ufw && ufw allow 443/tcp || true
+which ufw && ufw allow 4000/tcp || true
+which ufw && ufw allow 5000/tcp || true
+which ufw && ufw reload || true
+iptables -I INPUT -p tcp --dport 80 -j ACCEPT || true
+iptables -I INPUT -p tcp --dport 443 -j ACCEPT || true
+iptables -I INPUT -p tcp --dport 4000 -j ACCEPT || true
+iptables -I INPUT -p tcp --dport 5000 -j ACCEPT || true
+
+# 2. Ensure PostgreSQL is installed and active
 echo "🐘 Configuring PostgreSQL database..."
 apt-get update -y
 apt-get install -y postgresql postgresql-contrib nginx
@@ -19,7 +31,7 @@ systemctl enable postgresql
 sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD 'postgres';" || true
 sudo -u postgres psql -c "CREATE DATABASE improx_monitor;" || true
 
-# 2. Setup Backend Environment & Prisma
+# 3. Setup Backend Environment & Prisma
 echo "⚙️ Setting up Backend API..."
 cd $APP_DIR/backend
 
@@ -33,25 +45,25 @@ npx prisma generate
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/improx_monitor?schema=public" npx prisma db push --accept-data-loss
 npm run build
 
-# 3. Setup Frontend Dashboard
+# 4. Setup Frontend Dashboard
 echo "📊 Setting up Frontend Dashboard..."
 cd $APP_DIR/frontend
 npm install
 npm run build
 
-# 4. PM2 Process Launch
+# 5. PM2 Process Launch
 echo "🚀 Launching backend via PM2..."
 cd $APP_DIR
 pm2 delete all || true
 pm2 start deploy/ecosystem.config.js
 pm2 save
 
-# 5. Nginx Configuration
+# 6. Nginx Configuration
 echo "🌐 Configuring Nginx reverse proxy..."
 cp deploy/nginx.conf /etc/nginx/sites-available/improx-monitor.conf
 ln -sf /etc/nginx/sites-available/improx-monitor.conf /etc/nginx/sites-enabled/
 rm -f /etc/nginx/sites-enabled/default
-nginx -t && systemctl reload nginx
+systemctl restart nginx
 
 echo "=========================================================="
 echo "✅ DEPLOYMENT SUCCESSFUL!"
