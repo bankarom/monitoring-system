@@ -13,13 +13,17 @@ asarUnpack:
 extraResources:
   - from: "bin"
     to: "bin"
+  - from: "assets"
+    to: "assets"
 win:
   target: nsis
   icon: assets/icon.ico
 nsis:
   oneClick: true
   perMachine: false
-  allowToChangeInstallationDirectory: false
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: "Improx Monitoring Agent"
   installerHeaderIcon: assets/icon.ico
   uninstallerIcon: assets/icon.ico
   runAfterFinish: true

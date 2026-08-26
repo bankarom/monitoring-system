@@ -9,6 +9,7 @@ import authRoutes from './routes/authRoutes';
 import activityRoutes from './routes/activityRoutes';
 import adminRoutes from './routes/adminRoutes';
 import { seedInitialAdmin } from './utils/seed';
+import { startHeartbeatSupervisor } from './services/heartbeatService';
 
 const app = express();
 const server = http.createServer(app);
@@ -59,6 +60,7 @@ server.listen(config.port, async () => {
   console.log('====================================================');
 
   await seedInitialAdmin();
+  startHeartbeatSupervisor();
 });
 
 export { app, server };

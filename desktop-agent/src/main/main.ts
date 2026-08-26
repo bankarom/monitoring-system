@@ -166,20 +166,42 @@ class AgentApplication {
   }
 
   private createTray() {
-    const icon = nativeImage.createFromBuffer(
-      Buffer.from(
-        'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAA7SURBVDhPY/wPBAxUAIwMDAwM/4GYgUr8n4GB4T+yHA4DqBrQ5fAYQNWALofHAKoGdDk8BlA1oMvhMQAAj4sN6K7bL5gAAAAASUVORK5CYII=',
-        'base64'
-      )
-    );
+    const iconCandidates = [
+      path.join(__dirname, '../assets/icon.ico'),
+      path.join(__dirname, '../../assets/icon.ico'),
+      path.join(process.resourcesPath || '.', 'assets/icon.ico'),
+      path.join(app ? app.getAppPath() : '.', 'assets/icon.ico')
+    ];
+
+    let iconPath = '';
+    for (const p of iconCandidates) {
+      if (fs.existsSync(p)) {
+        iconPath = p;
+        break;
+      }
+    }
+
+    const icon = iconPath
+      ? nativeImage.createFromPath(iconPath)
+      : nativeImage.createFromBuffer(
+          Buffer.from(
+            'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAA7SURBVDhPY/wPBAxUAIwMDAwM/4GYgUr8n4GB4T+yHA4DqBrQ5fAYQNWALofHAKoGdDk8BlA1oMvhMQAAj4sN6K7bL5gAAAAASUVORK5CYII=',
+            'base64'
+          )
+        );
 
     this.tray = new Tray(icon);
-    this.tray.setToolTip('Improx Monitoring Agent');
+    this.tray.setToolTip('Improx Monitoring Agent - Running');
     this.updateTrayMenu();
 
     this.tray.on('double-click', () => {
       if (!this.currentUser) {
         this.createLoginWindow();
+      } else {
+        this.tray?.displayBalloon({
+          title: 'Improx Agent Active',
+          content: `Logged in as ${this.currentUser.name}. Tracking is active.`
+        });
       }
     });
   }
