@@ -1,4 +1,4 @@
-﻿# 🚀 Improx Monitoring System
+# 🚀 Improx Monitoring System
 
 Commercial-grade, proprietary Employee Monitoring & Productivity Platform built from scratch for **Improx Group**.
 
