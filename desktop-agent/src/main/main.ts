@@ -21,11 +21,11 @@ class AgentApplication {
 
   private activityBuffer: any[] = [];
   private activeWindowTimer: NodeJS.Timeout | null = null;
-  private telemetryTimer: NodeJS.Timeout | null = null;
   private screenshotTimer: NodeJS.Timeout | null = null;
 
   private screenshotIntervalMinutes = 10;
-  private idleThresholdMinutes = 5;
+  private idleThresholdMinutes = 3; // 3 minutes idle/break threshold
+  private sampleDurationSeconds = 20; // 20 seconds sample duration (3 logs per min)
   private lastSample: TrackerSample | null = null;
 
   constructor() {
@@ -54,6 +54,7 @@ class AgentApplication {
           this.currentUser = data.user;
         }
         if (data.screenshotInterval) this.screenshotIntervalMinutes = data.screenshotInterval;
+        if (data.idleThreshold) this.idleThresholdMinutes = data.idleThreshold;
       }
     } catch (e) {}
   }
@@ -64,7 +65,8 @@ class AgentApplication {
         serverUrl: this.serverUrl,
         user: this.currentUser,
         token: (this.syncService as any).token,
-        screenshotInterval: this.screenshotIntervalMinutes
+        screenshotInterval: this.screenshotIntervalMinutes,
+        idleThreshold: this.idleThresholdMinutes
       };
       fs.writeFileSync(this.configFilePath, JSON.stringify(data, null, 2));
     } catch (e) {}
@@ -91,7 +93,7 @@ class AgentApplication {
       this.setupAutoStart();
 
       if (this.currentUser && (this.syncService as any).token) {
-        console.log('🚀 Found existing session for:', this.currentUser.name);
+        console.log('🚀 Auto-resuming session for:', this.currentUser.name);
         this.startTracking();
       } else {
         this.createLoginWindow();
@@ -190,7 +192,7 @@ class AgentApplication {
       ? 'Offline'
       : this.isTracking
       ? this.lastSample?.isIdle
-        ? '🟡 Away (Idle)'
+        ? '🟡 Away (Break / Idle)'
         : '🟢 Tracking (Active)'
       : '🔴 Paused';
 
@@ -220,8 +222,11 @@ class AgentApplication {
         }
       },
       {
-        label: 'Exit Agent',
-        click: () => {
+        label: 'Exit Agent (Clock Out)',
+        click: async () => {
+          if (this.isTracking) {
+            await this.syncService.logout().catch(() => {});
+          }
           app.quit();
         }
       }
@@ -284,62 +289,50 @@ class AgentApplication {
     this.updateTrayMenu();
     console.log('🟢 Tracking started for:', this.currentUser?.name);
 
-    // 1. Poll Native Tracker every 3 seconds for fast window response
+    // 1. Poll Native Tracker every 20 seconds (3 clean log entries per minute)
     this.activeWindowTimer = setInterval(async () => {
       const sample = await this.tracker.getSample();
       this.lastSample = sample;
 
-      this.activityBuffer.push({
+      const logItem = {
         appName: sample.appName,
         processName: sample.processName,
         windowTitle: sample.windowTitle,
         domain: sample.domain,
         url: null,
-        durationSeconds: 3,
+        durationSeconds: this.sampleDurationSeconds,
         mouseClicks: sample.clicks,
         keystrokes: sample.keys,
         isIdle: sample.isIdle,
         recordedAt: new Date().toISOString()
-      });
+      };
 
-      this.updateTrayMenu();
-    }, 3000);
+      const clicksPerMin = Math.round((sample.clicks / this.sampleDurationSeconds) * 60);
+      const keysPerMin = Math.round((sample.keys / this.sampleDurationSeconds) * 60);
+      const currentStatus = sample.isIdle ? 'IDLE' : 'ONLINE';
 
-    // 2. Flush telemetry batch every 10 seconds for real-time live dashboard sync
-    this.telemetryTimer = setInterval(async () => {
-      if (this.activityBuffer.length === 0) return;
-
-      const batch = [...this.activityBuffer];
-      this.activityBuffer = [];
-
-      const totalClicks = batch.reduce((sum, item) => sum + item.mouseClicks, 0);
-      const totalKeys = batch.reduce((sum, item) => sum + item.keystrokes, 0);
-      const totalSecs = batch.reduce((sum, item) => sum + item.durationSeconds, 0) || 1;
-
-      const clicksPerMinute = Math.round((totalClicks / totalSecs) * 60);
-      const keysPerMinute = Math.round((totalKeys / totalSecs) * 60);
-      const currentStatus = this.lastSample?.isIdle ? 'IDLE' : 'ONLINE';
-
-      console.log(`📡 Sending telemetry: ${batch.length} logs | App: ${this.lastSample?.appName} | Clicks: ${totalClicks} | Keys: ${totalKeys}`);
+      console.log(`📡 [20s Telemetry] App: ${sample.appName} | Domain: ${sample.domain || 'N/A'} | Clicks: ${sample.clicks} | Keys: ${sample.keys} | Status: ${currentStatus}`);
 
       await this.syncService.sendActivityBatch(
-        batch,
-        clicksPerMinute,
-        keysPerMinute,
+        [logItem],
+        clicksPerMin,
+        keysPerMin,
         currentStatus
       );
-    }, 10000);
 
-    // 3. Screenshot Capture Interval (every 10 minutes)
+      this.updateTrayMenu();
+    }, this.sampleDurationSeconds * 1000);
+
+    // 2. Screenshot Capture Interval (every 10 minutes)
     const msInterval = this.screenshotIntervalMinutes * 60 * 1000;
     this.screenshotTimer = setInterval(async () => {
       await this.performScreenshotCapture();
     }, msInterval);
 
-    // Capture initial screenshot 2 seconds after connect
+    // Initial capture 3 seconds after connect
     setTimeout(() => {
       this.performScreenshotCapture();
-    }, 2000);
+    }, 3000);
   }
 
   private async performScreenshotCapture() {
@@ -367,7 +360,6 @@ class AgentApplication {
   public stopTracking() {
     this.isTracking = false;
     if (this.activeWindowTimer) clearInterval(this.activeWindowTimer);
-    if (this.telemetryTimer) clearInterval(this.telemetryTimer);
     if (this.screenshotTimer) clearInterval(this.screenshotTimer);
     this.updateTrayMenu();
   }

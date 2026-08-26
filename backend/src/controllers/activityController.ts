@@ -104,7 +104,8 @@ export async function uploadActivityBatch(req: AuthenticatedRequest, res: Respon
       update: {
         totalActiveSeconds: { increment: batchActiveSeconds },
         totalIdleSeconds: { increment: batchIdleSeconds },
-        totalWorkSeconds: { increment: batchActiveSeconds + batchIdleSeconds }
+        totalWorkSeconds: { increment: batchActiveSeconds + batchIdleSeconds },
+        clockOutAt: null
       },
       create: {
         userId,
