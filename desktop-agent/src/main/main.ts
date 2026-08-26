@@ -281,6 +281,7 @@ class AgentApplication {
     this.isTracking = true;
     this.updateTrayMenu();
 
+    // 1. Poll active window every 5 seconds
     this.activeWindowTimer = setInterval(async () => {
       const windowInfo = await getActiveWindowInfo();
       const isIdle = this.inputTracker.checkIdleState();
@@ -301,12 +302,21 @@ class AgentApplication {
       this.updateTrayMenu();
     }, 5000);
 
+    // 2. Flush telemetry batch every 30 seconds
     this.telemetryTimer = setInterval(async () => {
       if (this.activityBuffer.length === 0) return;
 
       const metrics = this.inputTracker.getAndResetMetrics(30);
       const batch = [...this.activityBuffer];
       this.activityBuffer = [];
+
+      const count = batch.length || 1;
+      const clicksPerItem = Math.floor(metrics.clicks / count);
+      const keysPerItem = Math.floor(metrics.keystrokes / count);
+      batch.forEach((item, idx) => {
+        item.mouseClicks = clicksPerItem + (idx === 0 ? metrics.clicks % count : 0);
+        item.keystrokes = keysPerItem + (idx === 0 ? metrics.keystrokes % count : 0);
+      });
 
       const currentStatus = metrics.isIdle ? 'IDLE' : 'ONLINE';
       await this.syncService.sendActivityBatch(
@@ -317,30 +327,36 @@ class AgentApplication {
       );
     }, 30000);
 
+    // 3. Screenshot Capture Interval
     const msInterval = this.screenshotIntervalMinutes * 60 * 1000;
     this.screenshotTimer = setInterval(async () => {
       await this.performScreenshotCapture();
     }, msInterval);
 
+    // Initial capture 3 seconds after start
     setTimeout(() => {
       this.performScreenshotCapture();
-    }, 5000);
+    }, 3000);
   }
 
   private async performScreenshotCapture() {
-    const screens = await this.screenshotEngine.captureAllScreens();
-    const windowInfo = await getActiveWindowInfo();
-    const isIdle = this.inputTracker.checkIdleState();
+    try {
+      const screens = await this.screenshotEngine.captureAllScreens();
+      const windowInfo = await getActiveWindowInfo();
+      const isIdle = this.inputTracker.checkIdleState();
 
-    for (const screen of screens) {
-      await this.syncService.uploadScreenshot(screen.filePath, {
-        displayIndex: screen.displayIndex,
-        appName: windowInfo.appName,
-        windowTitle: windowInfo.windowTitle,
-        isIdle,
-        takenAt: screen.takenAt
-      });
-      this.screenshotEngine.cleanupTempFile(screen.filePath);
+      for (const screen of screens) {
+        await this.syncService.uploadScreenshot(screen.filePath, {
+          displayIndex: screen.displayIndex,
+          appName: windowInfo.appName,
+          windowTitle: windowInfo.windowTitle,
+          isIdle,
+          takenAt: screen.takenAt
+        });
+        this.screenshotEngine.cleanupTempFile(screen.filePath);
+      }
+    } catch (e) {
+      console.warn('Screenshot capture routine error:', e);
     }
   }
 

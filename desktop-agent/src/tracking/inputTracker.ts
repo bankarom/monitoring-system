@@ -1,32 +1,68 @@
+import koffi from 'koffi';
 import { powerMonitor } from 'electron';
+
+let user32: any;
+let GetAsyncKeyState: any;
+
+try {
+  user32 = koffi.load('user32.dll');
+  GetAsyncKeyState = user32.func('short GetAsyncKeyState(int vKey)');
+} catch (e) {
+  console.warn('GetAsyncKeyState loader warning:', e);
+}
 
 export class InputTracker {
   private clicksCount = 0;
   private keystrokesCount = 0;
-  private lastIdleCheck = Date.now();
-  private isCurrentlyIdle = false;
   private idleThresholdSeconds = 300; // 5 minutes default
+  private pollingTimer: NodeJS.Timeout | null = null;
 
   constructor(idleThresholdMinutes = 5) {
     this.idleThresholdSeconds = idleThresholdMinutes * 60;
+    this.startGlobalInputPolling();
   }
 
   public setIdleThreshold(minutes: number) {
     this.idleThresholdSeconds = minutes * 60;
   }
 
-  public recordMouseClick() {
-    this.clicksCount++;
-  }
+  private startGlobalInputPolling() {
+    if (!GetAsyncKeyState) return;
 
-  public recordKeystroke() {
-    this.keystrokesCount++;
+    // Track state of mouse buttons and keys
+    const previousState = new Uint8Array(256);
+
+    this.pollingTimer = setInterval(() => {
+      try {
+        // 1. Mouse Clicks (Left=1, Right=2, Middle=4)
+        for (const vk of [0x01, 0x02, 0x04]) {
+          const state = GetAsyncKeyState(vk);
+          const isDown = (state & 0x8000) !== 0;
+          if (isDown && !previousState[vk]) {
+            this.clicksCount++;
+          }
+          previousState[vk] = isDown ? 1 : 0;
+        }
+
+        // 2. Keyboard Keys (0x08 to 0xFE: Backspace, Tab, Enter, Shift, Ctrl, Alt, Space, A-Z, 0-9, etc.)
+        for (let vk = 0x08; vk <= 0xFE; vk++) {
+          // Skip mouse buttons already handled
+          if (vk === 0x01 || vk === 0x02 || vk === 0x04) continue;
+
+          const state = GetAsyncKeyState(vk);
+          const isDown = (state & 0x8000) !== 0;
+          if (isDown && !previousState[vk]) {
+            this.keystrokesCount++;
+          }
+          previousState[vk] = isDown ? 1 : 0;
+        }
+      } catch (e) {}
+    }, 50); // High-precision 50ms polling (<0.1% CPU)
   }
 
   public checkIdleState(): boolean {
     const idleSeconds = powerMonitor.getSystemIdleTime();
-    this.isCurrentlyIdle = idleSeconds >= this.idleThresholdSeconds;
-    return this.isCurrentlyIdle;
+    return idleSeconds >= this.idleThresholdSeconds;
   }
 
   public getAndResetMetrics(sampleDurationSeconds = 30) {
@@ -48,5 +84,9 @@ export class InputTracker {
       keysPerMinute,
       isIdle
     };
+  }
+
+  public destroy() {
+    if (this.pollingTimer) clearInterval(this.pollingTimer);
   }
 }

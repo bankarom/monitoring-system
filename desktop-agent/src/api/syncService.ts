@@ -35,9 +35,7 @@ export class SyncService {
         {},
         { headers: { Authorization: `Bearer ${this.token}` } }
       );
-    } catch (e) {
-      // Ignore network errors during exit
-    }
+    } catch (e) {}
   }
 
   public async sendActivityBatch(
@@ -63,11 +61,10 @@ export class SyncService {
         }
       );
 
-      // Successfully synced, try flushing any offline queued items
       this.flushOfflineQueue().catch(() => {});
       return true;
     } catch (error) {
-      console.warn('Network offline or server error, enqueuing activities locally:', (error as any).message);
+      console.warn('Network offline, enqueuing activities locally:', (error as any).message);
       for (const item of activities) {
         await this.offlineQueue.enqueueActivity(item).catch(() => {});
       }
@@ -92,12 +89,13 @@ export class SyncService {
           ...form.getHeaders(),
           Authorization: `Bearer ${this.token}`
         },
-        timeout: 20000
+        timeout: 30000
       });
 
+      console.log('✅ Screenshot uploaded successfully');
       return true;
     } catch (error) {
-      console.warn('Screenshot upload failed, enqueuing to local storage:', (error as any).message);
+      console.warn('Screenshot upload failed, enqueuing to local queue:', (error as any).message);
       await this.offlineQueue.enqueueScreenshot(filePath, metadata).catch(() => {});
       return false;
     }
@@ -106,7 +104,6 @@ export class SyncService {
   public async flushOfflineQueue() {
     if (!this.token) return;
 
-    // Flush pending activities
     const pendingActivities = await this.offlineQueue.getPendingActivities(50);
     if (pendingActivities.length > 0) {
       try {
@@ -120,12 +117,10 @@ export class SyncService {
         const ids = pendingActivities.map((p) => p.id);
         await this.offlineQueue.removeActivities(ids);
       } catch (err) {
-        // Stop flushing if still offline
         return;
       }
     }
 
-    // Flush pending screenshots
     const pendingScreens = await this.offlineQueue.getPendingScreenshots(5);
     for (const screen of pendingScreens) {
       if (fs.existsSync(screen.imagePath)) {
@@ -143,7 +138,7 @@ export class SyncService {
               ...form.getHeaders(),
               Authorization: `Bearer ${this.token}`
             },
-            timeout: 20000
+            timeout: 30000
           });
 
           await this.offlineQueue.removeScreenshots([screen.id]);
