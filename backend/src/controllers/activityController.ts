@@ -3,6 +3,7 @@ import { AuthenticatedRequest } from '../middleware/auth';
 import { prisma } from '../config/prisma';
 import { resolveAppInfo } from '../config/appCategories';
 import { socketService } from '../services/socketService';
+import { config } from '../config/environment';
 import path from 'path';
 
 export interface ActivityBatchItem {
@@ -152,7 +153,7 @@ export async function uploadScreenshotHandler(req: AuthenticatedRequest, res: Re
     const { displayIndex, appName, windowTitle, isIdle, takenAt } = req.body;
     const now = takenAt ? new Date(takenAt) : new Date();
 
-    const relativePath = path.relative(path.resolve(__dirname, '../../uploads'), req.file.path).replace(/\\/g, '/');
+    const relativePath = path.relative(config.uploadDir, req.file.path).replace(/\\/g, '/');
     const screenshotUrl = '/uploads/' + relativePath;
 
     const screenshot = await prisma.screenshot.create({

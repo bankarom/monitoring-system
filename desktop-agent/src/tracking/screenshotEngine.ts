@@ -1,6 +1,7 @@
-import { desktopCapturer, app } from 'electron';
+import screenshot from 'screenshot-desktop';
 import path from 'path';
 import fs from 'fs';
+import { app } from 'electron';
 
 export interface ScreenCaptureResult {
   filePath: string;
@@ -12,7 +13,8 @@ export class ScreenshotEngine {
   private tempDir: string;
 
   constructor() {
-    this.tempDir = app ? path.join(app.getPath('userData'), 'screenshots_cache') : path.join(process.env.APPDATA || '.', 'ImproxAgent', 'screenshots_cache');
+    const base = app ? app.getPath('userData') : path.join(process.env.APPDATA || '.', 'ImproxAgent');
+    this.tempDir = path.join(base, 'screenshots_cache');
     if (!fs.existsSync(this.tempDir)) {
       fs.mkdirSync(this.tempDir, { recursive: true });
     }
@@ -21,20 +23,14 @@ export class ScreenshotEngine {
   public async captureAllScreens(): Promise<ScreenCaptureResult[]> {
     const results: ScreenCaptureResult[] = [];
     try {
-      const sources = await desktopCapturer.getSources({
-        types: ['screen'],
-        thumbnailSize: { width: 1920, height: 1080 }
-      });
-
+      const displays = await screenshot.all({ format: 'jpg' });
       const now = new Date().toISOString();
-      let index = 0;
 
-      for (const source of sources) {
-        const jpegBuffer = source.thumbnail.toJPEG(80);
-        if (jpegBuffer && jpegBuffer.length > 100) {
+      displays.forEach((buffer: Buffer, index: number) => {
+        if (buffer && buffer.length > 100) {
           const filename = `screen_${Date.now()}_${index}.jpg`;
           const filePath = path.join(this.tempDir, filename);
-          fs.writeFileSync(filePath, jpegBuffer);
+          fs.writeFileSync(filePath, buffer);
 
           results.push({
             filePath,
@@ -42,10 +38,18 @@ export class ScreenshotEngine {
             takenAt: now
           });
         }
-        index++;
-      }
+      });
     } catch (error) {
-      console.error('ScreenshotEngine capture error:', error);
+      try {
+        const singleBuf = await screenshot({ format: 'jpg' });
+        const filePath = path.join(this.tempDir, `screen_${Date.now()}_0.jpg`);
+        fs.writeFileSync(filePath, singleBuf);
+        results.push({
+          filePath,
+          displayIndex: 0,
+          takenAt: new Date().toISOString()
+        });
+      } catch (e) {}
     }
     return results;
   }
