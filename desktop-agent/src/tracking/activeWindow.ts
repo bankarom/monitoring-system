@@ -47,25 +47,31 @@ export function extractDomainFromTitle(title: string): string | null {
 export class NativeTrackerSupervisor {
   private child: ChildProcess | null = null;
   private pendingResolves: Array<(sample: TrackerSample) => void> = [];
-  private idleThresholdSeconds = 300;
+  private idleThresholdSeconds = 180;
 
-  constructor(idleThresholdMinutes = 5) {
+  constructor(idleThresholdMinutes = 3) {
     this.idleThresholdSeconds = idleThresholdMinutes * 60;
     this.spawnTrackerProcess();
   }
 
   private findTrackerBinary(): string {
     const candidates = [
+      path.join(process.resourcesPath || '.', 'bin', 'tracker_engine.exe'),
+      path.join(process.resourcesPath || '.', 'app.asar.unpacked', 'bin', 'tracker_engine.exe'),
+      path.join(process.resourcesPath || '.', 'app.asar.unpacked', 'dist', 'bin', 'tracker_engine.exe'),
       path.join(__dirname, '../bin/tracker_engine.exe'),
       path.join(__dirname, '../../bin/tracker_engine.exe'),
       path.join(app ? app.getAppPath() : '.', 'dist/bin/tracker_engine.exe'),
-      path.join(app ? app.getAppPath() : '.', 'bin/tracker_engine.exe'),
-      path.join(process.resourcesPath || '.', 'bin/tracker_engine.exe')
+      path.join(app ? app.getAppPath() : '.', 'bin/tracker_engine.exe')
     ];
 
     for (const c of candidates) {
-      if (fs.existsSync(c)) return c;
+      if (fs.existsSync(c)) {
+        console.log('✅ Found tracker binary at:', c);
+        return c;
+      }
     }
+    console.warn('⚠️ Tracker binary not found in candidates, defaulting to:', candidates[0]);
     return candidates[0];
   }
 
@@ -162,7 +168,7 @@ export class NativeTrackerSupervisor {
             isIdle: false
           });
         }
-      }, 1000);
+      }, 1500);
     });
   }
 

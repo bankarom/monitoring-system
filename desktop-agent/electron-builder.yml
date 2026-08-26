@@ -7,6 +7,12 @@ files:
   - bin/**/*
   - src/ui/**/*
   - assets/**/*
+asarUnpack:
+  - "**/bin/**"
+  - "**/node_modules/screenshot-desktop/**"
+extraResources:
+  - from: "bin"
+    to: "bin"
 win:
   target: nsis
   icon: assets/icon.ico

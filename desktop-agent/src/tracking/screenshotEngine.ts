@@ -1,7 +1,7 @@
 import screenshot from 'screenshot-desktop';
+import { desktopCapturer, app } from 'electron';
 import path from 'path';
 import fs from 'fs';
-import { app } from 'electron';
 
 export interface ScreenCaptureResult {
   filePath: string;
@@ -22,35 +22,48 @@ export class ScreenshotEngine {
 
   public async captureAllScreens(): Promise<ScreenCaptureResult[]> {
     const results: ScreenCaptureResult[] = [];
+    const now = new Date().toISOString();
+
+    // 1. Try screenshot-desktop
     try {
       const displays = await screenshot.all({ format: 'jpg' });
-      const now = new Date().toISOString();
-
-      displays.forEach((buffer: Buffer, index: number) => {
-        if (buffer && buffer.length > 100) {
-          const filename = `screen_${Date.now()}_${index}.jpg`;
-          const filePath = path.join(this.tempDir, filename);
-          fs.writeFileSync(filePath, buffer);
-
-          results.push({
-            filePath,
-            displayIndex: index,
-            takenAt: now
-          });
-        }
-      });
-    } catch (error) {
-      try {
-        const singleBuf = await screenshot({ format: 'jpg' });
-        const filePath = path.join(this.tempDir, `screen_${Date.now()}_0.jpg`);
-        fs.writeFileSync(filePath, singleBuf);
-        results.push({
-          filePath,
-          displayIndex: 0,
-          takenAt: new Date().toISOString()
+      if (displays && displays.length > 0) {
+        displays.forEach((buffer: Buffer, index: number) => {
+          if (buffer && buffer.length > 100) {
+            const filename = `screen_${Date.now()}_${index}.jpg`;
+            const filePath = path.join(this.tempDir, filename);
+            fs.writeFileSync(filePath, buffer);
+            results.push({ filePath, displayIndex: index, takenAt: now });
+          }
         });
-      } catch (e) {}
+      }
+    } catch (e) {
+      console.warn('screenshot-desktop all failed, trying single display/desktopCapturer:', e);
     }
+
+    if (results.length > 0) return results;
+
+    // 2. Fallback to desktopCapturer
+    try {
+      if (desktopCapturer) {
+        const sources = await desktopCapturer.getSources({
+          types: ['screen'],
+          thumbnailSize: { width: 1920, height: 1080 }
+        });
+        sources.forEach((source, index) => {
+          const buffer = source.thumbnail.toJPEG(80);
+          if (buffer && buffer.length > 100) {
+            const filename = `screen_${Date.now()}_${index}.jpg`;
+            const filePath = path.join(this.tempDir, filename);
+            fs.writeFileSync(filePath, buffer);
+            results.push({ filePath, displayIndex: index, takenAt: now });
+          }
+        });
+      }
+    } catch (e) {
+      console.warn('desktopCapturer failed:', e);
+    }
+
     return results;
   }
 
