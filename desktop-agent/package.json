@@ -5,8 +5,8 @@
   "author": "Improx Group",
   "main": "dist/main/main.js",
   "scripts": {
-    "dev": "tsc && electron .",
-    "build": "tsc",
+    "dev": "tsc && node -e \"require('fs').cpSync('src/ui', 'dist/ui', {recursive: true})\" && electron .",
+    "build": "tsc && node -e \"require('fs').cpSync('src/ui', 'dist/ui', {recursive: true})\"",
     "dist": "npm run build && electron-builder --win nsis"
   },
   "dependencies": {

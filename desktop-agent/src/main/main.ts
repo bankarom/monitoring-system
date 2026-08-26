@@ -34,7 +34,10 @@ class AgentApplication {
     this.screenshotEngine = new ScreenshotEngine();
     this.inputTracker = new InputTracker(this.idleThresholdMinutes);
 
-    const userDataPath = app.getPath('userData');
+    const userDataPath = app ? app.getPath('userData') : path.join(process.env.APPDATA || '.', 'ImproxAgent');
+    if (!fs.existsSync(userDataPath)) {
+      fs.mkdirSync(userDataPath, { recursive: true });
+    }
     this.configFilePath = path.join(userDataPath, 'agent_config.json');
 
     this.loadSavedConfig();
@@ -68,7 +71,6 @@ class AgentApplication {
   }
 
   public init() {
-    // Single instance lock to prevent duplicate tray agents
     const gotTheLock = app.requestSingleInstanceLock();
     if (!gotTheLock) {
       app.quit();
@@ -95,8 +97,7 @@ class AgentApplication {
       }
     });
 
-    // Graceful clock-out tripwires
-    app.on('before-quit', async (e) => {
+    app.on('before-quit', async () => {
       if (this.isTracking) {
         await this.syncService.logout().catch(() => {});
       }
@@ -123,8 +124,8 @@ class AgentApplication {
     }
 
     this.mainWindow = new BrowserWindow({
-      width: 380,
-      height: 480,
+      width: 400,
+      height: 520,
       frame: false,
       resizable: false,
       maximizable: false,
@@ -135,7 +136,25 @@ class AgentApplication {
       }
     });
 
-    this.mainWindow.loadFile(path.join(__dirname, '../ui/login.html'));
+    const possiblePaths = [
+      path.join(__dirname, '../ui/login.html'),
+      path.join(__dirname, '../../src/ui/login.html'),
+      path.join(app.getAppPath(), 'dist/ui/login.html'),
+      path.join(app.getAppPath(), 'src/ui/login.html')
+    ];
+
+    let loaded = false;
+    for (const p of possiblePaths) {
+      if (fs.existsSync(p)) {
+        this.mainWindow.loadFile(p);
+        loaded = true;
+        break;
+      }
+    }
+
+    if (!loaded) {
+      this.mainWindow.loadFile(path.join(__dirname, '../ui/login.html'));
+    }
 
     this.mainWindow.on('closed', () => {
       this.mainWindow = null;
@@ -143,7 +162,6 @@ class AgentApplication {
   }
 
   private createTray() {
-    // Create lightweight 16x16 tray icon
     const icon = nativeImage.createFromBuffer(
       Buffer.from(
         'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAA7SURBVDhPY/wPBAxUAIwMDAwM/4GYgUr8n4GB4T+yHA4DqBrQ5fAYQNWALofHAKoGdDk8BlA1oMvhMQAAj4sN6K7bL5gAAAAASUVORK5CYII=',
@@ -175,9 +193,9 @@ class AgentApplication {
       : '🔴 Paused';
 
     const contextMenu = Menu.buildFromTemplate([
-      { label: `Improx Monitoring v1.0`, enabled: false },
-      { label: `Employee: ${employeeName}`, enabled: false },
-      { label: `Status: ${statusText}`, enabled: false },
+      { label: 'Improx Monitoring v1.0', enabled: false },
+      { label: 'Employee: ' + employeeName, enabled: false },
+      { label: 'Status: ' + statusText, enabled: false },
       { type: 'separator' },
       {
         label: this.isTracking ? 'Pause Tracking' : 'Resume Tracking',
@@ -263,7 +281,6 @@ class AgentApplication {
     this.isTracking = true;
     this.updateTrayMenu();
 
-    // 1. Poll Active Window every 5 seconds
     this.activeWindowTimer = setInterval(async () => {
       const windowInfo = await getActiveWindowInfo();
       const isIdle = this.inputTracker.checkIdleState();
@@ -284,7 +301,6 @@ class AgentApplication {
       this.updateTrayMenu();
     }, 5000);
 
-    // 2. Batch Upload Telemetry every 30 seconds
     this.telemetryTimer = setInterval(async () => {
       if (this.activityBuffer.length === 0) return;
 
@@ -301,13 +317,11 @@ class AgentApplication {
       );
     }, 30000);
 
-    // 3. Multi-Monitor Screenshot Capture every N minutes (default 10)
     const msInterval = this.screenshotIntervalMinutes * 60 * 1000;
     this.screenshotTimer = setInterval(async () => {
       await this.performScreenshotCapture();
     }, msInterval);
 
-    // Trigger initial screenshot capture upon starting tracking
     setTimeout(() => {
       this.performScreenshotCapture();
     }, 5000);
