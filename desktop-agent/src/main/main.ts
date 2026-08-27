@@ -16,7 +16,7 @@ class AgentApplication {
 
   private isTracking = false;
   private currentUser: any = null;
-  private serverUrl = 'http://200.141.2.53:4000';
+  private serverUrl = 'http://200.141.2.53';
   private configFilePath: string;
 
   private activityBuffer: any[] = [];
