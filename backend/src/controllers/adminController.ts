@@ -9,8 +9,9 @@ import { config } from '../config/environment';
 // Dashboard Overview Statistics
 export async function getDashboardStats(req: Request, res: Response) {
   try {
-    const today = new Date().toISOString().split('T')[0];
-    const todayStart = new Date(new Date().setHours(0, 0, 0, 0));
+    const requestedDate = (req.query.date as string) || new Date().toISOString().split('T')[0];
+    const targetStart = new Date(requestedDate + 'T00:00:00.000Z');
+    const targetEnd = new Date(requestedDate + 'T23:59:59.999Z');
 
     // Headcount status
     const employees = await prisma.user.findMany({
@@ -23,20 +24,20 @@ export async function getDashboardStats(req: Request, res: Response) {
     const idleCount = employees.filter(e => e.status === 'IDLE').length;
     const offlineCount = employees.filter(e => e.status === 'OFFLINE').length;
 
-    // Today's aggregate work hours
-    const todayAttendances = await prisma.attendance.findMany({
-      where: { date: today }
+    // Aggregate work hours for selected date
+    const dateAttendances = await prisma.attendance.findMany({
+      where: { date: requestedDate }
     });
 
-    const totalActiveSecondsToday = todayAttendances.reduce((sum, a) => sum + a.totalActiveSeconds, 0);
-    const totalIdleSecondsToday = todayAttendances.reduce((sum, a) => sum + a.totalIdleSeconds, 0);
+    const totalActiveSecondsToday = dateAttendances.reduce((sum, a) => sum + a.totalActiveSeconds, 0);
+    const totalIdleSecondsToday = dateAttendances.reduce((sum, a) => sum + a.totalIdleSeconds, 0);
     const totalWorkSecondsToday = totalActiveSecondsToday + totalIdleSecondsToday;
 
-    // Top Apps Today
+    // Top Apps for selected date
     const appLogs = await prisma.activityLog.groupBy({
       by: ['appName', 'category'],
       where: {
-        recordedAt: { gte: todayStart },
+        recordedAt: { gte: targetStart, lte: targetEnd },
         isIdle: false
       },
       _sum: { durationSeconds: true },
@@ -50,11 +51,11 @@ export async function getDashboardStats(req: Request, res: Response) {
       durationMinutes: Math.round((item._sum.durationSeconds || 0) / 60)
     }));
 
-    // Top Websites Today
+    // Top Websites for selected date
     const domainLogs = await prisma.activityLog.groupBy({
       by: ['domain'],
       where: {
-        recordedAt: { gte: todayStart },
+        recordedAt: { gte: targetStart, lte: targetEnd },
         domain: { not: null },
         isIdle: false
       },

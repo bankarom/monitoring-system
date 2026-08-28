@@ -27,11 +27,13 @@ import {
 export const Dashboard: React.FC = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [chartType, setChartType] = useState<'area' | 'bar'>('area');
+  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(true);
 
-  const fetchStats = async () => {
+  const fetchStats = async (dateStr?: string) => {
     try {
-      const res = await api.get('/admin/dashboard');
+      const targetDate = dateStr || selectedDate;
+      const res = await api.get(`/admin/dashboard?date=${targetDate}`);
       setStats(res.data.stats);
     } catch (err) {
       console.error('Failed to fetch dashboard stats', err);
@@ -41,10 +43,10 @@ export const Dashboard: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchStats();
-    const interval = setInterval(fetchStats, 10000);
+    fetchStats(selectedDate);
+    const interval = setInterval(() => fetchStats(selectedDate), 10000);
     return () => clearInterval(interval);
-  }, []);
+  }, [selectedDate]);
 
   if (loading || !stats) {
     return (
@@ -54,6 +56,8 @@ export const Dashboard: React.FC = () => {
     );
   }
 
+  const isToday = selectedDate === new Date().toISOString().split('T')[0];
+
   return (
     <div className="space-y-6">
       {/* Top Banner & Quick Insight Bar */}
@@ -62,13 +66,39 @@ export const Dashboard: React.FC = () => {
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-black text-slate-900 tracking-tight">Organization Overview</h1>
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-sky-100 text-sky-700 border border-sky-200 uppercase tracking-wider">
-              Real-time Analytics
+              {isToday ? 'Real-time Analytics' : `Historical Records (${selectedDate})`}
             </span>
           </div>
-          <p className="text-xs text-slate-500 mt-1 font-medium">Live productivity intelligence and attendance summary (Auto-refreshes every 10s)</p>
+          <p className="text-xs text-slate-500 mt-1 font-medium">Productivity intelligence and attendance summary ({isToday ? 'Auto-refreshes every 10s' : `Showing data for ${selectedDate}`})</p>
         </div>
 
-        <div className="flex items-center gap-4 text-xs">
+        <div className="flex flex-wrap items-center gap-3 text-xs">
+          {/* Date Selector */}
+          <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-2xs">
+            <span className="font-bold text-slate-600">Select Date:</span>
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => {
+                setSelectedDate(e.target.value);
+                setLoading(true);
+              }}
+              className="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 font-bold text-slate-800 text-xs focus:outline-none focus:border-sky-500"
+            />
+            {!isToday && (
+              <button
+                onClick={() => {
+                  const todayStr = new Date().toISOString().split('T')[0];
+                  setSelectedDate(todayStr);
+                  setLoading(true);
+                }}
+                className="px-2 py-1 bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200 rounded-lg font-bold text-[11px] transition-colors"
+              >
+                Reset Today
+              </button>
+            )}
+          </div>
+
           <div className="bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-2xs">
             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Active Focus Rate</p>
             <p className="text-base font-black text-slate-900">
