@@ -13,6 +13,8 @@ import {
   ShieldCheck
 } from 'lucide-react';
 
+import logoImg from '../assets/logo.png';
+
 const navigation = [
   { name: 'Overview', href: '/', icon: LayoutDashboard },
   { name: 'Live Monitor', href: '/realtime', icon: Radio, badge: 'LIVE' },
@@ -31,7 +33,7 @@ export const Sidebar: React.FC = () => {
       {/* Brand Header */}
       <div className="h-16 flex items-center px-5 border-b border-slate-200 justify-between">
         <div className="flex items-center gap-2">
-          <img src="/logo.png" alt="Improx Logo" className="h-8 object-contain" />
+          <img src={logoImg || "/logo.png"} alt="Improx Logo" className="h-7 w-auto max-w-[130px] object-contain" />
           <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-sky-50 text-sky-700 border border-sky-200 uppercase tracking-wide">
             PRO
           </span>

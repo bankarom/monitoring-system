@@ -26,6 +26,7 @@ import {
 
 export const Dashboard: React.FC = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [chartType, setChartType] = useState<'area' | 'bar'>('area');
   const [loading, setLoading] = useState(true);
 
   const fetchStats = async () => {
@@ -122,31 +123,74 @@ export const Dashboard: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* 7-Day Trend Chart */}
         <div className="lg:col-span-2 bg-white border border-slate-200 rounded-2xl p-5 shadow-xs">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
             <div className="flex items-center gap-2">
               <TrendingUp className="w-5 h-5 text-sky-600" />
-              <h3 className="text-sm font-bold text-slate-800">7-Day Productivity Curve (Hours)</h3>
+              <div>
+                <h3 className="text-sm font-bold text-slate-800">7-Day Productivity Trend</h3>
+                <p className="text-[11px] text-slate-400 font-medium">Daily Active Work vs Break Hours</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs">
+              <button
+                onClick={() => setChartType('area')}
+                className={`px-3 py-1 rounded-lg font-bold transition-all ${
+                  chartType === 'area'
+                    ? 'bg-white text-sky-600 shadow-xs'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                Area Curve
+              </button>
+              <button
+                onClick={() => setChartType('bar')}
+                className={`px-3 py-1 rounded-lg font-bold transition-all ${
+                  chartType === 'bar'
+                    ? 'bg-white text-sky-600 shadow-xs'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                Bar Columns
+              </button>
             </div>
           </div>
 
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={stats.productivityTrend}>
-                <defs>
-                  <linearGradient id="activeGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#0284c7" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#0284c7" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis dataKey="date" stroke="#94a3b8" fontSize={11} fontStyle="bold" />
-                <YAxis stroke="#94a3b8" fontSize={11} unit="h" />
-                <Tooltip
-                  contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', borderRadius: '0.75rem', fontSize: '12px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}
-                />
-                <Area type="monotone" dataKey="activeHours" stroke="#0284c7" strokeWidth={2.5} fillOpacity={1} fill="url(#activeGrad)" name="Active Hours" />
-                <Area type="monotone" dataKey="idleHours" stroke="#f59e0b" strokeWidth={2} fill="#f59e0b" fillOpacity={0.08} name="Idle Hours" />
-              </AreaChart>
+              {chartType === 'area' ? (
+                <AreaChart data={stats.productivityTrend}>
+                  <defs>
+                    <linearGradient id="activeGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#0284c7" stopOpacity={0.4} />
+                      <stop offset="95%" stopColor="#0284c7" stopOpacity={0.02} />
+                    </linearGradient>
+                    <linearGradient id="idleGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.02} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                  <XAxis dataKey="date" stroke="#94a3b8" fontSize={11} fontStyle="bold" />
+                  <YAxis stroke="#94a3b8" fontSize={11} unit="h" />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', borderRadius: '0.75rem', fontSize: '12px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
+                  />
+                  <Area type="monotone" dataKey="activeHours" stroke="#0284c7" strokeWidth={3} fillOpacity={1} fill="url(#activeGrad)" name="Active Work (h)" />
+                  <Area type="monotone" dataKey="idleHours" stroke="#f59e0b" strokeWidth={2} fillOpacity={1} fill="url(#idleGrad)" name="Idle Breaks (h)" />
+                </AreaChart>
+              ) : (
+                <BarChart data={stats.productivityTrend}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                  <XAxis dataKey="date" stroke="#94a3b8" fontSize={11} fontStyle="bold" />
+                  <YAxis stroke="#94a3b8" fontSize={11} unit="h" />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', borderRadius: '0.75rem', fontSize: '12px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
+                  />
+                  <Bar dataKey="activeHours" fill="#0284c7" radius={[4, 4, 0, 0]} name="Active Work (h)" />
+                  <Bar dataKey="idleHours" fill="#f59e0b" radius={[4, 4, 0, 0]} name="Idle Breaks (h)" />
+                </BarChart>
+              )}
             </ResponsiveContainer>
           </div>
         </div>

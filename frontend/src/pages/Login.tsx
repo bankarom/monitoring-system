@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ShieldCheck, Mail, Lock, AlertCircle, ArrowRight } from 'lucide-react';
+import logoImg from '../assets/logo.png';
 
 export const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -30,7 +31,7 @@ export const Login: React.FC = () => {
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 relative overflow-hidden">
       <div className="w-full max-w-md bg-white border border-slate-200 rounded-3xl p-8 shadow-xl relative">
         <div className="text-center mb-8">
-          <img src="/logo.png" alt="Improx Logo" className="h-12 object-contain mx-auto mb-3" />
+          <img src={logoImg || "/logo.png"} alt="Improx Logo" className="h-10 w-auto max-w-[180px] object-contain mx-auto mb-3" />
           <p className="text-xs font-extrabold text-slate-500 uppercase tracking-widest">Enterprise Management Console</p>
         </div>
 
