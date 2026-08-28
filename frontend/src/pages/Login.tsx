@@ -30,11 +30,8 @@ export const Login: React.FC = () => {
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 relative overflow-hidden">
       <div className="w-full max-w-md bg-white border border-slate-200 rounded-3xl p-8 shadow-xl relative">
         <div className="text-center mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-sky-600 to-indigo-600 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-sky-500/20">
-            <ShieldCheck className="w-7 h-7 text-white" />
-          </div>
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight">IMPROX MONITORING</h2>
-          <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-wider">Management Portal</p>
+          <img src="/logo.png" alt="Improx Logo" className="h-12 object-contain mx-auto mb-3" />
+          <p className="text-xs font-extrabold text-slate-500 uppercase tracking-widest">Enterprise Management Console</p>
         </div>
 
         {error && (

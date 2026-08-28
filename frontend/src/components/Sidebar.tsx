@@ -29,15 +29,12 @@ export const Sidebar: React.FC = () => {
   return (
     <aside className="w-64 bg-white border-r border-slate-200 flex flex-col h-screen select-none shrink-0 shadow-sm">
       {/* Brand Header */}
-      <div className="h-16 flex items-center px-6 border-b border-slate-200 gap-3">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-600 to-indigo-600 flex items-center justify-center shadow-md shadow-sky-500/20">
-          <ShieldCheck className="w-5 h-5 text-white" />
-        </div>
-        <div>
-          <h1 className="font-bold text-base tracking-tight text-slate-900 flex items-center gap-1.5">
-            IMPROX <span className="text-sky-600 font-semibold text-xs px-1.5 py-0.5 rounded bg-sky-50 border border-sky-200">PRO</span>
-          </h1>
-          <p className="text-[11px] text-slate-500 font-medium">Enterprise Monitoring</p>
+      <div className="h-16 flex items-center px-5 border-b border-slate-200 justify-between">
+        <div className="flex items-center gap-2">
+          <img src="/logo.png" alt="Improx Logo" className="h-8 object-contain" />
+          <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-sky-50 text-sky-700 border border-sky-200 uppercase tracking-wide">
+            PRO
+          </span>
         </div>
       </div>
 

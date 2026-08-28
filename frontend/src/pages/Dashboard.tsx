@@ -55,11 +55,33 @@ export const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Top Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* Top Banner & Quick Insight Bar */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-sky-500/10 via-indigo-500/5 to-transparent p-5 rounded-2xl border border-sky-100 shadow-2xs">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Organization Overview</h1>
-          <p className="text-xs text-slate-500 mt-1 font-medium">Live productivity intelligence and attendance summary (Auto-refreshing every 10s)</p>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Organization Overview</h1>
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-sky-100 text-sky-700 border border-sky-200 uppercase tracking-wider">
+              Real-time Analytics
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 mt-1 font-medium">Live productivity intelligence and attendance summary (Auto-refreshes every 10s)</p>
+        </div>
+
+        <div className="flex items-center gap-4 text-xs">
+          <div className="bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-2xs">
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Active Focus Rate</p>
+            <p className="text-base font-black text-slate-900">
+              {stats.todayHours.activeHours > 0
+                ? Math.round((stats.todayHours.activeHours / (stats.todayHours.activeHours + stats.todayHours.idleHours)) * 100)
+                : 100}%
+            </p>
+          </div>
+          <div className="bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-2xs">
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Active Workforce</p>
+            <p className="text-base font-black text-emerald-600">
+              {stats.headcount.online} / {stats.headcount.total}
+            </p>
+          </div>
         </div>
       </div>
 
