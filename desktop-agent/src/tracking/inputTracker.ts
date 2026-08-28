@@ -1,14 +1,15 @@
-import koffi from 'koffi';
 import { powerMonitor } from 'electron';
 
-let user32: any;
-let GetAsyncKeyState: any;
+let GetAsyncKeyState: any = null;
 
-try {
-  user32 = koffi.load('user32.dll');
-  GetAsyncKeyState = user32.func('short GetAsyncKeyState(int vKey)');
-} catch (e) {
-  console.warn('GetAsyncKeyState loader warning:', e);
+if (process.platform === 'win32') {
+  try {
+    const koffi = require('koffi');
+    const user32 = koffi.load('user32.dll');
+    GetAsyncKeyState = user32.func('short GetAsyncKeyState(int vKey)');
+  } catch (e) {
+    console.warn('GetAsyncKeyState loader warning:', e);
+  }
 }
 
 export class InputTracker {
