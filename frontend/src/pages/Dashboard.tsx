@@ -59,7 +59,7 @@ export const Dashboard: React.FC = () => {
   const isToday = selectedDate === new Date().toISOString().split('T')[0];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in-up">
       {/* Top Banner & Quick Insight Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-sky-500/10 via-indigo-500/5 to-transparent p-5 rounded-2xl border border-sky-100 shadow-2xs">
         <div>
@@ -206,8 +206,8 @@ export const Dashboard: React.FC = () => {
                   <Tooltip
                     contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', borderRadius: '0.75rem', fontSize: '12px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
                   />
-                  <Area type="monotone" dataKey="activeHours" stroke="#0284c7" strokeWidth={3} fillOpacity={1} fill="url(#activeGrad)" name="Active Work (h)" />
-                  <Area type="monotone" dataKey="idleHours" stroke="#f59e0b" strokeWidth={2} fillOpacity={1} fill="url(#idleGrad)" name="Idle Breaks (h)" />
+                  <Area type="monotone" dataKey="activeHours" stroke="#0284c7" strokeWidth={3} fillOpacity={1} fill="url(#activeGrad)" name="Active Work (h)" isAnimationActive={true} animationDuration={1500} />
+                  <Area type="monotone" dataKey="idleHours" stroke="#f59e0b" strokeWidth={2} fillOpacity={1} fill="url(#idleGrad)" name="Idle Breaks (h)" isAnimationActive={true} animationDuration={1500} />
                 </AreaChart>
               ) : (
                 <BarChart data={stats.productivityTrend}>
@@ -217,8 +217,8 @@ export const Dashboard: React.FC = () => {
                   <Tooltip
                     contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', borderRadius: '0.75rem', fontSize: '12px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
                   />
-                  <Bar dataKey="activeHours" fill="#0284c7" radius={[4, 4, 0, 0]} name="Active Work (h)" />
-                  <Bar dataKey="idleHours" fill="#f59e0b" radius={[4, 4, 0, 0]} name="Idle Breaks (h)" />
+                  <Bar dataKey="activeHours" fill="#0284c7" radius={[4, 4, 0, 0]} name="Active Work (h)" isAnimationActive={true} animationDuration={1200} />
+                  <Bar dataKey="idleHours" fill="#f59e0b" radius={[4, 4, 0, 0]} name="Idle Breaks (h)" isAnimationActive={true} animationDuration={1200} />
                 </BarChart>
               )}
             </ResponsiveContainer>

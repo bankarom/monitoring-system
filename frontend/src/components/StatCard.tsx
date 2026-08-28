@@ -35,23 +35,28 @@ export const StatCard: React.FC<StatCardProps> = ({
   badge
 }) => {
   return (
-    <div className={`p-5 rounded-2xl bg-white border ${colorMap[color]} shadow-xs hover:shadow-md transition-shadow relative overflow-hidden`}>
+    <div className={`p-5 rounded-2xl bg-white border ${colorMap[color]} shadow-2xs hover-card-lift relative overflow-hidden group`}>
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">{title}</p>
-          <h3 className="text-2xl sm:text-3xl font-black text-slate-900 mt-1.5">{value}</h3>
+          <p className="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">{title}</p>
+          <h3 className="text-2xl sm:text-3xl font-black text-slate-900 mt-1.5 tracking-tight group-hover:text-sky-600 transition-colors">
+            {value}
+          </h3>
           {subtitle && <p className="text-xs text-slate-500 mt-1 font-medium">{subtitle}</p>}
         </div>
 
-        <div className={`w-11 h-11 rounded-xl flex items-center justify-center border ${iconBgMap[color]} shadow-xs`}>
+        <div className={`w-11 h-11 rounded-xl flex items-center justify-center border ${iconBgMap[color]} shadow-xs group-hover:scale-105 transition-transform duration-300`}>
           <Icon className="w-5 h-5" />
         </div>
       </div>
 
       {badge && (
         <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-          <span className="text-slate-500 font-medium">Status</span>
-          <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">{badge}</span>
+          <span className="text-slate-400 font-bold uppercase text-[10px]">Status</span>
+          <span className="font-extrabold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+            {badge}
+          </span>
         </div>
       )}
     </div>
