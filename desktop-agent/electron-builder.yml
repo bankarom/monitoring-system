@@ -18,6 +18,12 @@ extraResources:
 win:
   target: nsis
   icon: assets/icon.ico
+mac:
+  target:
+    - dmg
+    - zip
+  category: public.app-category.business
+  icon: assets/icon.png
 nsis:
   oneClick: true
   perMachine: false

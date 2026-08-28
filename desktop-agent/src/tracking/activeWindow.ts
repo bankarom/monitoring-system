@@ -138,6 +138,10 @@ export class NativeTrackerSupervisor {
   }
 
   public async getSample(): Promise<TrackerSample> {
+    if (process.platform === 'darwin') {
+      return this.getMacSample();
+    }
+
     if (!this.child || !this.child.stdin) {
       return {
         appName: 'Desktop',
@@ -169,6 +173,55 @@ export class NativeTrackerSupervisor {
           });
         }
       }, 1500);
+    });
+  }
+
+  private async getMacSample(): Promise<TrackerSample> {
+    return new Promise((resolve) => {
+      const script = `tell application "System Events"
+        set frontApp to first application process whose frontmost is true
+        set frontAppName to name of frontApp
+        tell process frontAppName
+          if exists (window 1) then
+            set windowTitle to name of window 1
+          else
+            set windowTitle to frontAppName
+          end if
+        end tell
+      end tell
+      return frontAppName & "|||" & windowTitle`;
+
+      const child = spawn('osascript', ['-e', script]);
+      let out = '';
+      child.stdout.on('data', (data) => (out += data.toString()));
+      child.on('close', () => {
+        const parts = out.trim().split('|||');
+        const appName = parts[0] || 'Finder';
+        const windowTitle = parts[1] || appName;
+        const domain = extractDomainFromTitle(windowTitle);
+
+        resolve({
+          appName,
+          processName: appName,
+          windowTitle,
+          domain,
+          clicks: 1,
+          keys: 1,
+          isIdle: false
+        });
+      });
+
+      child.on('error', () => {
+        resolve({
+          appName: 'Finder',
+          processName: 'Finder',
+          windowTitle: 'Desktop',
+          domain: null,
+          clicks: 0,
+          keys: 0,
+          isIdle: false
+        });
+      });
     });
   }
 

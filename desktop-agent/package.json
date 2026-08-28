@@ -7,7 +7,8 @@
   "scripts": {
     "dev": "tsc && node -e \"require('fs').cpSync('src/ui', 'dist/ui', {recursive: true})\" && electron .",
     "build": "tsc && node -e \"require('fs').cpSync('src/ui', 'dist/ui', {recursive: true})\"",
-    "dist": "npm run build && electron-builder --win nsis"
+    "dist": "npm run build && electron-builder --win nsis",
+    "dist:mac": "npm run build && electron-builder --mac dmg"
   },
   "dependencies": {
     "active-win": "^7.0.1",
