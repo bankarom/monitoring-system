@@ -1,0 +1,41 @@
+name: Build macOS & Windows Agent Installers
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-mac:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Desktop Agent Dependencies
+        run: |
+          cd desktop-agent
+          npm install
+
+      - name: Build macOS DMG & ZIP Package
+        run: |
+          cd desktop-agent
+          npm run dist:mac
+
+      - name: Upload Mac DMG Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Improx-Monitoring-Agent-Mac-DMG
+          path: desktop-agent/release/*.dmg
+
+      - name: Upload Mac ZIP Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Improx-Monitoring-Agent-Mac-ZIP
+          path: desktop-agent/release/*.zip
