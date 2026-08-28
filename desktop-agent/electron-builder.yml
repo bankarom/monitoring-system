@@ -24,6 +24,7 @@ mac:
     - zip
   category: public.app-category.business
   icon: assets/icon.png
+  identity: null
 nsis:
   oneClick: true
   perMachine: false
