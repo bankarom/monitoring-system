@@ -2,13 +2,16 @@ import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { Employee } from '../types';
 import { AddEmployeeModal } from '../components/AddEmployeeModal';
+import { EditEmployeeModal } from '../components/EditEmployeeModal';
 import { formatHoursToTime } from '../utils/format';
-import { Users, UserPlus, Search, Trash2, Mail, RefreshCw } from 'lucide-react';
+import { Users, UserPlus, Search, Trash2, Mail, RefreshCw, Pencil } from 'lucide-react';
 
 export const Employees: React.FC = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const fetchEmployees = async () => {
@@ -153,7 +156,17 @@ export const Employees: React.FC = () => {
                       {emp.currentApp || '—'}
                     </td>
 
-                    <td className="px-5 py-3.5 text-right">
+                    <td className="px-5 py-3.5 text-right flex items-center justify-end gap-1">
+                      <button
+                        onClick={() => {
+                          setEditingEmployee(emp);
+                          setIsEditModalOpen(true);
+                        }}
+                        className="p-1.5 text-slate-400 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-colors"
+                        title="Edit Employee"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
                       <button
                         onClick={() => handleDelete(emp.id, emp.name)}
                         className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
@@ -173,6 +186,16 @@ export const Employees: React.FC = () => {
       <AddEmployeeModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
+        onSuccess={fetchEmployees}
+      />
+
+      <EditEmployeeModal
+        isOpen={isEditModalOpen}
+        employee={editingEmployee}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setEditingEmployee(null);
+        }}
         onSuccess={fetchEmployees}
       />
     </div>

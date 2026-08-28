@@ -137,17 +137,29 @@ export const Dashboard: React.FC = () => {
               <h3 className="text-sm font-bold text-slate-800">Top Software Today</h3>
             </div>
 
-            <div className="h-48 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={stats.topApps} layout="vertical">
-                  <XAxis type="number" stroke="#94a3b8" fontSize={10} unit="m" />
-                  <YAxis type="category" dataKey="name" stroke="#64748b" fontSize={11} width={80} tickFormatter={(val) => val.length > 10 ? val.substring(0, 10) + '...' : val} />
-                  <Tooltip
-                    contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', borderRadius: '0.75rem', fontSize: '12px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}
-                  />
-                  <Bar dataKey="durationMinutes" fill="#0284c7" radius={[0, 6, 6, 0]} name="Minutes" />
-                </BarChart>
-              </ResponsiveContainer>
+            <div className="space-y-3">
+              {stats.topApps.length === 0 ? (
+                <p className="text-xs text-slate-400 font-medium py-4 text-center">No software activity logged today yet</p>
+              ) : (
+                stats.topApps.slice(0, 4).map((app, idx) => {
+                  const maxMins = Math.max(...stats.topApps.map((a) => a.durationMinutes), 1);
+                  const pct = Math.min(100, Math.round((app.durationMinutes / maxMins) * 100));
+                  return (
+                    <div key={idx} className="space-y-1">
+                      <div className="flex items-center justify-between text-xs font-bold text-slate-800">
+                        <span className="truncate max-w-[160px]">{app.name}</span>
+                        <span className="text-sky-600 font-extrabold">{app.durationMinutes}m</span>
+                      </div>
+                      <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-sky-500 to-indigo-500 rounded-full transition-all duration-500"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
 
@@ -156,12 +168,16 @@ export const Dashboard: React.FC = () => {
               <Globe className="w-3.5 h-3.5 text-indigo-600" /> Top Visited Domains
             </h4>
             <div className="space-y-1.5">
-              {stats.topWebsites.slice(0, 3).map((w, idx) => (
-                <div key={idx} className="flex items-center justify-between text-xs bg-slate-50 px-2.5 py-1.5 rounded-xl border border-slate-200">
-                  <span className="text-slate-800 font-semibold truncate">{w.domain}</span>
-                  <span className="text-sky-600 font-extrabold">{w.durationMinutes}m</span>
-                </div>
-              ))}
+              {stats.topWebsites.length === 0 ? (
+                <p className="text-xs text-slate-400 font-medium py-2 text-center">No domain activity logged today</p>
+              ) : (
+                stats.topWebsites.slice(0, 3).map((w, idx) => (
+                  <div key={idx} className="flex items-center justify-between text-xs bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 shadow-2xs">
+                    <span className="text-slate-800 font-bold truncate">{w.domain}</span>
+                    <span className="text-indigo-600 font-extrabold">{w.durationMinutes}m</span>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
