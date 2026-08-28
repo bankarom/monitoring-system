@@ -20,10 +20,9 @@ win:
   icon: assets/icon.ico
 mac:
   target:
-    - dmg
     - zip
+    - dmg
   category: public.app-category.business
-  icon: assets/icon.png
   identity: null
 nsis:
   oneClick: true
