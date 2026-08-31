@@ -261,12 +261,14 @@ export async function updateEmployee(req: Request, res: Response) {
 export async function deleteEmployee(req: Request, res: Response) {
   try {
     const { id } = req.params;
-    await prisma.user.update({
-      where: { id },
-      data: { isActive: false, status: 'OFFLINE' }
-    });
 
-    return res.status(200).json({ success: true, message: 'Employee deactivated successfully' });
+    // Hard delete all dependent logs, screenshots, and attendance records
+    await prisma.activityLog.deleteMany({ where: { userId: id } });
+    await prisma.screenshot.deleteMany({ where: { userId: id } });
+    await prisma.attendance.deleteMany({ where: { userId: id } });
+    await prisma.user.delete({ where: { id } });
+
+    return res.status(200).json({ success: true, message: 'Employee permanently deleted from database' });
   } catch (error: any) {
     return res.status(500).json({ success: false, message: error.message });
   }

@@ -32,7 +32,7 @@ export const Employees: React.FC = () => {
   }, []);
 
   const handleDelete = async (id: string, name: string) => {
-    if (!window.confirm(`Are you sure you want to deactivate ${name}?`)) return;
+    if (!window.confirm(`Are you sure you want to PERMANENTLY delete ${name} and all their records from the database?`)) return;
     try {
       await api.delete(`/admin/employees/${id}`);
       fetchEmployees();
