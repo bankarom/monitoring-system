@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { api, API_BASE_URL } from '../services/api';
 import { TimesheetRecord } from '../types';
 import { formatHoursToTime } from '../utils/format';
-import { CalendarCheck, Download, RefreshCw } from 'lucide-react';
+import { CalendarCheck, Download, RefreshCw, Trash2 } from 'lucide-react';
 
 export const Timesheets: React.FC = () => {
   const [timesheets, setTimesheets] = useState<TimesheetRecord[]>([]);
@@ -32,6 +32,16 @@ export const Timesheets: React.FC = () => {
   const handleExportCSV = () => {
     const url = `${API_BASE_URL}/api/admin/timesheets/export-csv?date=${selectedDate}`;
     window.open(url, '_blank');
+  };
+
+  const handleDeleteTimesheet = async (id: string, employeeName: string) => {
+    if (!window.confirm(`Are you sure you want to delete this timesheet entry for ${employeeName}?`)) return;
+    try {
+      await api.delete(`/admin/timesheets/${id}`);
+      fetchTimesheets();
+    } catch (err) {
+      console.error('Failed to delete timesheet', err);
+    }
   };
 
   const filtered = timesheets.filter(
@@ -100,6 +110,7 @@ export const Timesheets: React.FC = () => {
                   <th className="px-5 py-3.5">Idle Breaks</th>
                   <th className="px-5 py-3.5">Total Time</th>
                   <th className="px-5 py-3.5">Productivity</th>
+                  <th className="px-5 py-3.5 text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -121,6 +132,15 @@ export const Timesheets: React.FC = () => {
                       <span className="px-2.5 py-0.5 rounded-full font-bold bg-sky-50 text-sky-700 border border-sky-200">
                         {t.productivityScore}%
                       </span>
+                    </td>
+                    <td className="px-5 py-3.5 text-right">
+                      <button
+                        onClick={() => handleDeleteTimesheet(t.id, t.employeeName)}
+                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                        title="Delete Timesheet Entry"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </td>
                   </tr>
                 ))}

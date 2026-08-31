@@ -12,6 +12,7 @@ import {
   getAppAnalytics,
   getWebAnalytics,
   getTimesheets,
+  deleteTimesheet,
   exportTimesheetsCSV,
   getSettings,
   updateSettings
@@ -48,6 +49,7 @@ router.get('/analytics/websites', getWebAnalytics);
 
 // Timesheets & CSV Export
 router.get('/timesheets', getTimesheets);
+router.delete('/timesheets/:id', deleteTimesheet);
 router.get('/timesheets/export-csv', exportTimesheetsCSV);
 
 // System Settings

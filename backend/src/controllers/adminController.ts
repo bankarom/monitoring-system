@@ -632,6 +632,18 @@ export async function getTimesheets(req: Request, res: Response) {
   }
 }
 
+export async function deleteTimesheet(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    await prisma.attendance.delete({
+      where: { id }
+    });
+    return res.status(200).json({ success: true, message: 'Timesheet record deleted' });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+}
+
 // 1-Click CSV Timesheet Export
 export async function exportTimesheetsCSV(req: Request, res: Response) {
   try {
