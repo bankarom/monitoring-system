@@ -5,7 +5,7 @@ import { api } from '../services/api';
 interface AuthContextType {
   user: User | null;
   token: string | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
   logout: () => void;
   isLoading: boolean;
 }
@@ -29,18 +29,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(false);
   }, [token]);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<User> => {
     const response = await api.post('/auth/login', { email, password });
     const { token: newToken, user: userData } = response.data;
-
-    if (userData.role !== 'ADMIN' && userData.role !== 'MANAGER') {
-      throw new Error('Access denied. Administrator privileges required for Web Dashboard.');
-    }
 
     localStorage.setItem('improx_token', newToken);
     localStorage.setItem('improx_user', JSON.stringify(userData));
     setToken(newToken);
     setUser(userData);
+    return userData;
   };
 
   const logout = () => {
