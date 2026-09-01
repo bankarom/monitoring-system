@@ -38,6 +38,17 @@ export class SyncService {
     } catch (e) {}
   }
 
+  public async clockOut() {
+    if (!this.token) return;
+    try {
+      await axios.post(
+        `${this.serverUrl}/api/activity/clock-out`,
+        {},
+        { headers: { Authorization: `Bearer ${this.token}` } }
+      );
+    } catch (e) {}
+  }
+
   public async sendActivityBatch(
     activities: any[],
     clicksPerMinute: number,

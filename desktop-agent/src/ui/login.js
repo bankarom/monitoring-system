@@ -24,7 +24,7 @@ const statusText = document.getElementById('statusText');
 
 const btnPauseToggle = document.getElementById('btnPauseToggle');
 const btnResume = document.getElementById('btnResume');
-const btnLogout = document.getElementById('btnLogout');
+const btnClockOut = document.getElementById('btnClockOut');
 
 const reasonModal = document.getElementById('reasonModal');
 const btnCancelModal = document.getElementById('btnCancelModal');
@@ -110,9 +110,11 @@ btnResume.addEventListener('click', async () => {
   updateUIStatus(state);
 });
 
-btnLogout.addEventListener('click', async () => {
-  await ipcRenderer.invoke('resume-agent');
-  showLoginView();
+btnClockOut.addEventListener('click', async () => {
+  if (confirm("End today's work session and clock out? Tracking will stop completely.")) {
+    await ipcRenderer.invoke('clock-out-agent');
+    showLoginView();
+  }
 });
 
 loginForm.addEventListener('submit', async (e) => {

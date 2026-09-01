@@ -92,12 +92,8 @@ class AgentApplication {
       this.setupIpcHandlers();
       this.setupAutoStart();
 
-      if (this.currentUser && (this.syncService as any).token) {
-        console.log('🚀 Auto-resuming session for:', this.currentUser.name);
-        this.startTracking();
-      } else {
-        this.createLoginWindow();
-      }
+      // Require explicit employee manual action to start work
+      this.createLoginWindow();
     });
 
     app.on('before-quit', async () => {
@@ -260,9 +256,7 @@ class AgentApplication {
   private setupAutoStart() {
     try {
       app.setLoginItemSettings({
-        openAtLogin: true,
-        path: process.execPath,
-        args: ['--hidden']
+        openAtLogin: false
       });
     } catch (e) {}
   }
@@ -308,6 +302,20 @@ class AgentApplication {
 
     ipcMain.on('window-close', () => {
       if (this.mainWindow) this.mainWindow.hide();
+    });
+
+    ipcMain.handle('clock-out-agent', async () => {
+      this.isTracking = false;
+      this.isPaused = false;
+      if (this.activeWindowTimer) clearInterval(this.activeWindowTimer);
+      if (this.screenshotTimer) clearInterval(this.screenshotTimer);
+      await this.syncService.clockOut().catch(() => {});
+      this.currentUser = null;
+      this.syncService.setToken('');
+      this.saveConfig();
+      this.updateTrayMenu();
+      app.quit();
+      return { success: true };
     });
 
     ipcMain.handle('get-agent-state', () => {

@@ -107,28 +107,38 @@ export async function uploadActivityBatch(req: AuthenticatedRequest, res: Respon
       }
     });
 
-    await prisma.attendance.upsert({
-      where: { userId_date: { userId, date: today } },
-      update: {
-        totalActiveSeconds: { increment: batchActiveSeconds },
-        totalIdleSeconds: { increment: batchIdleSeconds },
-        manualPauseSeconds: { increment: batchPauseSeconds },
-        totalWorkSeconds: { increment: batchActiveSeconds + batchIdleSeconds + batchPauseSeconds },
-        pauseReason: isPaused ? (pauseReason || 'Break') : undefined,
-        clockOutAt: null
-      },
-      create: {
-        userId,
-        date: today,
-        clockInAt: now,
-        totalActiveSeconds: batchActiveSeconds,
-        totalIdleSeconds: batchIdleSeconds,
-        manualPauseSeconds: batchPauseSeconds,
-        totalWorkSeconds: batchActiveSeconds + batchIdleSeconds + batchPauseSeconds,
-        status: 'PRESENT',
-        pauseReason: isPaused ? (pauseReason || 'Break') : null
-      }
+    // Find active open shift (clockOutAt === null) to support cross-midnight shifts (e.g. 6:30 PM to 3:30 AM)
+    let activeAtt = await prisma.attendance.findFirst({
+      where: { userId, clockOutAt: null },
+      orderBy: { createdAt: 'desc' }
     });
+
+    if (!activeAtt) {
+      activeAtt = await prisma.attendance.create({
+        data: {
+          userId,
+          date: today,
+          clockInAt: now,
+          totalActiveSeconds: batchActiveSeconds,
+          totalIdleSeconds: batchIdleSeconds,
+          manualPauseSeconds: batchPauseSeconds,
+          totalWorkSeconds: batchActiveSeconds + batchIdleSeconds + batchPauseSeconds,
+          status: 'PRESENT',
+          pauseReason: isPaused ? (pauseReason || 'Break') : null
+        }
+      });
+    } else {
+      activeAtt = await prisma.attendance.update({
+        where: { id: activeAtt.id },
+        data: {
+          totalActiveSeconds: { increment: batchActiveSeconds },
+          totalIdleSeconds: { increment: batchIdleSeconds },
+          manualPauseSeconds: { increment: batchPauseSeconds },
+          totalWorkSeconds: { increment: batchActiveSeconds + batchIdleSeconds + batchPauseSeconds },
+          pauseReason: isPaused ? (pauseReason || 'Break') : undefined
+        }
+      });
+    }
 
     socketService.broadcastLiveActivity(userId, {
       status: userStatus,
@@ -149,6 +159,45 @@ export async function uploadActivityBatch(req: AuthenticatedRequest, res: Respon
   } catch (error: any) {
     console.error('Activity upload error:', error);
     return res.status(500).json({ success: false, message: 'Failed to process activity batch', error: error.message });
+  }
+}
+
+export async function clockOutHandler(req: AuthenticatedRequest, res: Response) {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+
+    const now = new Date();
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        status: 'OFFLINE',
+        pauseReason: null,
+        pauseComment: null,
+        currentApp: null,
+        currentTitle: null,
+        currentDomain: null
+      }
+    });
+
+    const activeAtt = await prisma.attendance.findFirst({
+      where: { userId, clockOutAt: null },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    if (activeAtt) {
+      await prisma.attendance.update({
+        where: { id: activeAtt.id },
+        data: { clockOutAt: now }
+      });
+    }
+
+    return res.status(200).json({ success: true, message: 'Clocked out successfully' });
+  } catch (error: any) {
+    console.error('Clock out error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to clock out', error: error.message });
   }
 }
 
