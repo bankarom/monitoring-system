@@ -13,7 +13,7 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onCl
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [department, setDepartment] = useState('Engineering');
-  const [shift, setShift] = useState('09:00 - 18:00');
+  const [shift, setShift] = useState('10:00 AM to 7:00 PM');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -131,14 +131,17 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onCl
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Shift</label>
-              <input
-                type="text"
+              <label className="block text-xs font-bold text-slate-700 mb-1">Shift / Schedule</label>
+              <select
                 value={shift}
                 onChange={(e) => setShift(e.target.value)}
-                placeholder="09:00 - 18:00"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-sky-500 focus:bg-white"
-              />
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-sky-500 focus:bg-white"
+              >
+                <option value="10:00 AM to 7:00 PM">🌅 10:00 AM to 7:00 PM (Day 1)</option>
+                <option value="12:00 PM to 9:00 PM">☀️ 12:00 PM to 9:00 PM (Mid 1)</option>
+                <option value="2:00 PM to 11:00 PM">🌆 2:00 PM to 11:00 PM (Mid 2)</option>
+                <option value="6:30 PM to 3:30 AM">🌙 6:30 PM to 3:30 AM (Night)</option>
+              </select>
             </div>
           </div>
 

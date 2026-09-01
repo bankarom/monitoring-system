@@ -130,15 +130,17 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
             </div>
 
             <div>
-              <label className="block font-bold text-slate-700 mb-1">Shift / Work Hours</label>
-              <input
-                type="text"
-                required
+              <label className="block font-bold text-slate-700 mb-1">Shift / Schedule</label>
+              <select
                 value={shift}
                 onChange={(e) => setShift(e.target.value)}
-                placeholder="09:00 - 18:00"
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-semibold placeholder-slate-400 focus:outline-none focus:border-sky-500 focus:bg-white transition-all"
-              />
+                className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-bold focus:outline-none focus:border-sky-500 focus:bg-white"
+              >
+                <option value="10:00 AM to 7:00 PM">🌅 10:00 AM to 7:00 PM (Day 1)</option>
+                <option value="12:00 PM to 9:00 PM">☀️ 12:00 PM to 9:00 PM (Mid 1)</option>
+                <option value="2:00 PM to 11:00 PM">🌆 2:00 PM to 11:00 PM (Mid 2)</option>
+                <option value="6:30 PM to 3:30 AM">🌙 6:30 PM to 3:30 AM (Night)</option>
+              </select>
             </div>
           </div>
 
