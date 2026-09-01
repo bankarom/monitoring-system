@@ -57,11 +57,11 @@ export class SyncService {
     isPaused?: boolean,
     pauseReason?: string,
     pauseComment?: string
-  ): Promise<boolean> {
-    if (!this.token || activities.length === 0) return false;
+  ): Promise<{ success: boolean; totalActiveSeconds?: number; totalIdleSeconds?: number }> {
+    if (!this.token || activities.length === 0) return { success: false };
 
     try {
-      await axios.post(
+      const response = await axios.post(
         `${this.serverUrl}/api/activity/upload`,
         {
           activities,
@@ -79,13 +79,17 @@ export class SyncService {
       );
 
       this.flushOfflineQueue().catch(() => {});
-      return true;
+      return {
+        success: true,
+        totalActiveSeconds: response.data.totalActiveSeconds || 0,
+        totalIdleSeconds: response.data.totalIdleSeconds || 0
+      };
     } catch (error) {
       console.warn('Network offline, enqueuing activities locally:', (error as any).message);
       for (const item of activities) {
         await this.offlineQueue.enqueueActivity(item).catch(() => {});
       }
-      return false;
+      return { success: false };
     }
   }
 

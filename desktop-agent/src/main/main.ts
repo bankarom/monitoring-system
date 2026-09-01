@@ -124,9 +124,11 @@ class AgentApplication {
     }
 
     this.mainWindow = new BrowserWindow({
-      width: 400,
+      width: 420,
       height: 520,
       frame: false,
+      show: true,
+      skipTaskbar: false,
       resizable: false,
       maximizable: false,
       backgroundColor: '#020617',
@@ -191,14 +193,7 @@ class AgentApplication {
     this.updateTrayMenu();
 
     this.tray.on('double-click', () => {
-      if (!this.currentUser) {
-        this.createLoginWindow();
-      } else {
-        this.tray?.displayBalloon({
-          title: 'Improx Agent Active',
-          content: `Logged in as ${this.currentUser.name}. Tracking is active.`
-        });
-      }
+      this.createLoginWindow();
     });
   }
 
@@ -220,16 +215,16 @@ class AgentApplication {
       { label: 'Status: ' + statusText, enabled: false },
       { type: 'separator' },
       {
+        label: 'Open Agent Dashboard',
+        click: () => this.createLoginWindow()
+      },
+      {
         label: this.isTracking ? 'Pause Tracking' : 'Resume Tracking',
         enabled: !!this.currentUser,
         click: () => {
-          if (this.isTracking) this.stopTracking();
-          else this.startTracking();
+          if (this.isTracking) this.pauseTracking('Break');
+          else this.resumeTracking();
         }
-      },
-      {
-        label: 'Open Login / Settings',
-        click: () => this.createLoginWindow()
       },
       { type: 'separator' },
       {
@@ -240,11 +235,12 @@ class AgentApplication {
         }
       },
       {
-        label: 'Exit Agent (Clock Out)',
+        label: 'Clock Out & Exit',
         click: async () => {
-          if (this.isTracking) {
-            await this.syncService.logout().catch(() => {});
-          }
+          this.isTracking = false;
+          if (this.activeWindowTimer) clearInterval(this.activeWindowTimer);
+          if (this.screenshotTimer) clearInterval(this.screenshotTimer);
+          await this.syncService.clockOut().catch(() => {});
           app.quit();
         }
       }
@@ -264,6 +260,8 @@ class AgentApplication {
   private isPaused = false;
   private pauseReason = '';
   private pauseComment = '';
+  private totalActiveSeconds = 0;
+  private totalIdleSeconds = 0;
 
   public pauseTracking(reason: string, comment?: string) {
     this.isPaused = true;
@@ -283,6 +281,12 @@ class AgentApplication {
     console.log('🟢 Tracking resumed');
   }
 
+  private formatSeconds(sec: number): string {
+    const hrs = Math.floor(sec / 3600);
+    const mins = Math.floor((sec % 3600) / 60);
+    return `${hrs}h ${mins}m`;
+  }
+
   private notifyUIState() {
     if (this.mainWindow && !this.mainWindow.isDestroyed()) {
       this.mainWindow.webContents.send('agent-state-changed', {
@@ -290,7 +294,9 @@ class AgentApplication {
         isPaused: this.isPaused,
         pauseReason: this.pauseReason,
         pauseComment: this.pauseComment,
-        user: this.currentUser
+        user: this.currentUser,
+        activeHoursFormatted: this.formatSeconds(this.totalActiveSeconds),
+        idleHoursFormatted: this.formatSeconds(this.totalIdleSeconds)
       });
     }
   }
@@ -325,7 +331,9 @@ class AgentApplication {
         pauseReason: this.pauseReason,
         pauseComment: this.pauseComment,
         user: this.currentUser,
-        serverUrl: this.serverUrl
+        serverUrl: this.serverUrl,
+        activeHoursFormatted: this.formatSeconds(this.totalActiveSeconds),
+        idleHoursFormatted: this.formatSeconds(this.totalIdleSeconds)
       };
     });
 
@@ -397,7 +405,7 @@ class AgentApplication {
 
       console.log(`📡 [20s Telemetry] App: ${sample.appName} | Status: ${currentStatus} ${this.isPaused ? `(${this.pauseReason})` : ''}`);
 
-      await this.syncService.sendActivityBatch(
+      const res = await this.syncService.sendActivityBatch(
         [logItem],
         clicksPerMin,
         keysPerMin,
@@ -407,7 +415,13 @@ class AgentApplication {
         this.pauseComment
       );
 
+      if (res.success) {
+        if (typeof res.totalActiveSeconds === 'number') this.totalActiveSeconds = res.totalActiveSeconds;
+        if (typeof res.totalIdleSeconds === 'number') this.totalIdleSeconds = res.totalIdleSeconds;
+      }
+
       this.updateTrayMenu();
+      this.notifyUIState();
     }, this.sampleDurationSeconds * 1000);
 
     // 2. Screenshot Capture Interval (every 10 minutes)

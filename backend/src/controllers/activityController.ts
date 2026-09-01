@@ -107,9 +107,12 @@ export async function uploadActivityBatch(req: AuthenticatedRequest, res: Respon
       }
     });
 
-    // Find active open shift (clockOutAt === null) to support cross-midnight shifts (e.g. 6:30 PM to 3:30 AM)
+    // Find active shift today or open shift
     let activeAtt = await prisma.attendance.findFirst({
-      where: { userId, clockOutAt: null },
+      where: {
+        userId,
+        OR: [{ date: today }, { clockOutAt: null }]
+      },
       orderBy: { createdAt: 'desc' }
     });
 
@@ -119,6 +122,7 @@ export async function uploadActivityBatch(req: AuthenticatedRequest, res: Respon
           userId,
           date: today,
           clockInAt: now,
+          clockOutAt: null,
           totalActiveSeconds: batchActiveSeconds,
           totalIdleSeconds: batchIdleSeconds,
           manualPauseSeconds: batchPauseSeconds,
@@ -131,17 +135,20 @@ export async function uploadActivityBatch(req: AuthenticatedRequest, res: Respon
       activeAtt = await prisma.attendance.update({
         where: { id: activeAtt.id },
         data: {
+          clockOutAt: null, // Clear Clock Out so employee is ACTIVE again!
           totalActiveSeconds: { increment: batchActiveSeconds },
           totalIdleSeconds: { increment: batchIdleSeconds },
           manualPauseSeconds: { increment: batchPauseSeconds },
           totalWorkSeconds: { increment: batchActiveSeconds + batchIdleSeconds + batchPauseSeconds },
-          pauseReason: isPaused ? (pauseReason || 'Break') : undefined
+          pauseReason: isPaused ? (pauseReason || 'Break') : null // Clear pauseReason when resumed!
         }
       });
     }
 
     socketService.broadcastLiveActivity(userId, {
       status: userStatus,
+      pauseReason: isPaused ? (pauseReason || 'Break') : null,
+      pauseComment: isPaused ? (pauseComment || null) : null,
       currentApp: resolvedLatest.friendlyName,
       currentTitle: latestItem.windowTitle,
       currentDomain: latestItem.domain,
@@ -150,11 +157,13 @@ export async function uploadActivityBatch(req: AuthenticatedRequest, res: Respon
       lastActiveAt: now
     });
 
+    const totalBreaks = (activeAtt.totalIdleSeconds || 0) + ((activeAtt as any).manualPauseSeconds || 0);
+
     return res.status(200).json({
       success: true,
       message: 'Processed ' + activities.length + ' activity entries',
-      activeSecondsAdded: batchActiveSeconds,
-      idleSecondsAdded: batchIdleSeconds
+      totalActiveSeconds: activeAtt.totalActiveSeconds,
+      totalIdleSeconds: totalBreaks
     });
   } catch (error: any) {
     console.error('Activity upload error:', error);

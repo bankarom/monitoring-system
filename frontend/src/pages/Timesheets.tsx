@@ -131,7 +131,7 @@ export const Timesheets: React.FC = () => {
                     <td className="px-5 py-3.5">
                       {(t as any).pauseReason ? (
                         <span className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
-                          {(t as any).pauseReason}
+                          {(t as any).pauseReason} {(t as any).pauseComment ? `("${(t as any).pauseComment}")` : ''}
                         </span>
                       ) : (
                         <span className="text-slate-400 font-medium">—</span>

@@ -13,9 +13,17 @@ import {
   ShieldCheck
 } from 'lucide-react';
 
+import { useAuth } from '../context/AuthContext';
 import logoImg from '../assets/logo.png';
 
-const navigation = [
+interface NavItem {
+  name: string;
+  href: string;
+  icon: any;
+  badge?: string;
+}
+
+const adminNavigation: NavItem[] = [
   { name: 'Overview', href: '/', icon: LayoutDashboard },
   { name: 'Live Monitor', href: '/realtime', icon: Radio, badge: 'LIVE' },
   { name: 'Employees', href: '/employees', icon: Users },
@@ -27,7 +35,17 @@ const navigation = [
   { name: 'System Settings', href: '/settings', icon: Settings },
 ];
 
+const employeeNavigation: NavItem[] = [
+  { name: 'My Dashboard', href: '/portal', icon: LayoutDashboard },
+  { name: 'My Screenshots', href: '/portal', icon: Image },
+  { name: 'My Activity & Apps', href: '/portal', icon: PieChart },
+  { name: 'My Timesheet', href: '/portal', icon: CalendarCheck },
+];
+
 export const Sidebar: React.FC = () => {
+  const { user } = useAuth();
+  const navigation = user?.role === 'EMPLOYEE' ? employeeNavigation : adminNavigation;
+
   return (
     <aside className="w-64 bg-white border-r border-slate-200 flex flex-col h-screen select-none shrink-0 shadow-sm">
       {/* Brand Header */}
@@ -35,14 +53,14 @@ export const Sidebar: React.FC = () => {
         <div className="flex items-center gap-2">
           <img src={logoImg || "/logo.png"} alt="Improx Logo" className="h-7 w-auto max-w-[130px] object-contain" />
           <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-sky-50 text-sky-700 border border-sky-200 uppercase tracking-wide">
-            PRO
+            {user?.role === 'EMPLOYEE' ? 'EMPLOYEE' : 'PRO'}
           </span>
         </div>
       </div>
 
       {/* Nav Links */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {navigation.map((item) => {
+        {navigation.map((item, idx) => {
           const Icon = item.icon;
           return (
             <NavLink

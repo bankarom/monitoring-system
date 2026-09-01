@@ -65,6 +65,9 @@ function showDashboardView(state) {
 }
 
 function updateUIStatus(state) {
+  if (statActive && state.activeHoursFormatted) statActive.textContent = state.activeHoursFormatted;
+  if (statBreaks && state.idleHoursFormatted) statBreaks.textContent = state.idleHoursFormatted;
+
   if (state.isPaused) {
     statusBanner.className = 'status-banner paused';
     statusText.textContent = `🟡 Paused: ${state.pauseReason || 'Break'}`;
