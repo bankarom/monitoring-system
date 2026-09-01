@@ -126,3 +126,37 @@ export async function getMyTimesheet(req: AuthenticatedRequest, res: Response) {
     return res.status(500).json({ success: false, message: error.message });
   }
 }
+
+export async function getMyAnalytics(req: AuthenticatedRequest, res: Response) {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
+
+    const dateStr = (req.query.date as string) || new Date().toISOString().split('T')[0];
+    const startOfDay = new Date(dateStr + 'T00:00:00.000Z');
+    const endOfDay = new Date(dateStr + 'T23:59:59.999Z');
+
+    const appUsage = await prisma.activityLog.groupBy({
+      by: ['appName', 'category'],
+      where: {
+        userId,
+        recordedAt: { gte: startOfDay, lte: endOfDay }
+      },
+      _sum: { durationSeconds: true, mouseClicks: true, keystrokes: true },
+      orderBy: { _sum: { durationSeconds: 'desc' } },
+      take: 10
+    });
+
+    const apps = appUsage.map(item => ({
+      appName: item.appName,
+      category: item.category,
+      minutes: Math.round((item._sum.durationSeconds || 0) / 60),
+      clicks: item._sum.mouseClicks || 0,
+      keystrokes: item._sum.keystrokes || 0
+    }));
+
+    return res.status(200).json({ success: true, date: dateStr, apps });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+}
