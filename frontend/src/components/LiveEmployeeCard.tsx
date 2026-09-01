@@ -49,7 +49,13 @@ export const LiveEmployeeCard: React.FC<LiveEmployeeCardProps> = ({ employee, on
 
           <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-bold ${statusColor}`}>
             <span className={`w-2 h-2 rounded-full ${dotColor} ${employee.status === 'ONLINE' ? 'animate-ping' : ''}`} />
-            <span>{employee.status === 'PAUSED' ? `PAUSED (${(employee as any).pauseReason || 'Break'})` : employee.status}</span>
+            <span>
+              {employee.status === 'PAUSED'
+                ? `PAUSED: ${(employee as any).pauseReason || 'Break'} ${(employee as any).pauseComment ? `("${(employee as any).pauseComment}")` : ''}`
+                : employee.status === 'ONLINE'
+                ? 'WORKING'
+                : employee.status}
+            </span>
           </div>
         </div>
 

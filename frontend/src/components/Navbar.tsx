@@ -25,16 +25,8 @@ export const Navbar: React.FC = () => {
     <header className="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between shrink-0 sticky top-0 z-20 shadow-xs">
       <div className="flex items-center gap-4">
         <h2 className="text-sm font-bold text-slate-800 tracking-tight">
-          {location.pathname === '/portal' ? 'My Personal Workspace' : 'Management Console'}
+          {user?.role === 'EMPLOYEE' ? 'My Personal Workspace' : 'Management Console'}
         </h2>
-        {isAdminOrHR && (
-          <button
-            onClick={() => navigate(location.pathname === '/portal' ? '/' : '/portal')}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 transition-all text-xs font-extrabold cursor-pointer"
-          >
-            {location.pathname === '/portal' ? '👑 Switch to Super Admin View' : '👤 Switch to My Personal View'}
-          </button>
-        )}
       </div>
 
       <div className="flex items-center gap-5">
