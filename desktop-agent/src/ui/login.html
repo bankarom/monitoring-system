@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Improx Monitoring Agent</title>
+  <title>Improx Agent Workspace</title>
   <link rel="stylesheet" href="login.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -10,13 +10,14 @@
 </head>
 <body>
   <div class="window-container">
+    {/* Titlebar */}
     <div class="titlebar">
       <div class="brand-title">
         <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
           <path d="m9 12 2 2 4-4"/>
         </svg>
-        <span>Improx Agent</span>
+        <span>Improx Agent Workspace</span>
       </div>
       <div class="window-controls">
         <button id="btnMinimize" class="control-btn">—</button>
@@ -25,76 +26,142 @@
     </div>
 
     <!-- 1. LOGIN VIEW -->
-    <div id="loginView" class="content">
-      <div class="header">
-        <h2>Employee Sign In</h2>
-        <p>Log in with your company credentials to begin tracking</p>
+    <div id="loginView" class="content-login">
+      <div class="login-box">
+        <div class="header">
+          <h2>Employee Work Login</h2>
+          <p>Sign in to your workplace account to start tracking</p>
+        </div>
+
+        <div id="errorBox" class="alert-box error hidden"></div>
+        <div id="successBox" class="alert-box success hidden"></div>
+
+        <form id="loginForm">
+          <div class="input-group">
+            <label>Server Endpoint</label>
+            <input type="text" id="serverUrl" value="http://200.141.2.53" placeholder="http://200.141.2.53" required>
+          </div>
+
+          <div class="input-group">
+            <label>Work Email</label>
+            <input type="email" id="email" placeholder="your.email@company.com" required>
+          </div>
+
+          <div class="input-group">
+            <label>Password</label>
+            <input type="password" id="password" placeholder="••••••••" required>
+          </div>
+
+          <button type="submit" id="btnSubmit" class="btn-primary">
+            <span id="btnText">Connect & Start Tracking</span>
+            <div id="btnSpinner" class="spinner hidden"></div>
+          </button>
+        </form>
       </div>
-
-      <div id="errorBox" class="alert-box error hidden"></div>
-      <div id="successBox" class="alert-box success hidden"></div>
-
-      <form id="loginForm">
-        <div class="input-group">
-          <label>Server Endpoint</label>
-          <input type="text" id="serverUrl" value="http://200.141.2.53" placeholder="http://200.141.2.53" required>
-        </div>
-
-        <div class="input-group">
-          <label>Work Email</label>
-          <input type="email" id="email" placeholder="employee@improx.com" required>
-        </div>
-
-        <div class="input-group">
-          <label>Password</label>
-          <input type="password" id="password" placeholder="••••••••" required>
-        </div>
-
-        <button type="submit" id="btnSubmit" class="btn-primary">
-          <span id="btnText">Connect & Start Tracking</span>
-          <div id="btnSpinner" class="spinner hidden"></div>
-        </button>
-      </form>
     </div>
 
-    <!-- 2. LOGGED IN AGENT DASHBOARD VIEW -->
-    <div id="agentDashboardView" class="content hidden">
-      <div class="user-card">
-        <div class="avatar" id="userAvatar">E</div>
-        <div>
-          <h3 id="userName">Employee Name</h3>
-          <p id="userEmail">employee@improx.com</p>
-          <p id="userShift" class="user-shift">Shift: 10:00 AM to 7:00 PM</p>
+    <!-- 2. FULL DESKTOP DASHBOARD APP VIEW (WITH LEFT SIDEBAR TABS) -->
+    <div id="agentDashboardView" class="app-layout hidden">
+      <!-- LEFT NAVIGATION SIDEBAR -->
+      <div class="sidebar">
+        <div class="user-profile">
+          <div class="avatar" id="userAvatar">E</div>
+          <div class="profile-info">
+            <h3 id="userName">Employee Name</h3>
+            <p id="userEmail">employee@company.com</p>
+            <span id="userShift" class="shift-badge">Shift: 10:00 AM to 7:00 PM</span>
+          </div>
+        </div>
+
+        <nav class="nav-menu">
+          <button class="nav-item active" data-tab="tabOverview">
+            <span>📊 Overview</span>
+          </button>
+          <button class="nav-item" data-tab="tabScreenshots">
+            <span>📸 My Screenshots</span>
+          </button>
+          <button class="nav-item" data-tab="tabApps">
+            <span>💻 Software & Activity</span>
+          </button>
+        </nav>
+
+        <div class="sidebar-footer">
+          <button id="btnClockOut" class="btn-danger-outline">⏹️ End Today's Work (Clock Out)</button>
         </div>
       </div>
 
-      <!-- TODAY STATS SUMMARY INSIDE POPUP -->
-      <div class="today-stats-grid">
-        <div class="stat-card">
-          <span class="stat-label">Active Work Today</span>
-          <span id="statActive" class="stat-value text-sky-400">0h 0m</span>
+      <!-- MAIN CONTENT AREA -->
+      <div class="main-stage">
+        <!-- TAB 1: OVERVIEW -->
+        <div id="tabOverview" class="tab-pane active">
+          <div class="stage-header">
+            <h4>Live Tracking Dashboard</h4>
+            <span id="statusBanner" class="status-banner active">
+              <span class="status-dot"></span>
+              <span id="statusText">🟢 Tracking Active</span>
+            </span>
+          </div>
+
+          <div class="stats-cards-grid">
+            <div class="card">
+              <span class="card-title">Active Work Today</span>
+              <p id="statActive" class="card-value text-sky">0h 0m</p>
+              <span class="card-sub font-mono">Software Usage Time</span>
+            </div>
+            <div class="card">
+              <span class="card-title">Idle & Breaks</span>
+              <p id="statBreaks" class="card-value text-amber">0h 0m</p>
+              <span class="card-sub font-mono">Meetings & Pause Time</span>
+            </div>
+          </div>
+
+          <div class="control-box mt-4">
+            <h5 className="text-xs font-bold text-white mb-2">Tracking Control</h5>
+            <button id="btnPauseToggle" class="btn-warning">
+              <span>⏸️ Pause Tracking</span>
+            </button>
+            <button id="btnResume" class="btn-success hidden">
+              <span>▶️ RESUME WORK</span>
+            </button>
+          </div>
         </div>
-        <div class="stat-card">
-          <span class="stat-label">Idle & Breaks</span>
-          <span id="statBreaks" class="stat-value text-amber-400">0h 0m</span>
+
+        <!-- TAB 2: MY SCREENSHOTS -->
+        <div id="tabScreenshots" class="tab-pane hidden">
+          <div class="stage-header">
+            <h4>My Captured Screen Recordings</h4>
+            <button id="btnRefreshScreenshots" class="btn-sm">🔄 Refresh</button>
+          </div>
+
+          <div id="screenshotsGrid" class="screenshots-grid">
+            <p class="empty-text">Loading screenshots...</p>
+          </div>
         </div>
-      </div>
 
-      <!-- STATUS BANNER -->
-      <div id="statusBanner" class="status-banner active">
-        <span class="status-dot"></span>
-        <span id="statusText">🟢 Tracking Active</span>
-      </div>
+        <!-- TAB 3: SOFTWARE & ACTIVITY -->
+        <div id="tabApps" class="tab-pane hidden">
+          <div class="stage-header">
+            <h4>My Software Usage & Input Meters</h4>
+            <button id="btnRefreshApps" class="btn-sm">🔄 Refresh</button>
+          </div>
 
-      <!-- PAUSE / RESUME CONTROLS -->
-      <div class="control-section">
-        <button id="btnPauseToggle" class="btn-warning">
-          <span>⏸️ Pause Tracking</span>
-        </button>
-
-        <button id="btnResume" class="btn-success hidden">
-          <span>▶️ RESUME WORK</span>
-        </button>
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Application</th>
+                  <th>Category</th>
+                  <th>Time Spent</th>
+                  <th>Mouse Clicks</th>
+                  <th>Keystrokes</th>
+                </tr>
+              </thead>
+              <tbody id="appsTableBody">
+                <tr><td colspan="5" class="empty-text">Loading activity...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
       <!-- REASON SELECTOR MODAL -->
@@ -132,10 +199,6 @@
             <button id="btnConfirmPause" class="btn-primary">Confirm Pause</button>
           </div>
         </div>
-      </div>
-
-      <div class="footer-actions">
-        <button id="btnClockOut" class="btn-danger-outline">⏹️ End Today's Work (Clock Out)</button>
       </div>
     </div>
   </div>

@@ -49,6 +49,32 @@ export class SyncService {
     } catch (e) {}
   }
 
+  public async getMyScreenshots(date?: string) {
+    if (!this.token) return [];
+    try {
+      const res = await axios.get(`${this.serverUrl}/api/employee/screenshots`, {
+        headers: { Authorization: `Bearer ${this.token}` },
+        params: { date }
+      });
+      return res.data.screenshots || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  public async getMyAnalytics(date?: string) {
+    if (!this.token) return [];
+    try {
+      const res = await axios.get(`${this.serverUrl}/api/employee/analytics`, {
+        headers: { Authorization: `Bearer ${this.token}` },
+        params: { date }
+      });
+      return res.data.apps || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
   public async sendActivityBatch(
     activities: any[],
     clicksPerMinute: number,

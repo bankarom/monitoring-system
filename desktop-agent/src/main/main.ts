@@ -124,13 +124,14 @@ class AgentApplication {
     }
 
     this.mainWindow = new BrowserWindow({
-      width: 420,
-      height: 520,
+      width: 900,
+      height: 620,
       frame: false,
       show: true,
       skipTaskbar: false,
-      resizable: false,
-      maximizable: false,
+      resizable: true,
+      minWidth: 800,
+      minHeight: 550,
       backgroundColor: '#020617',
       webPreferences: {
         nodeIntegration: true,
@@ -322,6 +323,14 @@ class AgentApplication {
       this.updateTrayMenu();
       app.quit();
       return { success: true };
+    });
+
+    ipcMain.handle('get-my-screenshots', async (evt, date) => {
+      return await this.syncService.getMyScreenshots(date);
+    });
+
+    ipcMain.handle('get-my-analytics', async (evt, date) => {
+      return await this.syncService.getMyAnalytics(date);
     });
 
     ipcMain.handle('get-agent-state', () => {
