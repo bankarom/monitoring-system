@@ -18,6 +18,7 @@ const btnClose = document.getElementById('btnClose');
 const userAvatar = document.getElementById('userAvatar');
 const userName = document.getElementById('userName');
 const userEmail = document.getElementById('userEmail');
+const userShift = document.getElementById('userShift');
 
 const statusBanner = document.getElementById('statusBanner');
 const statusText = document.getElementById('statusText');
@@ -57,6 +58,7 @@ function showDashboardView(state) {
   const name = state.user?.name || 'Employee';
   userName.textContent = name;
   userEmail.textContent = state.user?.email || '';
+  if (userShift) userShift.textContent = `Shift: ${state.user?.shift || '10:00 AM to 7:00 PM'}`;
   userAvatar.textContent = name.charAt(0).toUpperCase();
 
   updateUIStatus(state);

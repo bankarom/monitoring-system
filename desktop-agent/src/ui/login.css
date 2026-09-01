@@ -260,6 +260,43 @@ form {
   color: #94a3b8;
 }
 
+.user-shift {
+  font-size: 10px;
+  color: #38bdf8 !important;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.today-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.stat-card {
+  background: #090d16;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-label {
+  font-size: 9px;
+  color: #94a3b8;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.stat-value {
+  font-size: 14px;
+  font-weight: 800;
+  margin-top: 2px;
+  color: #38bdf8;
+}
+
 /* STATUS BANNER */
 .status-banner {
   display: flex;
