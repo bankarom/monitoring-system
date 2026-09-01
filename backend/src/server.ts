@@ -32,6 +32,7 @@ if (!fs.existsSync(config.uploadDir)) {
 
 // Serve uploaded screenshots statically
 app.use('/uploads', express.static(config.uploadDir));
+app.use('/downloads', express.static(path.join(__dirname, '../downloads')));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
