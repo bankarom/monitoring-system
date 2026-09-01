@@ -15,12 +15,14 @@ export const LiveEmployeeCard: React.FC<LiveEmployeeCardProps> = ({ employee, on
       ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
       : employee.status === 'IDLE'
       ? 'bg-amber-50 text-amber-700 border-amber-300'
+      : employee.status === 'PAUSED'
+      ? 'bg-amber-100 text-amber-800 border-amber-400 font-extrabold'
       : 'bg-rose-50 text-rose-700 border-rose-300';
 
   const dotColor =
     employee.status === 'ONLINE'
       ? 'bg-emerald-500'
-      : employee.status === 'IDLE'
+      : employee.status === 'IDLE' || employee.status === 'PAUSED'
       ? 'bg-amber-500'
       : 'bg-rose-500';
 
@@ -47,7 +49,7 @@ export const LiveEmployeeCard: React.FC<LiveEmployeeCardProps> = ({ employee, on
 
           <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-bold ${statusColor}`}>
             <span className={`w-2 h-2 rounded-full ${dotColor} ${employee.status === 'ONLINE' ? 'animate-ping' : ''}`} />
-            <span>{employee.status}</span>
+            <span>{employee.status === 'PAUSED' ? `PAUSED (${(employee as any).pauseReason || 'Break'})` : employee.status}</span>
           </div>
         </div>
 

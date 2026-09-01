@@ -108,6 +108,7 @@ export const Timesheets: React.FC = () => {
                   <th className="px-5 py-3.5">Clock Out</th>
                   <th className="px-5 py-3.5">Active Work</th>
                   <th className="px-5 py-3.5">Idle Breaks</th>
+                  <th className="px-5 py-3.5">Pause / Activity</th>
                   <th className="px-5 py-3.5">Total Time</th>
                   <th className="px-5 py-3.5">Productivity</th>
                   <th className="px-5 py-3.5 text-right">Action</th>
@@ -127,6 +128,15 @@ export const Timesheets: React.FC = () => {
                     </td>
                     <td className="px-5 py-3.5 font-black text-slate-900">{formatHoursToTime(t.activeHours)}</td>
                     <td className="px-5 py-3.5 text-amber-700 font-bold">{formatHoursToTime(t.idleHours)}</td>
+                    <td className="px-5 py-3.5">
+                      {(t as any).pauseReason ? (
+                        <span className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                          {(t as any).pauseReason}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400 font-medium">—</span>
+                      )}
+                    </td>
                     <td className="px-5 py-3.5 font-black text-sky-700">{formatHoursToTime(t.totalHours)}</td>
                     <td className="px-5 py-3.5">
                       <span className="px-2.5 py-0.5 rounded-full font-bold bg-sky-50 text-sky-700 border border-sky-200">

@@ -1,5 +1,5 @@
 export type UserRole = 'ADMIN' | 'MANAGER' | 'EMPLOYEE';
-export type UserStatus = 'ONLINE' | 'IDLE' | 'OFFLINE';
+export type UserStatus = 'ONLINE' | 'IDLE' | 'PAUSED' | 'OFFLINE';
 export type ActivityCategory = 'WORK' | 'BROWSING' | 'COMMUNICATION' | 'ENTERTAINMENT' | 'IDLE' | 'OTHER';
 
 export interface User {
