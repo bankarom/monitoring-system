@@ -8,22 +8,26 @@ export async function getMyProfile(req: AuthenticatedRequest, res: Response) {
     if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
 
     const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        department: true,
-        shift: true,
-        role: true,
-        status: true,
-        pauseReason: true,
-        pauseComment: true,
-        currentApp: true
-      }
+      where: { id: userId }
     });
 
-    return res.status(200).json({ success: true, user });
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    return res.status(200).json({
+      success: true,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        department: user.department,
+        shift: user.shift,
+        role: user.role,
+        status: user.status,
+        pauseReason: (user as any).pauseReason || null,
+        pauseComment: (user as any).pauseComment || null,
+        currentApp: user.currentApp
+      }
+    });
   } catch (error: any) {
     return res.status(500).json({ success: false, message: error.message });
   }
@@ -99,7 +103,7 @@ export async function getMyTimesheet(req: AuthenticatedRequest, res: Response) {
       });
     }
 
-    const totalBreaks = (attendance.totalIdleSeconds || 0) + (attendance.manualPauseSeconds || 0);
+    const totalBreaks = (attendance.totalIdleSeconds || 0) + ((attendance as any).manualPauseSeconds || 0);
     const activeHours = parseFloat((attendance.totalActiveSeconds / 3600).toFixed(2));
     const idleHours = parseFloat((totalBreaks / 3600).toFixed(2));
     const totalHours = parseFloat((attendance.totalWorkSeconds / 3600).toFixed(2));
@@ -115,7 +119,7 @@ export async function getMyTimesheet(req: AuthenticatedRequest, res: Response) {
         totalHours,
         productivityScore,
         status: attendance.status,
-        pauseReason: attendance.pauseReason
+        pauseReason: (attendance as any).pauseReason || null
       }
     });
   } catch (error: any) {

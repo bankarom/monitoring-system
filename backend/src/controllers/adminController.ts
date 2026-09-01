@@ -604,7 +604,7 @@ export async function getTimesheets(req: Request, res: Response) {
     });
 
     const formatted = attendances.map(a => {
-      const totalBreaks = (a.totalIdleSeconds || 0) + (a.manualPauseSeconds || 0);
+      const totalBreaks = (a.totalIdleSeconds || 0) + ((a as any).manualPauseSeconds || 0);
       const activeHours = parseFloat((a.totalActiveSeconds / 3600).toFixed(2));
       const idleHours = parseFloat((totalBreaks / 3600).toFixed(2));
       const totalHours = parseFloat((a.totalWorkSeconds / 3600).toFixed(2));
@@ -624,7 +624,7 @@ export async function getTimesheets(req: Request, res: Response) {
         totalHours,
         productivityScore,
         status: a.status,
-        pauseReason: a.pauseReason || null
+        pauseReason: (a as any).pauseReason || null
       };
     });
 
