@@ -639,7 +639,11 @@ export async function wipeDatabaseData(req: Request, res: Response) {
     await prisma.activityLog.deleteMany({});
     await prisma.screenshot.deleteMany({});
     await prisma.attendance.deleteMany({});
+    await prisma.user.deleteMany({
+      where: { role: 'EMPLOYEE' }
+    });
     await prisma.user.updateMany({
+      where: { role: 'ADMIN' },
       data: {
         status: 'OFFLINE',
         pauseReason: null,
@@ -652,7 +656,7 @@ export async function wipeDatabaseData(req: Request, res: Response) {
 
     return res.status(200).json({
       success: true,
-      message: 'All past activity logs, screenshots, and attendance data wiped cleanly'
+      message: 'Database fully wiped. All old employees, activity logs, screenshots, and attendance cleared.'
     });
   } catch (error: any) {
     return res.status(500).json({ success: false, message: error.message });
