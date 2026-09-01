@@ -26,9 +26,12 @@ export async function uploadActivityBatch(req: AuthenticatedRequest, res: Respon
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
 
-    const { activities, currentStatus, clicksPerMinute, keysPerMinute } = req.body as {
+    const { activities, currentStatus, isPaused, pauseReason, pauseComment, clicksPerMinute, keysPerMinute } = req.body as {
       activities: ActivityBatchItem[];
-      currentStatus?: 'ONLINE' | 'IDLE';
+      currentStatus?: 'ONLINE' | 'IDLE' | 'PAUSED';
+      isPaused?: boolean;
+      pauseReason?: string;
+      pauseComment?: string;
       clicksPerMinute?: number;
       keysPerMinute?: number;
     };
@@ -42,6 +45,7 @@ export async function uploadActivityBatch(req: AuthenticatedRequest, res: Respon
 
     let batchActiveSeconds = 0;
     let batchIdleSeconds = 0;
+    let batchPauseSeconds = 0;
 
     const createRecords = activities.map((item) => {
       const { friendlyName, category } = resolveAppInfo(
@@ -52,7 +56,9 @@ export async function uploadActivityBatch(req: AuthenticatedRequest, res: Respon
       );
 
       const duration = item.durationSeconds || 5;
-      if (item.isIdle) {
+      if (isPaused || currentStatus === 'PAUSED') {
+        batchPauseSeconds += duration;
+      } else if (item.isIdle) {
         batchIdleSeconds += duration;
       } else {
         batchActiveSeconds += duration;
@@ -86,12 +92,14 @@ export async function uploadActivityBatch(req: AuthenticatedRequest, res: Respon
       latestItem.isIdle
     );
 
-    const userStatus = currentStatus || (latestItem.isIdle ? 'IDLE' : 'ONLINE');
+    const userStatus = isPaused ? 'PAUSED' : (currentStatus || (latestItem.isIdle ? 'IDLE' : 'ONLINE'));
 
     await prisma.user.update({
       where: { id: userId },
       data: {
         status: userStatus,
+        pauseReason: isPaused ? (pauseReason || 'Break') : null,
+        pauseComment: isPaused ? (pauseComment || null) : null,
         lastActiveAt: now,
         currentApp: resolvedLatest.friendlyName,
         currentTitle: latestItem.windowTitle || null,
@@ -104,7 +112,9 @@ export async function uploadActivityBatch(req: AuthenticatedRequest, res: Respon
       update: {
         totalActiveSeconds: { increment: batchActiveSeconds },
         totalIdleSeconds: { increment: batchIdleSeconds },
-        totalWorkSeconds: { increment: batchActiveSeconds + batchIdleSeconds },
+        manualPauseSeconds: { increment: batchPauseSeconds },
+        totalWorkSeconds: { increment: batchActiveSeconds + batchIdleSeconds + batchPauseSeconds },
+        pauseReason: isPaused ? (pauseReason || 'Break') : undefined,
         clockOutAt: null
       },
       create: {
@@ -113,8 +123,10 @@ export async function uploadActivityBatch(req: AuthenticatedRequest, res: Respon
         clockInAt: now,
         totalActiveSeconds: batchActiveSeconds,
         totalIdleSeconds: batchIdleSeconds,
-        totalWorkSeconds: batchActiveSeconds + batchIdleSeconds,
-        status: 'PRESENT'
+        manualPauseSeconds: batchPauseSeconds,
+        totalWorkSeconds: batchActiveSeconds + batchIdleSeconds + batchPauseSeconds,
+        status: 'PRESENT',
+        pauseReason: isPaused ? (pauseReason || 'Break') : null
       }
     });
 

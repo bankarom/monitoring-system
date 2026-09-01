@@ -16,6 +16,7 @@ enum Role {
 enum UserStatus {
   ONLINE
   IDLE
+  PAUSED
   OFFLINE
 }
 
@@ -37,6 +38,8 @@ model User {
   department    String       @default("General")
   shift         String       @default("09:00 - 18:00")
   status        UserStatus   @default(OFFLINE)
+  pauseReason   String?
+  pauseComment  String?
   lastActiveAt  DateTime?
   currentApp    String?
   currentTitle  String?
@@ -61,8 +64,10 @@ model Attendance {
   clockOutAt         DateTime?
   totalActiveSeconds Int       @default(0)
   totalIdleSeconds   Int       @default(0)
+  manualPauseSeconds Int       @default(0)
   totalWorkSeconds   Int       @default(0)
   status             String    @default("PRESENT")
+  pauseReason        String?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 

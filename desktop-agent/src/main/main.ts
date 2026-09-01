@@ -267,6 +267,40 @@ class AgentApplication {
     } catch (e) {}
   }
 
+  private isPaused = false;
+  private pauseReason = '';
+  private pauseComment = '';
+
+  public pauseTracking(reason: string, comment?: string) {
+    this.isPaused = true;
+    this.pauseReason = reason || 'Break';
+    this.pauseComment = comment || '';
+    this.updateTrayMenu();
+    this.notifyUIState();
+    console.log(`🟡 Tracking paused: ${this.pauseReason} (${this.pauseComment})`);
+  }
+
+  public resumeTracking() {
+    this.isPaused = false;
+    this.pauseReason = '';
+    this.pauseComment = '';
+    this.updateTrayMenu();
+    this.notifyUIState();
+    console.log('🟢 Tracking resumed');
+  }
+
+  private notifyUIState() {
+    if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+      this.mainWindow.webContents.send('agent-state-changed', {
+        isTracking: this.isTracking,
+        isPaused: this.isPaused,
+        pauseReason: this.pauseReason,
+        pauseComment: this.pauseComment,
+        user: this.currentUser
+      });
+    }
+  }
+
   private setupIpcHandlers() {
     ipcMain.on('window-minimize', () => {
       if (this.mainWindow) this.mainWindow.hide();
@@ -274,6 +308,27 @@ class AgentApplication {
 
     ipcMain.on('window-close', () => {
       if (this.mainWindow) this.mainWindow.hide();
+    });
+
+    ipcMain.handle('get-agent-state', () => {
+      return {
+        isTracking: this.isTracking,
+        isPaused: this.isPaused,
+        pauseReason: this.pauseReason,
+        pauseComment: this.pauseComment,
+        user: this.currentUser,
+        serverUrl: this.serverUrl
+      };
+    });
+
+    ipcMain.handle('pause-agent', (event, { reason, comment }) => {
+      this.pauseTracking(reason, comment);
+      return { success: true, isPaused: true };
+    });
+
+    ipcMain.handle('resume-agent', () => {
+      this.resumeTracking();
+      return { success: true, isPaused: false };
     });
 
     ipcMain.handle('agent-login', async (event, { serverUrl, email, password }) => {
@@ -294,10 +349,7 @@ class AgentApplication {
         this.saveConfig();
         this.startTracking();
 
-        setTimeout(() => {
-          if (this.mainWindow) this.mainWindow.hide();
-        }, 1200);
-
+        this.notifyUIState();
         return { success: true, user: data.user };
       } catch (err: any) {
         return { success: false, message: err.response?.data?.message || err.message || 'Login failed' };
@@ -308,7 +360,9 @@ class AgentApplication {
   public startTracking() {
     if (this.isTracking) return;
     this.isTracking = true;
+    this.isPaused = false;
     this.updateTrayMenu();
+    this.notifyUIState();
     console.log('🟢 Tracking started for:', this.currentUser?.name);
 
     // 1. Poll Native Tracker every 20 seconds (3 clean log entries per minute)
@@ -325,21 +379,24 @@ class AgentApplication {
         durationSeconds: this.sampleDurationSeconds,
         mouseClicks: sample.clicks,
         keystrokes: sample.keys,
-        isIdle: sample.isIdle,
+        isIdle: this.isPaused ? true : sample.isIdle,
         recordedAt: new Date().toISOString()
       };
 
-      const clicksPerMin = Math.round((sample.clicks / this.sampleDurationSeconds) * 60);
-      const keysPerMin = Math.round((sample.keys / this.sampleDurationSeconds) * 60);
-      const currentStatus = sample.isIdle ? 'IDLE' : 'ONLINE';
+      const clicksPerMin = this.isPaused ? 0 : Math.round((sample.clicks / this.sampleDurationSeconds) * 60);
+      const keysPerMin = this.isPaused ? 0 : Math.round((sample.keys / this.sampleDurationSeconds) * 60);
+      const currentStatus = this.isPaused ? 'PAUSED' : (sample.isIdle ? 'IDLE' : 'ONLINE');
 
-      console.log(`📡 [20s Telemetry] App: ${sample.appName} | Domain: ${sample.domain || 'N/A'} | Clicks: ${sample.clicks} | Keys: ${sample.keys} | Status: ${currentStatus}`);
+      console.log(`📡 [20s Telemetry] App: ${sample.appName} | Status: ${currentStatus} ${this.isPaused ? `(${this.pauseReason})` : ''}`);
 
       await this.syncService.sendActivityBatch(
         [logItem],
         clicksPerMin,
         keysPerMin,
-        currentStatus
+        currentStatus,
+        this.isPaused,
+        this.pauseReason,
+        this.pauseComment
       );
 
       this.updateTrayMenu();
@@ -358,6 +415,10 @@ class AgentApplication {
   }
 
   private async performScreenshotCapture() {
+    if (this.isPaused) {
+      console.log('⏸️ Tracking is paused. Skipping screenshot capture.');
+      return;
+    }
     try {
       console.log('📸 Taking screen capture...');
       const screens = await this.screenshotEngine.captureAllScreens();

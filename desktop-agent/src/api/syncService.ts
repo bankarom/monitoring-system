@@ -42,7 +42,10 @@ export class SyncService {
     activities: any[],
     clicksPerMinute: number,
     keysPerMinute: number,
-    currentStatus: 'ONLINE' | 'IDLE'
+    currentStatus: 'ONLINE' | 'IDLE' | 'PAUSED',
+    isPaused?: boolean,
+    pauseReason?: string,
+    pauseComment?: string
   ): Promise<boolean> {
     if (!this.token || activities.length === 0) return false;
 
@@ -53,7 +56,10 @@ export class SyncService {
           activities,
           clicksPerMinute,
           keysPerMinute,
-          currentStatus
+          currentStatus,
+          isPaused: !!isPaused,
+          pauseReason: pauseReason || null,
+          pauseComment: pauseComment || null
         },
         {
           headers: { Authorization: `Bearer ${this.token}` },

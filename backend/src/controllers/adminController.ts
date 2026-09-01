@@ -604,10 +604,11 @@ export async function getTimesheets(req: Request, res: Response) {
     });
 
     const formatted = attendances.map(a => {
+      const totalBreaks = (a.totalIdleSeconds || 0) + (a.manualPauseSeconds || 0);
       const activeHours = parseFloat((a.totalActiveSeconds / 3600).toFixed(2));
-      const idleHours = parseFloat((a.totalIdleSeconds / 3600).toFixed(2));
+      const idleHours = parseFloat((totalBreaks / 3600).toFixed(2));
       const totalHours = parseFloat((a.totalWorkSeconds / 3600).toFixed(2));
-      const productivityScore = totalHours > 0 ? Math.round((activeHours / totalHours) * 100) : 0;
+      const productivityScore = totalHours > 0 ? Math.min(100, Math.round((activeHours / totalHours) * 100)) : 0;
 
       return {
         id: a.id,
@@ -622,11 +623,37 @@ export async function getTimesheets(req: Request, res: Response) {
         idleHours,
         totalHours,
         productivityScore,
-        status: a.status
+        status: a.status,
+        pauseReason: a.pauseReason || null
       };
     });
 
     return res.status(200).json({ success: true, timesheets: formatted });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+}
+
+export async function wipeDatabaseData(req: Request, res: Response) {
+  try {
+    await prisma.activityLog.deleteMany({});
+    await prisma.screenshot.deleteMany({});
+    await prisma.attendance.deleteMany({});
+    await prisma.user.updateMany({
+      data: {
+        status: 'OFFLINE',
+        pauseReason: null,
+        pauseComment: null,
+        currentApp: null,
+        currentTitle: null,
+        currentDomain: null
+      }
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'All past activity logs, screenshots, and attendance data wiped cleanly'
+    });
   } catch (error: any) {
     return res.status(500).json({ success: false, message: error.message });
   }

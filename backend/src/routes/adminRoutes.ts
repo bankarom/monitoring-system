@@ -15,7 +15,8 @@ import {
   deleteTimesheet,
   exportTimesheetsCSV,
   getSettings,
-  updateSettings
+  updateSettings,
+  wipeDatabaseData
 } from '../controllers/adminController';
 import { authenticateToken, requireAdmin } from '../middleware/auth';
 
@@ -23,6 +24,9 @@ const router = Router();
 
 // Enforce authentication & Admin verification on all admin routes
 router.use(authenticateToken, requireAdmin);
+
+// System Reset
+router.post('/system/wipe-database', wipeDatabaseData);
 
 // Dashboard
 router.get('/dashboard', getDashboardStats);

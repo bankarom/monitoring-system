@@ -20,6 +20,7 @@ body {
   border: 1px solid #1e293b;
   border-radius: 12px;
   background: radial-gradient(circle at top right, #0f172a 0%, #020617 100%);
+  position: relative;
 }
 
 .titlebar {
@@ -79,7 +80,7 @@ body {
 }
 
 .content {
-  padding: 24px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -174,27 +175,193 @@ form {
   opacity: 0.95;
 }
 
-.btn-primary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+.btn-warning {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  padding: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  width: 100%;
+  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.3);
 }
 
-.footer-note {
-  text-align: center;
-  font-size: 10px;
+.btn-success {
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  padding: 12px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  width: 100%;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.btn-secondary {
+  background: #1e293b;
+  border: none;
+  border-radius: 8px;
+  color: #cbd5e1;
+  padding: 9px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-link {
+  background: transparent;
+  border: none;
   color: #64748b;
+  font-size: 11px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.btn-link:hover {
+  color: #f87171;
+}
+
+/* USER CARD */
+.user-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #090d16;
+  border: 1px solid #1e293b;
+  border-radius: 10px;
+}
+
+.user-card .avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #0284c7;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 15px;
+}
+
+.user-card h3 {
+  font-size: 13px;
+  font-weight: 700;
+  color: white;
+}
+
+.user-card p {
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+/* STATUS BANNER */
+.status-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  margin: 14px 0;
+}
+
+.status-banner.active {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #34d399;
+}
+
+.status-banner.paused {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: #fbbf24;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* MODAL */
+.modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(2, 6, 23, 0.85);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 100;
+}
+
+.modal-content {
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: 12px;
+  padding: 16px;
+  width: 100%;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+}
+
+.modal-content h4 {
+  font-size: 14px;
+  font-weight: 800;
+  color: white;
+}
+
+.modal-content p {
+  font-size: 10px;
+  color: #94a3b8;
+  margin-top: 2px;
+  margin-bottom: 10px;
+}
+
+.reason-options {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.option-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: #090d16;
+  border: 1px solid #1e293b;
+  border-radius: 6px;
+  font-size: 11px;
+  color: #cbd5e1;
+  cursor: pointer;
+}
+
+.option-card input {
+  accent-color: #0284c7;
+}
+
+.modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
   margin-top: 12px;
 }
 
-.spinner {
-  width: 14px;
-  height: 14px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top-color: white;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
+.footer-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
 }

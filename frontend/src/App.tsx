@@ -15,6 +15,7 @@ import { AppAnalytics } from './pages/AppAnalytics';
 import { WebAnalytics } from './pages/WebAnalytics';
 import { Timesheets } from './pages/Timesheets';
 import { Settings } from './pages/Settings';
+import { EmployeePortal } from './pages/EmployeePortal';
 
 const ProtectedLayout: React.FC = () => {
   const { user, isLoading } = useAuth();
@@ -31,25 +32,34 @@ const ProtectedLayout: React.FC = () => {
     return <Navigate to="/login" replace />;
   }
 
+  const isEmployee = user.role === 'EMPLOYEE';
+
   return (
     <SocketProvider>
       <div className="flex h-screen bg-slate-50 text-slate-900 overflow-hidden">
-        <Sidebar />
+        {!isEmployee && <Sidebar />}
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           <Navbar />
           <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-slate-50">
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/realtime" element={<LiveGrid />} />
-              <Route path="/employees" element={<Employees />} />
-              <Route path="/screenshots" element={<Screenshots />} />
-              <Route path="/timeline" element={<Timeline />} />
-              <Route path="/analytics/apps" element={<AppAnalytics />} />
-              <Route path="/analytics/websites" element={<WebAnalytics />} />
-              <Route path="/timesheets" element={<Timesheets />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
+            {isEmployee ? (
+              <Routes>
+                <Route path="/portal" element={<EmployeePortal />} />
+                <Route path="*" element={<Navigate to="/portal" replace />} />
+              </Routes>
+            ) : (
+              <Routes>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/realtime" element={<LiveGrid />} />
+                <Route path="/employees" element={<Employees />} />
+                <Route path="/screenshots" element={<Screenshots />} />
+                <Route path="/timeline" element={<Timeline />} />
+                <Route path="/analytics/apps" element={<AppAnalytics />} />
+                <Route path="/analytics/websites" element={<WebAnalytics />} />
+                <Route path="/timesheets" element={<Timesheets />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            )}
           </main>
         </div>
       </div>

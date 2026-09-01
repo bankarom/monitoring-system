@@ -24,7 +24,8 @@
       </div>
     </div>
 
-    <div class="content">
+    <!-- 1. LOGIN VIEW -->
+    <div id="loginView" class="content">
       <div class="header">
         <h2>Employee Sign In</h2>
         <p>Log in with your company credentials to begin tracking</p>
@@ -54,9 +55,74 @@
           <div id="btnSpinner" class="spinner hidden"></div>
         </button>
       </form>
+    </div>
 
-      <div class="footer-note">
-        <span>Running silently in system tray upon connection</span>
+    <!-- 2. LOGGED IN AGENT DASHBOARD VIEW -->
+    <div id="agentDashboardView" class="content hidden">
+      <div class="user-card">
+        <div class="avatar" id="userAvatar">E</div>
+        <div>
+          <h3 id="userName">Employee Name</h3>
+          <p id="userEmail">employee@improx.com</p>
+        </div>
+      </div>
+
+      <!-- STATUS BANNER -->
+      <div id="statusBanner" class="status-banner active">
+        <span class="status-dot"></span>
+        <span id="statusText">🟢 Tracking Active</span>
+      </div>
+
+      <!-- PAUSE / RESUME CONTROLS -->
+      <div class="control-section">
+        <button id="btnPauseToggle" class="btn-warning">
+          <span>⏸️ Pause Tracking</span>
+        </button>
+
+        <button id="btnResume" class="btn-success hidden">
+          <span>▶️ RESUME WORK</span>
+        </button>
+      </div>
+
+      <!-- REASON SELECTOR MODAL -->
+      <div id="reasonModal" class="modal-overlay hidden">
+        <div class="modal-content">
+          <h4>Select Pause Reason</h4>
+          <p>Select your activity status while away from work:</p>
+
+          <div class="reason-options">
+            <label class="option-card">
+              <input type="radio" name="pauseReason" value="In a Meeting" checked>
+              <span>👥 In a Meeting (Call)</span>
+            </label>
+            <label class="option-card">
+              <input type="radio" name="pauseReason" value="Lunch Break">
+              <span>🍽️ Lunch / Meal Break</span>
+            </label>
+            <label class="option-card">
+              <input type="radio" name="pauseReason" value="Short Break">
+              <span>☕ Personal Break / Tea</span>
+            </label>
+            <label class="option-card">
+              <input type="radio" name="pauseReason" value="Offline Work">
+              <span>📚 Offline Work / Paperwork</span>
+            </label>
+          </div>
+
+          <div class="input-group mt-2">
+            <label>Notes / Comment (Optional)</label>
+            <input type="text" id="pauseComment" placeholder="e.g. Client call with Team A">
+          </div>
+
+          <div class="modal-actions">
+            <button id="btnCancelModal" class="btn-secondary">Cancel</button>
+            <button id="btnConfirmPause" class="btn-primary">Confirm Pause</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-actions">
+        <button id="btnLogout" class="btn-link">Sign Out</button>
       </div>
     </div>
   </div>

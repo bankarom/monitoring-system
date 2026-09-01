@@ -8,6 +8,7 @@ import { socketService } from './services/socketService';
 import authRoutes from './routes/authRoutes';
 import activityRoutes from './routes/activityRoutes';
 import adminRoutes from './routes/adminRoutes';
+import employeeRoutes from './routes/employeeRoutes';
 import { seedInitialAdmin } from './utils/seed';
 import { startHeartbeatSupervisor } from './services/heartbeatService';
 
@@ -46,6 +47,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/activity', activityRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/employee', employeeRoutes);
 
 // Initialize WebSockets
 socketService.initialize(server, config.corsOrigin);
