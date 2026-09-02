@@ -353,7 +353,7 @@ class AgentApplication {
     });
 
     ipcMain.handle('get-my-reports', async (evt, date) => {
-      return await this.syncService.getMyScrinReports(date);
+      return await this.syncService.getMyDetailedReports(date);
     });
 
     ipcMain.handle('open-web-portal', () => {

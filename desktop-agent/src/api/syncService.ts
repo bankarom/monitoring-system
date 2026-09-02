@@ -217,10 +217,10 @@ export class SyncService {
     }
   }
 
-  public async getMyScrinReports(dateStr?: string) {
+  public async getMyDetailedReports(dateStr?: string) {
     if (!this.token) return null;
     try {
-      const res = await axios.get(`${this.serverUrl}/api/employee/reports/scrin`, {
+      const res = await axios.get(`${this.serverUrl}/api/employee/reports/detailed`, {
         params: { date: dateStr },
         headers: { Authorization: `Bearer ${this.token}` }
       });

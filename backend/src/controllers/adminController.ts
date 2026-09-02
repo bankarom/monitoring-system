@@ -432,8 +432,8 @@ export async function exportScreenshotsZip(req: Request, res: Response) {
   }
 }
 
-// Helper to construct Scrin.io granular timeline intervals with attached screenshots
-export function buildScrinTimelineIntervals(
+// Helper to construct granular timeline intervals with attached screenshots
+export function buildTimelineIntervals(
   logs: any[],
   screenshots: any[],
   offlineTimes: any[] = []
@@ -617,7 +617,7 @@ export async function getActivityTimeline(req: Request, res: Response) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    const intervals = buildScrinTimelineIntervals(logs, screenshots, offlineTimes);
+    const intervals = buildTimelineIntervals(logs, screenshots, offlineTimes);
 
     return res.status(200).json({
       success: true,
@@ -1096,7 +1096,7 @@ export async function deleteOfflineTimeAdmin(req: Request, res: Response) {
   }
 }
 
-export async function getScrinReports(req: Request, res: Response) {
+export async function getDetailedReports(req: Request, res: Response) {
   try {
     const { userId, date, dateFrom, dateTo } = req.query as { userId?: string; date?: string; dateFrom?: string; dateTo?: string };
 
@@ -1130,7 +1130,7 @@ export async function getScrinReports(req: Request, res: Response) {
       include: { user: { select: { id: true, name: true, email: true } } }
     });
 
-    // 1. Detailed Scrin.io Rows
+    // 1. Detailed Interval Rows
     const detailedRows: any[] = [];
 
     // Group activity into continuous interval blocks

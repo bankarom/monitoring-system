@@ -9,7 +9,7 @@ import {
   getMyOfflineTimes,
   deleteMyOfflineTime,
   getMyYouTubeHistory,
-  getMyScrinReports
+  getMyDetailedReports
 } from '../controllers/employeeController';
 import { authenticateToken } from '../middleware/auth';
 
@@ -24,7 +24,7 @@ router.get('/timeline', getMyTimeline);
 router.get('/timesheet', getMyTimesheet);
 router.get('/analytics', getMyAnalytics);
 router.get('/youtube-history', getMyYouTubeHistory);
-router.get('/reports/scrin', getMyScrinReports);
+router.get('/reports/detailed', getMyDetailedReports);
 
 router.post('/offline-time', addMyOfflineTime);
 router.get('/offline-time', getMyOfflineTimes);

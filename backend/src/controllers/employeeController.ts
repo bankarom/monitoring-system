@@ -1,7 +1,7 @@
 import { Response } from 'express';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { prisma } from '../config/prisma';
-import { buildScrinTimelineIntervals } from './adminController';
+import { buildTimelineIntervals } from './adminController';
 import { extractYouTubeVideoTitle } from '../config/appCategories';
 
 export async function getMyProfile(req: AuthenticatedRequest, res: Response) {
@@ -100,7 +100,7 @@ export async function getMyTimeline(req: AuthenticatedRequest, res: Response) {
       })
     ]);
 
-    const intervals = buildScrinTimelineIntervals(logs, screenshots, offlineTimes);
+    const intervals = buildTimelineIntervals(logs, screenshots, offlineTimes);
 
     return res.status(200).json({
       success: true,
@@ -386,7 +386,7 @@ export async function getMyYouTubeHistory(req: AuthenticatedRequest, res: Respon
   }
 }
 
-export async function getMyScrinReports(req: AuthenticatedRequest, res: Response) {
+export async function getMyDetailedReports(req: AuthenticatedRequest, res: Response) {
   try {
     const userId = req.user?.userId;
     if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });

@@ -16,7 +16,7 @@ import {
   Calendar
 } from 'lucide-react';
 
-interface ScrinTimelineViewProps {
+interface ActivityTimelineViewProps {
   user: {
     id: string;
     name: string;
@@ -48,7 +48,7 @@ const categoryColors: Record<ActivityCategory, { bg: string; text: string; borde
   OTHER: { bg: 'bg-slate-50', text: 'text-slate-700', border: 'border-slate-200', label: '📁 Other' }
 };
 
-export const ScrinTimelineView: React.FC<ScrinTimelineViewProps> = ({
+export const ActivityTimelineView: React.FC<ActivityTimelineViewProps> = ({
   user,
   date,
   attendance,

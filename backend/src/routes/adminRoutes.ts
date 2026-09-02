@@ -19,7 +19,7 @@ import {
   updateSettings,
   addOfflineTimeAdmin,
   deleteOfflineTimeAdmin,
-  getScrinReports,
+  getDetailedReports,
   wipeDatabaseData
 } from '../controllers/adminController';
 import { authenticateToken, requireAdmin } from '../middleware/auth';
@@ -32,8 +32,8 @@ router.use(authenticateToken, requireAdmin);
 // System Reset
 router.post('/system/wipe-database', wipeDatabaseData);
 
-// Scrin Reports
-router.get('/reports/scrin', getScrinReports);
+// Detailed Reports
+router.get('/reports/detailed', getDetailedReports);
 
 // Dashboard
 router.get('/dashboard', getDashboardStats);

@@ -3,7 +3,7 @@ import { api } from '../services/api';
 import { Employee, TimelineInterval } from '../types';
 import { AddEmployeeModal } from '../components/AddEmployeeModal';
 import { EditEmployeeModal } from '../components/EditEmployeeModal';
-import { ScrinTimelineView } from '../components/ScrinTimelineView';
+import { ActivityTimelineView } from '../components/ScrinTimelineView';
 import { formatHoursToTime } from '../utils/format';
 import {
   Users,
@@ -315,8 +315,8 @@ export const Employees: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Scrin.io 24h Scrubber Timeline & Screenshots */}
-                <ScrinTimelineView
+                {/* 24h Scrubber Timeline & Screenshots */}
+                <ActivityTimelineView
                   user={{
                     id: selectedEmployee.id,
                     name: selectedEmployee.name,

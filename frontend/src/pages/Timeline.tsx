@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { Employee, TimelineInterval } from '../types';
-import { ScrinTimelineView } from '../components/ScrinTimelineView';
+import { ActivityTimelineView } from '../components/ScrinTimelineView';
 import { formatHoursToTime } from '../utils/format';
 import {
   Clock,
@@ -168,8 +168,8 @@ export const Timeline: React.FC = () => {
             </div>
           </div>
 
-          {/* Scrin.io 24-Hour Interactive Timeline with Scrubber and Embedded Thumbnails */}
-          <ScrinTimelineView
+          {/* 24-Hour Interactive Timeline with Scrubber and Embedded Thumbnails */}
+          <ActivityTimelineView
             user={
               selectedEmployee || {
                 id: selectedUserId,

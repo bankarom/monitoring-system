@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { api, API_BASE_URL } from '../services/api';
 import { formatHoursToTime } from '../utils/format';
-import { ScrinTimelineView } from '../components/ScrinTimelineView';
+import { ActivityTimelineView } from '../components/ScrinTimelineView';
 import { ScreenshotModal } from '../components/ScreenshotModal';
 import { TimelineInterval, YouTubeVideoRecord } from '../types';
 import {
@@ -37,18 +37,18 @@ export const EmployeePortal: React.FC = () => {
     timestamp: string;
   } | null>(null);
 
-  const [scrinReports, setScrinReports] = useState<{ detailedRows: any[]; appsAndUrls: any[] }>({ detailedRows: [], appsAndUrls: [] });
+  const [detailedReports, setDetailedReports] = useState<{ detailedRows: any[]; appsAndUrls: any[] }>({ detailedRows: [], appsAndUrls: [] });
 
   const fetchEmployeeData = async () => {
     try {
-      const [profRes, timeRes, timelineRes, shotRes, appRes, ytRes, scrinRes] = await Promise.all([
+      const [profRes, timeRes, timelineRes, shotRes, appRes, ytRes, reportsRes] = await Promise.all([
         api.get('/employee/profile'),
         api.get('/employee/timesheet', { params: { date: selectedDate } }),
         api.get('/employee/timeline', { params: { date: selectedDate } }),
         api.get('/employee/screenshots', { params: { date: selectedDate } }),
         api.get('/employee/analytics', { params: { date: selectedDate } }),
         api.get('/employee/youtube', { params: { date: selectedDate } }),
-        api.get('/employee/reports/scrin', { params: { date: selectedDate } })
+        api.get('/employee/reports/detailed', { params: { date: selectedDate } })
       ]);
 
       setProfile(profRes.data.user);
@@ -58,9 +58,9 @@ export const EmployeePortal: React.FC = () => {
       setScreenshots(shotRes.data.screenshots || []);
       setApps(appRes.data.apps || []);
       setYoutubeVideos(ytRes.data.videos || []);
-      setScrinReports({
-        detailedRows: scrinRes.data.detailedRows || [],
-        appsAndUrls: scrinRes.data.appsAndUrls || []
+      setDetailedReports({
+        detailedRows: reportsRes.data.detailedRows || [],
+        appsAndUrls: reportsRes.data.appsAndUrls || []
       });
     } catch (err) {
       console.error('Failed to fetch employee portal data', err);
@@ -218,9 +218,9 @@ export const EmployeePortal: React.FC = () => {
 
       {/* 3. TAB PANES */}
 
-      {/* TAB 1: 24-HOUR SCRIN.IO TIMELINE */}
+      {/* TAB 1: 24-HOUR ACTIVITY TIMELINE */}
       {activeTab === 'timeline' && (
-        <ScrinTimelineView
+        <ActivityTimelineView
           user={profile || { id: '', name: 'Employee', email: '' }}
           date={selectedDate}
           attendance={attendance}
@@ -386,19 +386,19 @@ export const EmployeePortal: React.FC = () => {
         </div>
       )}
 
-      {/* SCRIN.IO DETAILED REPORT TABLE */}
+      {/* DETAILED WORK ACTIVITY LOGS TABLE */}
       <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-base font-extrabold text-slate-900">Scrin.io Detailed Activity Logs</h3>
+            <h3 className="text-base font-extrabold text-slate-900">Detailed Work Activity Logs</h3>
             <p className="text-xs text-slate-500 mt-0.5 font-medium">Granular intervals, start/stop times, and activity percentages</p>
           </div>
           <span className="text-xs font-extrabold text-slate-600 bg-slate-100 px-3 py-1 rounded-xl">
-            {scrinReports.detailedRows.length} Detailed Entries
+            {detailedReports.detailedRows.length} Detailed Entries
           </span>
         </div>
 
-        {scrinReports.detailedRows.length === 0 ? (
+        {detailedReports.detailedRows.length === 0 ? (
           <div className="p-8 text-center text-slate-400 text-xs font-medium">
             No detailed activity entries recorded for this date yet.
           </div>
@@ -418,7 +418,7 @@ export const EmployeePortal: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
-                {scrinReports.detailedRows.map((row) => (
+                {detailedReports.detailedRows.map((row) => (
                   <tr key={row.id} className="hover:bg-slate-50">
                     <td className="px-4 py-3 font-mono font-bold text-slate-700">{row.date}</td>
                     <td className="px-4 py-3 font-bold text-slate-900">{row.employeeName}</td>
