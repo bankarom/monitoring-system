@@ -10,7 +10,8 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
-    "seed": "ts-node-dev src/utils/seed.ts"
+    "seed": "ts-node-dev src/utils/seed.ts",
+    "wipe-db": "node dist/scripts/wipe.js"
   },
   "dependencies": {
     "@prisma/client": "^5.19.1",
