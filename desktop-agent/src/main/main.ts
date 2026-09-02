@@ -135,14 +135,14 @@ class AgentApplication {
     }
 
     this.mainWindow = new BrowserWindow({
-      width: 900,
-      height: 620,
+      width: 980,
+      height: 700,
       frame: false,
       show: true,
       skipTaskbar: false,
       resizable: true,
-      minWidth: 800,
-      minHeight: 550,
+      minWidth: 880,
+      minHeight: 600,
       backgroundColor: '#020617',
       webPreferences: {
         nodeIntegration: true,
@@ -346,6 +346,14 @@ class AgentApplication {
 
     ipcMain.handle('get-my-analytics', async (evt, date) => {
       return await this.syncService.getMyAnalytics(date);
+    });
+
+    ipcMain.handle('get-my-timeline', async (evt, date) => {
+      return await this.syncService.getMyTimeline(date);
+    });
+
+    ipcMain.handle('get-my-reports', async (evt, date) => {
+      return await this.syncService.getMyScrinReports(date);
     });
 
     ipcMain.handle('open-web-portal', () => {

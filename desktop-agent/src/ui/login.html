@@ -68,80 +68,133 @@
 
     <!-- 2. SCRIN.IO-STYLE MAIN TRACKER VIEW -->
     <div id="agentDashboardView" class="view-panel hidden">
-      <!-- TOP USER BAR -->
-      <div class="top-user-bar">
+      <!-- TOP USER BAR WITH TAB NAVIGATION -->
+      <div class="top-user-bar" style="border-b: 1px solid #e2e8f0; padding-bottom: 8px;">
         <div class="user-greeting">
           <span class="user-status-dot" id="headerStatusDot"></span>
           <span class="user-name" id="userName">om</span>
         </div>
+
+        <!-- DESKTOP WORKSPACE TABS -->
+        <div class="desktop-nav-tabs" style="display: flex; align-items: center; gap: 4px; background: #f1f5f9; padding: 4px; border-radius: 12px;">
+          <button class="nav-tab active" data-tab="tabTracker" style="padding: 6px 12px; font-size: 11px; font-weight: 800; border-radius: 8px; border: none; background: #0f172a; color: white; cursor: pointer;">⚡ Tracker</button>
+          <button class="nav-tab" data-tab="tabTimeline" style="padding: 6px 12px; font-size: 11px; font-weight: 700; border-radius: 8px; border: none; background: transparent; color: #475569; cursor: pointer;">📊 Timeline</button>
+          <button class="nav-tab" data-tab="tabScreenshots" style="padding: 6px 12px; font-size: 11px; font-weight: 700; border-radius: 8px; border: none; background: transparent; color: #475569; cursor: pointer;">📸 Shots</button>
+          <button class="nav-tab" data-tab="tabApps" style="padding: 6px 12px; font-size: 11px; font-weight: 700; border-radius: 8px; border: none; background: transparent; color: #475569; cursor: pointer;">🍩 Apps</button>
+          <button class="nav-tab" data-tab="tabLogs" style="padding: 6px 12px; font-size: 11px; font-weight: 700; border-radius: 8px; border: none; background: transparent; color: #475569; cursor: pointer;">📋 Logs</button>
+        </div>
+
         <div class="top-actions">
-          <button id="btnOpenScreenshots" class="icon-action-btn" title="Screenshots Gallery">
-            📸
-          </button>
-          <button id="btnOpenSettings" class="icon-action-btn" title="Settings">
-            ⚙️
-          </button>
-          <button id="btnClockOut" class="icon-action-btn danger" title="Clock Out & Exit">
-            ⏹️
-          </button>
+          <button id="btnOpenSettings" class="icon-action-btn" title="Settings">⚙️</button>
+          <button id="btnClockOut" class="icon-action-btn danger" title="Clock Out & Exit">⏹️</button>
         </div>
       </div>
 
-      <!-- TASK INPUT & PLAY / STOP CONTROLS -->
-      <div class="task-tracker-bar">
-        <div class="task-input-wrapper">
-          <input
-            type="text"
-            id="taskInput"
-            placeholder="What are you working on? (e.g. vs code)"
-            value="vs code"
-          />
-        </div>
-
-        <div class="control-buttons">
-          <button id="btnPlay" class="btn-play" title="Start Tracking">
-            <svg viewBox="0 0 24 24" fill="currentColor">
-              <path d="M8 5v14l11-7z"/>
-            </svg>
-          </button>
-          <button id="btnStop" class="btn-stop hidden" title="Stop / Pause Tracking">
-            <svg viewBox="0 0 24 24" fill="currentColor">
-              <rect x="6" y="6" width="12" height="12" rx="2"/>
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      <!-- QUICK CATEGORY TAGS -->
-      <div class="quick-category-pills">
-        <button class="cat-pill active" data-cat="WORK">💼 Work</button>
-        <button class="cat-pill" data-cat="BROWSING">🌐 Browsing</button>
-        <button class="cat-pill" data-cat="COMMUNICATION">💬 Meeting</button>
-        <button class="cat-pill" data-cat="ENTERTAINMENT">🎬 Media</button>
-        <button class="cat-pill" data-cat="IDLE">☕ Break</button>
-      </div>
-
-      <!-- TODAY TIMING DISPLAY -->
-      <div class="today-section">
-        <div class="today-header">
-          <span class="today-label">TODAY</span>
-        </div>
-        <div class="today-timer-row">
-          <div class="digital-timer" id="todayTimer">0:00</div>
-          <button id="btnViewOnline" class="link-view-online">view online ↗</button>
-        </div>
-      </div>
-
-      <!-- TODAY'S TASK BREAKDOWN LIST -->
-      <div class="tasks-history-section">
-        <div class="history-list" id="taskList">
-          <div class="task-item active-task" id="currentTaskItem">
-            <div class="task-name-info">
-              <span class="task-bullet"></span>
-              <span class="task-title" id="displayTaskTitle">vs code</span>
-            </div>
-            <span class="task-duration" id="displayTaskDuration">0h 00m</span>
+      <!-- TAB 1: LIVE TRACKER -->
+      <div id="tabTracker" class="tab-panel">
+        <!-- TASK INPUT & PLAY / STOP CONTROLS -->
+        <div class="task-tracker-bar">
+          <div class="task-input-wrapper">
+            <input
+              type="text"
+              id="taskInput"
+              placeholder="What are you working on? (e.g. vs code)"
+              value="vs code"
+            />
           </div>
+
+          <div class="control-buttons">
+            <button id="btnPlay" class="btn-play" title="Start Tracking">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M8 5v14l11-7z"/>
+              </svg>
+            </button>
+            <button id="btnStop" class="btn-stop hidden" title="Stop / Pause Tracking">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <rect x="6" y="6" width="12" height="12" rx="2"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- QUICK CATEGORY TAGS -->
+        <div class="quick-category-pills">
+          <button class="cat-pill active" data-cat="WORK">💼 Work</button>
+          <button class="cat-pill" data-cat="BROWSING">🌐 Browsing</button>
+          <button class="cat-pill" data-cat="COMMUNICATION">💬 Meeting</button>
+          <button class="cat-pill" data-cat="ENTERTAINMENT">🎬 Media</button>
+          <button class="cat-pill" data-cat="IDLE">☕ Break</button>
+        </div>
+
+        <!-- TODAY TIMING DISPLAY -->
+        <div class="today-section">
+          <div class="today-header">
+            <span class="today-label">TODAY LIVE TIMER</span>
+          </div>
+          <div class="today-timer-row">
+            <div class="digital-timer" id="todayTimer">0:00</div>
+          </div>
+        </div>
+
+        <!-- TODAY'S TASK BREAKDOWN LIST -->
+        <div class="tasks-history-section">
+          <div class="history-list" id="taskList">
+            <div class="task-item active-task" id="currentTaskItem">
+              <div class="task-name-info">
+                <span class="task-bullet"></span>
+                <span class="task-title" id="displayTaskTitle">vs code</span>
+              </div>
+              <span class="task-duration" id="displayTaskDuration">0h 00m</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: 24-HOUR TIMELINE & PAST DATES -->
+      <div id="tabTimeline" class="tab-panel hidden" style="padding: 12px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+          <h4 style="font-size: 13px; font-weight: 900; color: #0f172a; margin: 0;">24-Hour Scrin Activity Timeline</h4>
+          <input type="date" id="timelineDatePicker" style="padding: 4px 8px; font-size: 11px; font-weight: 700; border-radius: 8px; border: 1px solid #cbd5e1; background: white;">
+        </div>
+
+        <div id="desktopTimelineContainer" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; text-align: center; color: #64748b; font-size: 12px;">
+          Loading 24-hour timeline...
+        </div>
+      </div>
+
+      <!-- TAB 3: SCREENSHOTS GALLERY -->
+      <div id="tabScreenshots" class="tab-panel hidden" style="padding: 12px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+          <h4 style="font-size: 13px; font-weight: 900; color: #0f172a; margin: 0;">Screenshots Gallery</h4>
+          <input type="date" id="shotsDatePicker" style="padding: 4px 8px; font-size: 11px; font-weight: 700; border-radius: 8px; border: 1px solid #cbd5e1; background: white;">
+        </div>
+
+        <div id="desktopShotsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; max-height: 420px; overflow-y: auto;">
+          <p style="color: #94a3b8; font-size: 12px;">Loading screenshots...</p>
+        </div>
+      </div>
+
+      <!-- TAB 4: APPS & URLS ANALYTICS -->
+      <div id="tabApps" class="tab-panel hidden" style="padding: 12px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+          <h4 style="font-size: 13px; font-weight: 900; color: #0f172a; margin: 0;">Software Usage & Analytics</h4>
+          <input type="date" id="appsDatePicker" style="padding: 4px 8px; font-size: 11px; font-weight: 700; border-radius: 8px; border: 1px solid #cbd5e1; background: white;">
+        </div>
+
+        <div id="desktopAppsContainer" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; max-height: 420px; overflow-y: auto;">
+          Loading app analytics...
+        </div>
+      </div>
+
+      <!-- TAB 5: DETAILED SESSION LOGS -->
+      <div id="tabLogs" class="tab-panel hidden" style="padding: 12px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+          <h4 style="font-size: 13px; font-weight: 900; color: #0f172a; margin: 0;">Detailed Session Logs</h4>
+          <input type="date" id="logsDatePicker" style="padding: 4px 8px; font-size: 11px; font-weight: 700; border-radius: 8px; border: 1px solid #cbd5e1; background: white;">
+        </div>
+
+        <div id="desktopLogsContainer" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; max-height: 420px; overflow-y: auto;">
+          Loading detailed session logs...
         </div>
       </div>
 

@@ -1,9 +1,223 @@
-const { ipcRenderer } = require('electron');
+// Desktop Workspace Nav Tabs
+const navTabs = document.querySelectorAll('.nav-tab');
+const tabPanels = document.querySelectorAll('.tab-panel');
 
-// Views
-const loginView = document.getElementById('loginView');
-const agentDashboardView = document.getElementById('agentDashboardView');
-const loginForm = document.getElementById('loginForm');
+navTabs.forEach((tab) => {
+  tab.addEventListener('click', async () => {
+    navTabs.forEach((t) => {
+      t.classList.remove('active');
+      t.style.background = 'transparent';
+      t.style.color = '#475569';
+    });
+    tab.classList.add('active');
+    tab.style.background = '#0f172a';
+    tab.style.color = 'white';
+
+    const targetTabId = tab.getAttribute('data-tab');
+    tabPanels.forEach((p) => p.classList.add('hidden'));
+
+    const targetPanel = document.getElementById(targetTabId);
+    if (targetPanel) targetPanel.classList.remove('hidden');
+
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    if (targetTabId === 'tabTimeline') {
+      const picker = document.getElementById('timelineDatePicker');
+      if (picker && !picker.value) picker.value = todayStr;
+      await loadDesktopTimeline(picker ? picker.value : todayStr);
+    } else if (targetTabId === 'tabScreenshots') {
+      const picker = document.getElementById('shotsDatePicker');
+      if (picker && !picker.value) picker.value = todayStr;
+      await loadDesktopScreenshots(picker ? picker.value : todayStr);
+    } else if (targetTabId === 'tabApps') {
+      const picker = document.getElementById('appsDatePicker');
+      if (picker && !picker.value) picker.value = todayStr;
+      await loadDesktopApps(picker ? picker.value : todayStr);
+    } else if (targetTabId === 'tabLogs') {
+      const picker = document.getElementById('logsDatePicker');
+      if (picker && !picker.value) picker.value = todayStr;
+      await loadDesktopLogs(picker ? picker.value : todayStr);
+    }
+  });
+});
+
+// Date picker listeners for native desktop views
+const timelineDatePicker = document.getElementById('timelineDatePicker');
+if (timelineDatePicker) {
+  timelineDatePicker.value = new Date().toISOString().split('T')[0];
+  timelineDatePicker.addEventListener('change', (e) => loadDesktopTimeline(e.target.value));
+}
+
+const shotsDatePicker = document.getElementById('shotsDatePicker');
+if (shotsDatePicker) {
+  shotsDatePicker.value = new Date().toISOString().split('T')[0];
+  shotsDatePicker.addEventListener('change', (e) => loadDesktopScreenshots(e.target.value));
+}
+
+const appsDatePicker = document.getElementById('appsDatePicker');
+if (appsDatePicker) {
+  appsDatePicker.value = new Date().toISOString().split('T')[0];
+  appsDatePicker.addEventListener('change', (e) => loadDesktopApps(e.target.value));
+}
+
+const logsDatePicker = document.getElementById('logsDatePicker');
+if (logsDatePicker) {
+  logsDatePicker.value = new Date().toISOString().split('T')[0];
+  logsDatePicker.addEventListener('change', (e) => loadDesktopLogs(e.target.value));
+}
+
+// 1. Load Desktop Timeline Bar & Summary
+async function loadDesktopTimeline(dateStr) {
+  const container = document.getElementById('desktopTimelineContainer');
+  if (!container) return;
+  container.innerHTML = '<p style="color: #64748b; font-size: 11px;">Loading timeline for ' + dateStr + '...</p>';
+
+  try {
+    const data = await ipcRenderer.invoke('get-my-timeline', dateStr);
+    if (!data || !data.intervals || data.intervals.length === 0) {
+      container.innerHTML = '<div style="padding: 20px; color: #64748b; font-size: 12px;"><p>No telemetry recorded for ' + dateStr + '.</p></div>';
+      return;
+    }
+
+    const activeMins = Math.round((data.attendance?.totalActiveSeconds || 0) / 60);
+    const idleMins = Math.round((data.attendance?.totalIdleSeconds || 0) / 60);
+    const activeHrs = (activeMins / 60).toFixed(1);
+
+    container.innerHTML = `
+      <div style="text-align: left; font-size: 12px; font-weight: 700; color: #0f172a; margin-bottom: 12px;">
+        <span>Active Work: ${activeHrs}h (${activeMins} mins)</span> • <span style="color: #d97706;">Break/Idle: ${idleMins} mins</span>
+      </div>
+      <div style="display: flex; gap: 2px; background: #f8fafc; padding: 6px; border-radius: 8px; overflow-x: auto;">
+        ${Array.from({ length: 24 }, (_, h) => {
+          const count = data.intervals.filter((inv) => new Date(inv.startTime).getHours() === h).length;
+          const bg = count > 0 ? '#10b981' : '#e2e8f0';
+          const label = h === 0 ? '12a' : h < 12 ? `${h}a` : h === 12 ? '12p' : `${h - 12}p`;
+          return `
+            <div style="flex: 1; min-width: 14px; text-align: center; font-size: 8px; font-weight: 700; color: #64748b;">
+              <div>${label}</div>
+              <div style="height: 24px; background: ${bg}; border-radius: 4px; margin-top: 2px;"></div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  } catch (e) {
+    container.innerHTML = '<p style="color: #ef4444; font-size: 11px;">Failed to load timeline.</p>';
+  }
+}
+
+// 2. Load Desktop Screenshots Grid
+async function loadDesktopScreenshots(dateStr) {
+  const container = document.getElementById('desktopShotsGrid');
+  if (!container) return;
+  container.innerHTML = '<p style="color: #64748b; font-size: 11px;">Loading screenshots for ' + dateStr + '...</p>';
+
+  try {
+    const list = await ipcRenderer.invoke('get-my-screenshots', dateStr);
+    if (!list || list.length === 0) {
+      container.innerHTML = '<div style="padding: 20px; color: #64748b; font-size: 12px; grid-column: 1 / -1;"><p>No screenshots recorded for ' + dateStr + '.</p></div>';
+      return;
+    }
+
+    container.innerHTML = list.map((s) => `
+      <div style="position: relative; border-radius: 10px; overflow: hidden; border: 1px solid #cbd5e1; background: #0f172a;">
+        <img src="${s.filePath}" alt="${s.appName || 'Screen'}" style="width: 100%; height: 110px; object-fit: cover;">
+        <div style="padding: 6px; background: rgba(15,23,42,0.9); color: white;">
+          <p style="font-size: 10px; font-weight: 700; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${s.taskName || s.appName || 'Screen'}</p>
+          <span style="font-size: 9px; color: #38bdf8; font-family: monospace;">${new Date(s.takenAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+        </div>
+      </div>
+    `).join('');
+  } catch (e) {
+    container.innerHTML = '<p style="color: #ef4444; font-size: 11px;">Failed to load screenshots.</p>';
+  }
+}
+
+// 3. Load Desktop App Analytics
+async function loadDesktopApps(dateStr) {
+  const container = document.getElementById('desktopAppsContainer');
+  if (!container) return;
+  container.innerHTML = '<p style="color: #64748b; font-size: 11px;">Loading app analytics for ' + dateStr + '...</p>';
+
+  try {
+    const data = await ipcRenderer.invoke('get-my-analytics', dateStr);
+    const apps = data?.apps || [];
+    if (apps.length === 0) {
+      container.innerHTML = '<div style="padding: 20px; color: #64748b; font-size: 12px;"><p>No application telemetry logged for ' + dateStr + '.</p></div>';
+      return;
+    }
+
+    container.innerHTML = `
+      <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 11px; color: #334155;">
+        <thead>
+          <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; font-weight: 800; color: #475569;">
+            <th style="padding: 8px;">Software / App</th>
+            <th style="padding: 8px;">Category</th>
+            <th style="padding: 8px;">Active Time</th>
+            <th style="padding: 8px;">Share %</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${apps.map((a) => `
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 8px; font-weight: 700; color: #0f172a;">${a.appName}</td>
+              <td style="padding: 8px;"><span style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 10px;">${a.category}</span></td>
+              <td style="padding: 8px; font-weight: 800; color: #0f172a;">${Math.round(a.totalHours * 60)} mins</td>
+              <td style="padding: 8px; font-weight: 700; color: #0284c7;">${a.percentage}%</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  } catch (e) {
+    container.innerHTML = '<p style="color: #ef4444; font-size: 11px;">Failed to load app analytics.</p>';
+  }
+}
+
+// 4. Load Desktop Session Logs
+async function loadDesktopLogs(dateStr) {
+  const container = document.getElementById('desktopLogsContainer');
+  if (!container) return;
+  container.innerHTML = '<p style="color: #64748b; font-size: 11px;">Loading detailed session logs for ' + dateStr + '...</p>';
+
+  try {
+    const data = await ipcRenderer.invoke('get-my-reports', dateStr);
+    const rows = data?.detailedRows || [];
+    if (rows.length === 0) {
+      container.innerHTML = '<div style="padding: 20px; color: #64748b; font-size: 12px;"><p>No detailed session logs for ' + dateStr + '.</p></div>';
+      return;
+    }
+
+    container.innerHTML = `
+      <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 11px; color: #334155;">
+        <thead>
+          <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; font-weight: 800; color: #475569;">
+            <th style="padding: 8px;">Date</th>
+            <th style="padding: 8px;">Task / Note</th>
+            <th style="padding: 8px;">From</th>
+            <th style="padding: 8px;">To</th>
+            <th style="padding: 8px;">Duration</th>
+            <th style="padding: 8px;">Activity %</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map((r) => `
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 8px; font-family: monospace; font-weight: 700;">${r.date}</td>
+              <td style="padding: 8px; font-weight: 700; color: #0284c7;">${r.note}</td>
+              <td style="padding: 8px; font-family: monospace;">${r.from}</td>
+              <td style="padding: 8px; font-family: monospace;">${r.to}</td>
+              <td style="padding: 8px; font-weight: 800;">${r.durationMinutes}m</td>
+              <td style="padding: 8px;"><span style="background: ${r.activityPercent > 70 ? '#dcfce7' : '#fef3c7'}; color: ${r.activityPercent > 70 ? '#166534' : '#92400e'}; padding: 2px 6px; border-radius: 999px; font-weight: 800; font-size: 10px;">${r.activityPercent}%</span></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  } catch (e) {
+    container.innerHTML = '<p style="color: #ef4444; font-size: 11px;">Failed to load session logs.</p>';
+  }
+}
 
 // Login Elements
 const serverUrlInput = document.getElementById('serverUrl');

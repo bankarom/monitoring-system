@@ -203,4 +203,30 @@ export class SyncService {
       }
     }
   }
+
+  public async getMyTimeline(dateStr?: string) {
+    if (!this.token) return null;
+    try {
+      const res = await axios.get(`${this.serverUrl}/api/employee/timeline`, {
+        params: { date: dateStr },
+        headers: { Authorization: `Bearer ${this.token}` }
+      });
+      return res.data;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  public async getMyScrinReports(dateStr?: string) {
+    if (!this.token) return null;
+    try {
+      const res = await axios.get(`${this.serverUrl}/api/employee/reports/scrin`, {
+        params: { date: dateStr },
+        headers: { Authorization: `Bearer ${this.token}` }
+      });
+      return res.data;
+    } catch (e) {
+      return null;
+    }
+  }
 }
