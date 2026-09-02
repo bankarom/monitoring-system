@@ -152,18 +152,21 @@ class AgentApplication {
     this.mainWindow = new BrowserWindow({
       width: 980,
       height: 700,
-      frame: false,
+      frame: true,
       show: true,
       skipTaskbar: false,
       resizable: true,
       minWidth: 880,
       minHeight: 600,
-      backgroundColor: '#020617',
+      backgroundColor: '#ffffff',
+      title: 'Improx Monitoring Agent',
       webPreferences: {
         nodeIntegration: true,
         contextIsolation: false
       }
     });
+
+    this.mainWindow.setSkipTaskbar(false);
 
     const possiblePaths = [
       path.join(__dirname, '../ui/login.html'),

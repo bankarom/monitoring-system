@@ -22,16 +22,9 @@ body {
   border: 1px solid #e2e8f0;
 }
 
-/* TITLEBAR */
+/* TITLEBAR (Using native OS title bar) */
 .titlebar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 36px;
-  padding: 0 10px;
-  background: #ffffff;
-  border-bottom: 1px solid #f1f5f9;
-  -webkit-app-region: drag;
+  display: none !important;
 }
 
 .brand-title {

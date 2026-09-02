@@ -541,8 +541,8 @@ loginForm.addEventListener('submit', async (e) => {
       successBox.textContent = '✅ Login successful!';
       successBox.classList.remove('hidden');
       setTimeout(() => {
-        showDashboardView({ user: res.user, isTracking: true, isPaused: false });
-      }, 500);
+        showDashboardView({ user: res.user, isTracking: false, isPaused: false });
+      }, 300);
     } else {
       errorBox.textContent = res.message || 'Login failed. Please check your credentials.';
       errorBox.classList.remove('hidden');
