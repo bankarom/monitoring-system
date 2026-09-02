@@ -345,7 +345,7 @@ class AgentApplication {
 
   private setupIpcHandlers() {
     ipcMain.on('window-minimize', () => {
-      if (this.mainWindow) this.mainWindow.hide();
+      if (this.mainWindow) this.mainWindow.minimize();
     });
 
     ipcMain.on('window-close', () => {
