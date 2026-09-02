@@ -59,26 +59,30 @@ body {
 .window-controls {
   display: flex;
   align-items: center;
-  -webkit-app-region: no-drag;
+  -webkit-app-region: no-drag !important;
+  z-index: 999999;
 }
 
 .control-btn {
   background: transparent;
   border: none;
-  color: #94a3b8;
-  width: 28px;
-  height: 28px;
-  cursor: pointer;
+  color: #64748b;
+  width: 36px;
+  height: 36px;
+  cursor: pointer !important;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
-  transition: all 0.15s;
+  font-size: 14px;
+  font-weight: 900;
+  border-radius: 6px;
+  -webkit-app-region: no-drag !important;
+  transition: all 0.15s ease;
 }
 
 .control-btn:hover {
   background: #f1f5f9;
-  color: #334155;
+  color: #0f172a;
 }
 
 .control-btn.close:hover {

@@ -302,8 +302,21 @@ let totalActiveSec = 0;
 let timerTicker = null;
 
 // Window controls
-btnMinimize.addEventListener('click', () => ipcRenderer.send('window-minimize'));
-btnClose.addEventListener('click', () => ipcRenderer.send('window-close'));
+if (btnMinimize) {
+  btnMinimize.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    ipcRenderer.send('window-minimize');
+  });
+}
+
+if (btnClose) {
+  btnClose.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    ipcRenderer.send('window-close');
+  });
+}
 
 // Category pills selection
 catPills.forEach((pill) => {
