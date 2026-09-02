@@ -240,24 +240,28 @@ btnSaveSettings.addEventListener('click', async () => {
   settingsModal.classList.add('hidden');
 });
 
-// Screenshots Quick Viewer
-btnOpenScreenshots.addEventListener('click', async () => {
-  screenshotsModal.classList.remove('hidden');
-  agentScreenshotsGrid.innerHTML = '<p class="loading-text">Loading screenshots...</p>';
+// Screenshots Quick Viewer & Past Date Picker
+const agentDateInput = document.getElementById('agentDateInput');
+if (agentDateInput) {
+  agentDateInput.value = new Date().toISOString().split('T')[0];
+}
+
+async function loadAgentScreenshotsForDate(dateStr) {
+  agentScreenshotsGrid.innerHTML = '<p class="loading-text">Loading screenshots for ' + dateStr + '...</p>';
   try {
-    const list = await ipcRenderer.invoke('get-my-screenshots');
+    const list = await ipcRenderer.invoke('get-my-screenshots', dateStr);
     if (!list || list.length === 0) {
-      agentScreenshotsGrid.innerHTML = '<p class="empty-text">No screenshots taken today yet.</p>';
+      agentScreenshotsGrid.innerHTML = '<div style="text-align: center; padding: 20px; color: #64748b; font-size: 12px; font-weight: 600;"><p>No screenshots recorded for ' + dateStr + '.</p><p style="font-size: 10px; color: #94a3b8; margin-top: 4px;">Use the date selector above to inspect yesterday or other previous dates.</p></div>';
       return;
     }
     agentScreenshotsGrid.innerHTML = list
       .map(
         (s) => `
-      <div class="shot-thumb-card">
-        <img src="${s.filePath}" alt="${s.taskName || s.appName || 'Screen'}">
-        <div class="meta">
-          <p>${s.taskName || s.appName || 'Active Work'}</p>
-          <span>${new Date(s.takenAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+      <div class="shot-thumb-card" style="position: relative; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; background: #0f172a;">
+        <img src="${s.filePath}" alt="${s.taskName || s.appName || 'Screen'}" style="width: 100%; height: 120px; object-fit: cover;">
+        <div class="meta" style="padding: 8px; background: rgba(15, 23, 42, 0.9); color: white;">
+          <p style="font-size: 11px; font-weight: 700; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${s.taskName || s.appName || 'Active Work'}</p>
+          <span style="font-size: 10px; color: #38bdf8; font-family: monospace;">${new Date(s.takenAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
         </div>
       </div>
     `
@@ -266,7 +270,19 @@ btnOpenScreenshots.addEventListener('click', async () => {
   } catch (e) {
     agentScreenshotsGrid.innerHTML = '<p class="empty-text">Failed to load screenshots.</p>';
   }
+}
+
+btnOpenScreenshots.addEventListener('click', async () => {
+  screenshotsModal.classList.remove('hidden');
+  const targetDate = agentDateInput ? agentDateInput.value : new Date().toISOString().split('T')[0];
+  await loadAgentScreenshotsForDate(targetDate);
 });
+
+if (agentDateInput) {
+  agentDateInput.addEventListener('change', async (e) => {
+    await loadAgentScreenshotsForDate(e.target.value);
+  });
+}
 
 btnCloseShots.addEventListener('click', () => screenshotsModal.classList.add('hidden'));
 
