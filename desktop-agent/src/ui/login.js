@@ -40,6 +40,18 @@ const displayTaskTitle = document.getElementById('displayTaskTitle');
 const displayTaskDuration = document.getElementById('displayTaskDuration');
 const taskList = document.getElementById('taskList');
 
+const btnLogOutForToday = document.getElementById('btnLogOutForToday');
+
+if (btnLogOutForToday) {
+  btnLogOutForToday.addEventListener('click', async () => {
+    if (confirm('Are you sure you want to log out for today? This will stop tracking and record your clock-out.')) {
+      await ipcRenderer.invoke('clock-out');
+      agentDashboardView.classList.add('hidden');
+      loginView.classList.remove('hidden');
+    }
+  });
+}
+
 // Status Footer
 const footerStatusDot = document.getElementById('footerStatusDot');
 const footerStatusText = document.getElementById('footerStatusText');

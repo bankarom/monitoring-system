@@ -442,8 +442,7 @@ class AgentApplication {
         }
 
         this.saveConfig();
-        this.startTracking();
-
+        // Standby mode: tracking starts manually when user presses Play/Start
         this.notifyUIState();
         return { success: true, user: data.user };
       } catch (err: any) {
@@ -465,6 +464,17 @@ class AgentApplication {
       const sample = await this.tracker.getSample();
       this.lastSample = sample;
 
+      const lowerTask = (this.currentTask || '').toLowerCase();
+      const isMeetingOrProductiveTask =
+        this.taskCategory === 'COMMUNICATION' ||
+        lowerTask.includes('meeting') ||
+        lowerTask.includes('call') ||
+        lowerTask.includes('discussion') ||
+        lowerTask.includes('client') ||
+        lowerTask.includes('paperwork');
+
+      const effectiveIdle = this.isPaused ? true : (isMeetingOrProductiveTask ? false : sample.isIdle);
+
       const logItem = {
         appName: sample.appName,
         processName: sample.processName,
@@ -476,13 +486,13 @@ class AgentApplication {
         durationSeconds: this.sampleDurationSeconds,
         mouseClicks: sample.clicks,
         keystrokes: sample.keys,
-        isIdle: this.isPaused ? true : sample.isIdle,
+        isIdle: effectiveIdle,
         recordedAt: new Date().toISOString()
       };
 
       const clicksPerMin = this.isPaused ? 0 : Math.round((sample.clicks / this.sampleDurationSeconds) * 60);
       const keysPerMin = this.isPaused ? 0 : Math.round((sample.keys / this.sampleDurationSeconds) * 60);
-      const currentStatus = this.isPaused ? 'PAUSED' : (sample.isIdle ? 'IDLE' : 'ONLINE');
+      const currentStatus = this.isPaused ? 'PAUSED' : (effectiveIdle ? 'IDLE' : 'ONLINE');
 
       console.log(`📡 [20s Telemetry] Task: ${this.currentTask} | App: ${sample.appName} | Status: ${currentStatus}`);
 
