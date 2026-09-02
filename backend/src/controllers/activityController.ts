@@ -12,6 +12,9 @@ export interface ActivityBatchItem {
   windowTitle?: string;
   domain?: string;
   url?: string;
+  taskName?: string;
+  comment?: string;
+  category?: 'WORK' | 'BROWSING' | 'COMMUNICATION' | 'ENTERTAINMENT' | 'IDLE' | 'OTHER';
   durationSeconds: number;
   mouseClicks: number;
   keystrokes: number;
@@ -26,12 +29,13 @@ export async function uploadActivityBatch(req: AuthenticatedRequest, res: Respon
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
 
-    const { activities, currentStatus, isPaused, pauseReason, pauseComment, clicksPerMinute, keysPerMinute } = req.body as {
+    const { activities, currentStatus, isPaused, pauseReason, pauseComment, taskName, clicksPerMinute, keysPerMinute } = req.body as {
       activities: ActivityBatchItem[];
       currentStatus?: 'ONLINE' | 'IDLE' | 'PAUSED';
       isPaused?: boolean;
       pauseReason?: string;
       pauseComment?: string;
+      taskName?: string;
       clicksPerMinute?: number;
       keysPerMinute?: number;
     };
@@ -48,11 +52,13 @@ export async function uploadActivityBatch(req: AuthenticatedRequest, res: Respon
     let batchPauseSeconds = 0;
 
     const createRecords = activities.map((item) => {
+      const activeTask = item.taskName || taskName || (isPaused ? (pauseReason || 'Break') : 'Active Task');
       const { friendlyName, category } = resolveAppInfo(
         item.processName || item.appName,
         item.windowTitle,
         item.domain,
-        item.isIdle
+        item.isIdle,
+        item.category
       );
 
       const duration = item.durationSeconds || 5;
@@ -71,6 +77,8 @@ export async function uploadActivityBatch(req: AuthenticatedRequest, res: Respon
         windowTitle: item.windowTitle || '',
         domain: item.domain || null,
         url: item.url || null,
+        taskName: activeTask,
+        comment: item.comment || pauseComment || null,
         category,
         durationSeconds: duration,
         mouseClicks: item.mouseClicks || 0,
@@ -89,10 +97,12 @@ export async function uploadActivityBatch(req: AuthenticatedRequest, res: Respon
       latestItem.processName || latestItem.appName,
       latestItem.windowTitle,
       latestItem.domain,
-      latestItem.isIdle
+      latestItem.isIdle,
+      latestItem.category
     );
 
     const userStatus = isPaused ? 'PAUSED' : (currentStatus || (latestItem.isIdle ? 'IDLE' : 'ONLINE'));
+    const activeCurrentTask = taskName || latestItem.taskName || (isPaused ? (pauseReason || 'Break') : 'Active Task');
 
     await prisma.user.update({
       where: { id: userId },
@@ -100,6 +110,7 @@ export async function uploadActivityBatch(req: AuthenticatedRequest, res: Respon
         status: userStatus,
         pauseReason: isPaused ? (pauseReason || 'Break') : null,
         pauseComment: isPaused ? (pauseComment || null) : null,
+        currentTask: activeCurrentTask,
         lastActiveAt: now,
         currentApp: resolvedLatest.friendlyName,
         currentTitle: latestItem.windowTitle || null,
@@ -149,6 +160,7 @@ export async function uploadActivityBatch(req: AuthenticatedRequest, res: Respon
       status: userStatus,
       pauseReason: isPaused ? (pauseReason || 'Break') : null,
       pauseComment: isPaused ? (pauseComment || null) : null,
+      currentTask: activeCurrentTask,
       currentApp: resolvedLatest.friendlyName,
       currentTitle: latestItem.windowTitle,
       currentDomain: latestItem.domain,
@@ -185,6 +197,7 @@ export async function clockOutHandler(req: AuthenticatedRequest, res: Response) 
         status: 'OFFLINE',
         pauseReason: null,
         pauseComment: null,
+        currentTask: null,
         currentApp: null,
         currentTitle: null,
         currentDomain: null
@@ -221,7 +234,7 @@ export async function uploadScreenshotHandler(req: AuthenticatedRequest, res: Re
       return res.status(400).json({ success: false, message: 'No screenshot file received' });
     }
 
-    const { displayIndex, appName, windowTitle, isIdle, takenAt } = req.body;
+    const { displayIndex, appName, windowTitle, taskName, isIdle, takenAt } = req.body;
     const now = takenAt ? new Date(takenAt) : new Date();
 
     const relativePath = path.relative(config.uploadDir, req.file.path).replace(/\\/g, '/');
@@ -235,6 +248,7 @@ export async function uploadScreenshotHandler(req: AuthenticatedRequest, res: Re
         displayIndex: displayIndex ? parseInt(displayIndex, 10) : 0,
         appName: appName || null,
         windowTitle: windowTitle || null,
+        taskName: taskName || null,
         isIdle: isIdle === 'true' || isIdle === true,
         takenAt: now
       }
@@ -245,6 +259,7 @@ export async function uploadScreenshotHandler(req: AuthenticatedRequest, res: Re
       filePath: screenshotUrl,
       appName: screenshot.appName,
       windowTitle: screenshot.windowTitle,
+      taskName: screenshot.taskName,
       isIdle: screenshot.isIdle,
       takenAt: screenshot.takenAt
     });

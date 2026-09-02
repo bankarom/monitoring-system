@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, powerMonitor } from 'electron';
+import { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, powerMonitor, shell } from 'electron';
 import path from 'path';
 import fs from 'fs';
 import { OfflineQueue } from '../storage/offlineQueue';
@@ -18,6 +18,17 @@ class AgentApplication {
   private currentUser: any = null;
   private serverUrl = 'http://200.141.2.53';
   private configFilePath: string;
+
+  private currentTask = 'vs code';
+  private taskCategory = 'WORK';
+  private userSettings = {
+    launchAtStartup: false,
+    autoStartTracking: true,
+    trayNotifications: true,
+    minimizeToTray: true,
+    startStopShortcut: 'Ctrl+Alt+S',
+    showHideShortcut: 'Ctrl+Alt+H'
+  };
 
   private activityBuffer: any[] = [];
   private activeWindowTimer: NodeJS.Timeout | null = null;
@@ -293,11 +304,15 @@ class AgentApplication {
       this.mainWindow.webContents.send('agent-state-changed', {
         isTracking: this.isTracking,
         isPaused: this.isPaused,
+        currentTask: this.currentTask,
+        taskCategory: this.taskCategory,
         pauseReason: this.pauseReason,
         pauseComment: this.pauseComment,
         user: this.currentUser,
+        serverUrl: this.serverUrl,
         activeHoursFormatted: this.formatSeconds(this.totalActiveSeconds),
-        idleHoursFormatted: this.formatSeconds(this.totalIdleSeconds)
+        idleHoursFormatted: this.formatSeconds(this.totalIdleSeconds),
+        userSettings: this.userSettings
       });
     }
   }
@@ -333,17 +348,72 @@ class AgentApplication {
       return await this.syncService.getMyAnalytics(date);
     });
 
+    ipcMain.handle('open-web-portal', () => {
+      const targetUrl = this.serverUrl || 'http://200.141.2.53';
+      shell.openExternal(`${targetUrl}/portal`).catch(() => {});
+      return { success: true };
+    });
+
     ipcMain.handle('get-agent-state', () => {
       return {
         isTracking: this.isTracking,
         isPaused: this.isPaused,
+        currentTask: this.currentTask,
+        taskCategory: this.taskCategory,
         pauseReason: this.pauseReason,
         pauseComment: this.pauseComment,
         user: this.currentUser,
         serverUrl: this.serverUrl,
         activeHoursFormatted: this.formatSeconds(this.totalActiveSeconds),
-        idleHoursFormatted: this.formatSeconds(this.totalIdleSeconds)
+        idleHoursFormatted: this.formatSeconds(this.totalIdleSeconds),
+        userSettings: this.userSettings,
+        teamSettings: {
+          screenshotsPerHour: Math.round(60 / this.screenshotIntervalMinutes),
+          screenshotIntervalMinutes: this.screenshotIntervalMinutes,
+          autoPauseMinutes: this.idleThresholdMinutes,
+          allowOfflineTime: true,
+          trackDomains: true
+        }
       };
+    });
+
+    ipcMain.handle('start-task', (event, { taskName, category }) => {
+      this.currentTask = (taskName || 'vs code').trim();
+      this.taskCategory = category || 'WORK';
+      this.isPaused = false;
+      this.pauseReason = '';
+      this.pauseComment = '';
+      if (!this.isTracking) {
+        this.startTracking();
+      } else {
+        this.resumeTracking();
+      }
+      this.notifyUIState();
+      return { success: true, isTracking: true, currentTask: this.currentTask };
+    });
+
+    ipcMain.handle('stop-task', (event, { reason, comment } = {}) => {
+      if (reason || comment) {
+        this.pauseTracking(reason || 'Break', comment || '');
+      } else {
+        this.pauseTracking('Break', '');
+      }
+      return { success: true, isPaused: true };
+    });
+
+    ipcMain.handle('open-web-portal', () => {
+      const targetUrl = `${this.serverUrl}/portal`;
+      shell.openExternal(targetUrl).catch(() => {});
+      return { success: true };
+    });
+
+    ipcMain.handle('save-settings', (event, settings) => {
+      this.userSettings = { ...this.userSettings, ...settings };
+      if (this.userSettings.launchAtStartup !== undefined) {
+        app.setLoginItemSettings({ openAtLogin: !!this.userSettings.launchAtStartup });
+      }
+      this.saveConfig();
+      return { success: true };
     });
 
     ipcMain.handle('pause-agent', (event, { reason, comment }) => {
@@ -388,9 +458,9 @@ class AgentApplication {
     this.isPaused = false;
     this.updateTrayMenu();
     this.notifyUIState();
-    console.log('🟢 Tracking started for:', this.currentUser?.name);
+    console.log('🟢 Tracking started for:', this.currentUser?.name, 'on task:', this.currentTask);
 
-    // 1. Poll Native Tracker every 20 seconds (3 clean log entries per minute)
+    // 1. Poll Native Tracker every 20 seconds
     this.activeWindowTimer = setInterval(async () => {
       const sample = await this.tracker.getSample();
       this.lastSample = sample;
@@ -401,6 +471,8 @@ class AgentApplication {
         windowTitle: sample.windowTitle,
         domain: sample.domain,
         url: null,
+        taskName: this.currentTask,
+        category: this.taskCategory,
         durationSeconds: this.sampleDurationSeconds,
         mouseClicks: sample.clicks,
         keystrokes: sample.keys,
@@ -412,7 +484,7 @@ class AgentApplication {
       const keysPerMin = this.isPaused ? 0 : Math.round((sample.keys / this.sampleDurationSeconds) * 60);
       const currentStatus = this.isPaused ? 'PAUSED' : (sample.isIdle ? 'IDLE' : 'ONLINE');
 
-      console.log(`📡 [20s Telemetry] App: ${sample.appName} | Status: ${currentStatus} ${this.isPaused ? `(${this.pauseReason})` : ''}`);
+      console.log(`📡 [20s Telemetry] Task: ${this.currentTask} | App: ${sample.appName} | Status: ${currentStatus}`);
 
       const res = await this.syncService.sendActivityBatch(
         [logItem],
@@ -421,7 +493,8 @@ class AgentApplication {
         currentStatus,
         this.isPaused,
         this.pauseReason,
-        this.pauseComment
+        this.pauseComment,
+        this.currentTask
       );
 
       if (res.success) {
@@ -433,7 +506,7 @@ class AgentApplication {
       this.notifyUIState();
     }, this.sampleDurationSeconds * 1000);
 
-    // 2. Screenshot Capture Interval (every 10 minutes)
+    // 2. Screenshot Capture Interval
     const msInterval = this.screenshotIntervalMinutes * 60 * 1000;
     this.screenshotTimer = setInterval(async () => {
       await this.performScreenshotCapture();
@@ -461,6 +534,7 @@ class AgentApplication {
           displayIndex: screen.displayIndex,
           appName: sample.appName,
           windowTitle: sample.windowTitle,
+          taskName: this.currentTask,
           isIdle: sample.isIdle,
           takenAt: screen.takenAt
         });

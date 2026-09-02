@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { AppAnalyticsItem } from '../types';
 import { formatHoursToTime } from '../utils/format';
+import { DonutChart } from '../components/DonutChart';
 import { PieChart, RefreshCw, Layers } from 'lucide-react';
 
 export const AppAnalytics: React.FC = () => {
@@ -65,7 +66,23 @@ export const AppAnalytics: React.FC = () => {
           No application logs recorded for this date.
         </div>
       ) : (
-        <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
+        <div className="space-y-6">
+          {/* Scrin.io Donut Visualizer */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs">
+            <h3 className="text-sm font-extrabold text-slate-800 mb-2 uppercase tracking-wider">Apps & URLs Donut Chart</h3>
+            <DonutChart
+              data={apps.map((app, idx) => ({
+                name: app.appName,
+                minutes: Math.round(app.totalHours * 60),
+                percentage: app.percentage,
+                color: ['#2563eb', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#64748b'][idx % 7]
+              }))}
+              totalDurationFormatted={formatHoursToTime(apps.reduce((sum, a) => sum + a.totalHours, 0))}
+              totalPercentageFormatted={`${Math.round(apps.reduce((sum, a) => sum + a.percentage, 0))}%`}
+            />
+          </div>
+
+          <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
           <table className="w-full text-left text-xs text-slate-600">
             <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200 uppercase tracking-wider">
               <tr>
@@ -110,6 +127,7 @@ export const AppAnalytics: React.FC = () => {
             </tbody>
           </table>
         </div>
+      </div>
       )}
     </div>
   );

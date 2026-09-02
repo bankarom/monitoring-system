@@ -1,85 +1,250 @@
 const { ipcRenderer } = require('electron');
 
+// Views
 const loginView = document.getElementById('loginView');
 const agentDashboardView = document.getElementById('agentDashboardView');
 const loginForm = document.getElementById('loginForm');
 
+// Login Elements
 const serverUrlInput = document.getElementById('serverUrl');
 const emailInput = document.getElementById('email');
 const passwordInput = document.getElementById('password');
-
 const errorBox = document.getElementById('errorBox');
 const successBox = document.getElementById('successBox');
 const btnSubmit = document.getElementById('btnSubmit');
 const btnText = document.getElementById('btnText');
 const btnSpinner = document.getElementById('btnSpinner');
 
+// Window Controls
 const btnMinimize = document.getElementById('btnMinimize');
 const btnClose = document.getElementById('btnClose');
+const windowTitleText = document.getElementById('windowTitleText');
 
-const userAvatar = document.getElementById('userAvatar');
+// User & Header
 const userName = document.getElementById('userName');
-const userEmail = document.getElementById('userEmail');
-const userShift = document.getElementById('userShift');
-
-const statusBanner = document.getElementById('statusBanner');
-const statusText = document.getElementById('statusText');
-const statActive = document.getElementById('statActive');
-const statBreaks = document.getElementById('statBreaks');
-
-const btnPauseToggle = document.getElementById('btnPauseToggle');
-const btnResume = document.getElementById('btnResume');
+const headerStatusDot = document.getElementById('headerStatusDot');
+const btnOpenScreenshots = document.getElementById('btnOpenScreenshots');
+const btnOpenSettings = document.getElementById('btnOpenSettings');
 const btnClockOut = document.getElementById('btnClockOut');
 
-const reasonModal = document.getElementById('reasonModal');
-const btnCancelModal = document.getElementById('btnCancelModal');
+// Task & Controls
+const taskInput = document.getElementById('taskInput');
+const btnPlay = document.getElementById('btnPlay');
+const btnStop = document.getElementById('btnStop');
+const catPills = document.querySelectorAll('.cat-pill');
+
+// Timer & Task list
+const todayTimer = document.getElementById('todayTimer');
+const btnViewOnline = document.getElementById('btnViewOnline');
+const displayTaskTitle = document.getElementById('displayTaskTitle');
+const displayTaskDuration = document.getElementById('displayTaskDuration');
+const taskList = document.getElementById('taskList');
+
+// Status Footer
+const footerStatusDot = document.getElementById('footerStatusDot');
+const footerStatusText = document.getElementById('footerStatusText');
+const activeAppNotice = document.getElementById('activeAppNotice');
+
+// Settings Modal
+const settingsModal = document.getElementById('settingsModal');
+const btnCloseSettings = document.getElementById('btnCloseSettings');
+const btnSaveSettings = document.getElementById('btnSaveSettings');
+const btnCancelSettings = document.getElementById('btnCancelSettings');
+const chkAutoLaunch = document.getElementById('chkAutoLaunch');
+const chkAutoStart = document.getElementById('chkAutoStart');
+const chkTrayNotify = document.getElementById('chkTrayNotify');
+const chkMinimizeTray = document.getElementById('chkMinimizeTray');
+
+// Pause Modal
+const pauseModal = document.getElementById('pauseModal');
+const btnClosePause = document.getElementById('btnClosePause');
 const btnConfirmPause = document.getElementById('btnConfirmPause');
-const pauseCommentInput = document.getElementById('pauseComment');
+const btnCancelPause = document.getElementById('btnCancelPause');
+const pauseCommentInput = document.getElementById('pauseCommentInput');
 
-const btnRefreshScreenshots = document.getElementById('btnRefreshScreenshots');
-const btnRefreshApps = document.getElementById('btnRefreshApps');
-const screenshotsGrid = document.getElementById('screenshotsGrid');
-const appsTableBody = document.getElementById('appsTableBody');
+// Screenshots Modal
+const screenshotsModal = document.getElementById('screenshotsModal');
+const btnCloseShots = document.getElementById('btnCloseShots');
+const agentScreenshotsGrid = document.getElementById('agentScreenshotsGrid');
 
+// State
+let currentCategory = 'WORK';
+let isRunning = false;
+let isPaused = false;
+let currentTaskName = 'vs code';
+let totalActiveSec = 0;
+let timerTicker = null;
+
+// Window controls
 btnMinimize.addEventListener('click', () => ipcRenderer.send('window-minimize'));
 btnClose.addEventListener('click', () => ipcRenderer.send('window-close'));
 
-// TAB NAVIGATION LOGIC INSIDE DESKTOP AGENT
-const navItems = document.querySelectorAll('.nav-item');
-const tabPanes = document.querySelectorAll('.tab-pane');
-
-navItems.forEach((btn) => {
-  btn.addEventListener('click', () => {
-    navItems.forEach((n) => n.classList.remove('active'));
-    tabPanes.forEach((p) => p.classList.add('hidden'));
-
-    btn.classList.add('active');
-    const targetTab = btn.getAttribute('data-tab');
-    const pane = document.getElementById(targetTab);
-    if (pane) pane.classList.remove('hidden');
-
-    if (targetTab === 'tabScreenshots') loadScreenshots();
-    if (targetTab === 'tabApps') loadApps();
+// Category pills selection
+catPills.forEach((pill) => {
+  pill.addEventListener('click', () => {
+    catPills.forEach((p) => p.classList.remove('active'));
+    pill.classList.add('active');
+    currentCategory = pill.getAttribute('data-cat') || 'WORK';
   });
 });
 
-async function loadScreenshots() {
-  if (!screenshotsGrid) return;
-  screenshotsGrid.innerHTML = '<p class="empty-text">Fetching screenshots...</p>';
+// Format seconds to H:MM or HH:MM:SS
+function formatTimerDisplay(sec) {
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = sec % 60;
+  if (h > 0) {
+    return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  }
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+function formatHoursMins(sec) {
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  return `${h}h ${m.toString().padStart(2, '0')}m`;
+}
+
+if (btnViewOnline) {
+  btnViewOnline.addEventListener('click', async () => {
+    await ipcRenderer.invoke('open-web-portal');
+  });
+}
+
+// Play / Start button
+btnPlay.addEventListener('click', async () => {
+  const task = (taskInput.value || 'vs code').trim();
+  currentTaskName = task;
+  displayTaskTitle.textContent = task;
+
+  await ipcRenderer.invoke('start-task', { taskName: task, category: currentCategory });
+  setRunningState(true);
+});
+
+// Enter key in task input starts tracking
+taskInput.addEventListener('keydown', async (e) => {
+  if (e.key === 'Enter') {
+    const task = (taskInput.value || 'vs code').trim();
+    currentTaskName = task;
+    displayTaskTitle.textContent = task;
+    await ipcRenderer.invoke('start-task', { taskName: task, category: currentCategory });
+    setRunningState(true);
+  }
+});
+
+// Stop / Pause button
+btnStop.addEventListener('click', () => {
+  pauseModal.classList.remove('hidden');
+});
+
+// Confirm Pause / Break
+btnConfirmPause.addEventListener('click', async () => {
+  const selectedRadio = document.querySelector('input[name="breakReason"]:checked');
+  const reason = selectedRadio ? selectedRadio.value : 'Break';
+  const comment = pauseCommentInput ? pauseCommentInput.value : '';
+
+  pauseModal.classList.add('hidden');
+  await ipcRenderer.invoke('stop-task', { reason, comment });
+  setRunningState(false, true, reason);
+});
+
+btnClosePause.addEventListener('click', () => pauseModal.classList.add('hidden'));
+btnCancelPause.addEventListener('click', () => pauseModal.classList.add('hidden'));
+
+function setRunningState(running, paused = false, pauseReason = '') {
+  isRunning = running;
+  isPaused = paused;
+
+  if (running && !paused) {
+    btnPlay.classList.add('hidden');
+    btnStop.classList.remove('hidden');
+    headerStatusDot.className = 'user-status-dot online';
+    footerStatusDot.className = 'status-dot-active';
+    footerStatusText.textContent = `Tracking: ${currentTaskName}`;
+    footerStatusText.className = 'text-emerald-700 font-bold';
+    windowTitleText.textContent = `Improx - ${currentTaskName}`;
+
+    if (!timerTicker) {
+      timerTicker = setInterval(() => {
+        totalActiveSec++;
+        todayTimer.textContent = formatTimerDisplay(totalActiveSec);
+        displayTaskDuration.textContent = formatHoursMins(totalActiveSec);
+      }, 1000);
+    }
+  } else if (paused) {
+    btnPlay.classList.remove('hidden');
+    btnStop.classList.add('hidden');
+    headerStatusDot.className = 'user-status-dot paused';
+    footerStatusDot.className = 'status-dot-paused';
+    footerStatusText.textContent = `Paused (${pauseReason || 'Break'})`;
+    footerStatusText.className = 'text-amber-700 font-bold';
+    windowTitleText.textContent = `Improx - Paused (${pauseReason || 'Break'})`;
+    if (timerTicker) {
+      clearInterval(timerTicker);
+      timerTicker = null;
+    }
+  } else {
+    btnPlay.classList.remove('hidden');
+    btnStop.classList.add('hidden');
+    headerStatusDot.className = 'user-status-dot';
+    footerStatusDot.className = 'status-dot-idle';
+    footerStatusText.textContent = 'Stopped';
+    footerStatusText.className = 'text-slate-600';
+    windowTitleText.textContent = 'Improx - Stopped';
+    if (timerTicker) {
+      clearInterval(timerTicker);
+      timerTicker = null;
+    }
+  }
+}
+
+// View online button opens browser portal
+btnViewOnline.addEventListener('click', async () => {
+  await ipcRenderer.invoke('open-web-portal');
+});
+
+// Settings Dialog
+btnOpenSettings.addEventListener('click', async () => {
+  const state = await ipcRenderer.invoke('get-agent-state');
+  if (state.userSettings) {
+    chkAutoLaunch.checked = !!state.userSettings.launchAtStartup;
+    chkAutoStart.checked = state.userSettings.autoStartTracking !== false;
+    chkTrayNotify.checked = state.userSettings.trayNotifications !== false;
+    chkMinimizeTray.checked = state.userSettings.minimizeToTray !== false;
+  }
+  settingsModal.classList.remove('hidden');
+});
+
+btnCloseSettings.addEventListener('click', () => settingsModal.classList.add('hidden'));
+btnCancelSettings.addEventListener('click', () => settingsModal.classList.add('hidden'));
+
+btnSaveSettings.addEventListener('click', async () => {
+  await ipcRenderer.invoke('save-settings', {
+    launchAtStartup: chkAutoLaunch.checked,
+    autoStartTracking: chkAutoStart.checked,
+    trayNotifications: chkTrayNotify.checked,
+    minimizeToTray: chkMinimizeTray.checked
+  });
+  settingsModal.classList.add('hidden');
+});
+
+// Screenshots Quick Viewer
+btnOpenScreenshots.addEventListener('click', async () => {
+  screenshotsModal.classList.remove('hidden');
+  agentScreenshotsGrid.innerHTML = '<p class="loading-text">Loading screenshots...</p>';
   try {
     const list = await ipcRenderer.invoke('get-my-screenshots');
     if (!list || list.length === 0) {
-      screenshotsGrid.innerHTML = '<p class="empty-text">No screenshots captured today yet.</p>';
+      agentScreenshotsGrid.innerHTML = '<p class="empty-text">No screenshots taken today yet.</p>';
       return;
     }
-
-    screenshotsGrid.innerHTML = list
+    agentScreenshotsGrid.innerHTML = list
       .map(
         (s) => `
-      <div class="shot-card">
-        <img src="${s.filePath}" alt="${s.appName || 'Screen'}">
-        <div class="shot-meta">
-          <p>${s.appName || 'Desktop'}</p>
+      <div class="shot-thumb-card">
+        <img src="${s.filePath}" alt="${s.taskName || s.appName || 'Screen'}">
+        <div class="meta">
+          <p>${s.taskName || s.appName || 'Active Work'}</p>
           <span>${new Date(s.takenAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
         </div>
       </div>
@@ -87,122 +252,20 @@ async function loadScreenshots() {
       )
       .join('');
   } catch (e) {
-    screenshotsGrid.innerHTML = '<p class="empty-text">Failed to load screenshots.</p>';
-  }
-}
-
-async function loadApps() {
-  if (!appsTableBody) return;
-  appsTableBody.innerHTML = '<tr><td colspan="5" class="empty-text">Fetching app analytics...</td></tr>';
-  try {
-    const list = await ipcRenderer.invoke('get-my-analytics');
-    if (!list || list.length === 0) {
-      appsTableBody.innerHTML = '<tr><td colspan="5" class="empty-text">No software activity recorded yet.</td></tr>';
-      return;
-    }
-
-    appsTableBody.innerHTML = list
-      .map(
-        (a) => `
-      <tr>
-        <td><strong>${a.appName}</strong></td>
-        <td><span class="shift-badge">${a.category}</span></td>
-        <td><strong>${a.minutes} mins</strong></td>
-        <td>${a.clicks}</td>
-        <td>${a.keystrokes}</td>
-      </tr>
-    `
-      )
-      .join('');
-  } catch (e) {
-    appsTableBody.innerHTML = '<tr><td colspan="5" class="empty-text">Failed to load activity.</td></tr>';
-  }
-}
-
-if (btnRefreshScreenshots) btnRefreshScreenshots.addEventListener('click', loadScreenshots);
-if (btnRefreshApps) btnRefreshApps.addEventListener('click', loadApps);
-
-async function loadAgentState() {
-  const state = await ipcRenderer.invoke('get-agent-state');
-  if (state.serverUrl) serverUrlInput.value = state.serverUrl;
-
-  if (state.user) {
-    showDashboardView(state);
-  } else {
-    showLoginView();
-  }
-}
-
-function showLoginView() {
-  loginView.classList.remove('hidden');
-  agentDashboardView.classList.add('hidden');
-}
-
-function showDashboardView(state) {
-  loginView.classList.add('hidden');
-  agentDashboardView.classList.remove('hidden');
-
-  const name = state.user?.name || 'Employee';
-  userName.textContent = name;
-  userEmail.textContent = state.user?.email || '';
-  if (userShift) userShift.textContent = `Shift: ${state.user?.shift || '10:00 AM to 7:00 PM'}`;
-  userAvatar.textContent = name.charAt(0).toUpperCase();
-
-  updateUIStatus(state);
-}
-
-function updateUIStatus(state) {
-  if (statActive && state.activeHoursFormatted) statActive.textContent = state.activeHoursFormatted;
-  if (statBreaks && state.idleHoursFormatted) statBreaks.textContent = state.idleHoursFormatted;
-
-  if (state.isPaused) {
-    statusBanner.className = 'status-banner paused';
-    statusText.textContent = `🟡 Paused: ${state.pauseReason || 'Break'}`;
-    btnPauseToggle.classList.add('hidden');
-    btnResume.classList.remove('hidden');
-  } else {
-    statusBanner.className = 'status-banner active';
-    statusText.textContent = '🟢 Tracking Active';
-    btnPauseToggle.classList.remove('hidden');
-    btnResume.classList.add('hidden');
-  }
-}
-
-ipcRenderer.on('agent-state-changed', (event, state) => {
-  if (state.user) {
-    showDashboardView(state);
-  } else {
-    showLoginView();
+    agentScreenshotsGrid.innerHTML = '<p class="empty-text">Failed to load screenshots.</p>';
   }
 });
 
-btnPauseToggle.addEventListener('click', () => {
-  reasonModal.classList.remove('hidden');
-});
+btnCloseShots.addEventListener('click', () => screenshotsModal.classList.add('hidden'));
 
-btnCancelModal.addEventListener('click', () => {
-  reasonModal.classList.add('hidden');
-});
-
-btnConfirmPause.addEventListener('click', async () => {
-  const selectedRadio = document.querySelector('input[name="pauseReason"]:checked');
-  const reason = selectedRadio ? selectedRadio.value : 'Break';
-  const comment = pauseCommentInput ? pauseCommentInput.value : '';
-
-  reasonModal.classList.add('hidden');
-  await ipcRenderer.invoke('pause-agent', { reason, comment });
-});
-
-btnResume.addEventListener('click', async () => {
-  await ipcRenderer.invoke('resume-agent');
-});
-
+// Clock Out
 btnClockOut.addEventListener('click', async () => {
-  if (confirm('Are you sure you want to end today\'s work and clock out? Tracking will stop completely.')) {
+  if (confirm("Are you sure you want to end today's work and clock out? Tracking will stop.")) {
     await ipcRenderer.invoke('clock-out-agent');
   }
 });
 
+// Login Form Submit
 loginForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   errorBox.classList.add('hidden');
@@ -220,23 +283,63 @@ loginForm.addEventListener('submit', async (e) => {
     const res = await ipcRenderer.invoke('agent-login', { serverUrl, email, password });
 
     if (res.success) {
-      successBox.textContent = '✅ Login successful! Agent tracking started.';
+      successBox.textContent = '✅ Login successful!';
       successBox.classList.remove('hidden');
       setTimeout(() => {
         showDashboardView({ user: res.user, isTracking: true, isPaused: false });
-      }, 800);
+      }, 500);
     } else {
       errorBox.textContent = res.message || 'Login failed. Please check your credentials.';
       errorBox.classList.remove('hidden');
     }
   } catch (err) {
-    errorBox.textContent = 'Network or server connection failed.';
+    errorBox.textContent = 'Server connection failed.';
     errorBox.classList.remove('hidden');
   } finally {
     btnSubmit.disabled = false;
-    btnText.textContent = 'Connect & Start Tracking';
+    btnText.textContent = 'Sign In & Connect';
     btnSpinner.classList.add('hidden');
   }
 });
+
+function showLoginView() {
+  loginView.classList.remove('hidden');
+  agentDashboardView.classList.add('hidden');
+}
+
+function showDashboardView(state) {
+  loginView.classList.add('hidden');
+  agentDashboardView.classList.remove('hidden');
+
+  const name = state.user?.name || 'om';
+  userName.textContent = name;
+
+  if (state.currentTask) {
+    currentTaskName = state.currentTask;
+    taskInput.value = state.currentTask;
+    displayTaskTitle.textContent = state.currentTask;
+  }
+
+  setRunningState(state.isTracking, state.isPaused, state.pauseReason);
+}
+
+ipcRenderer.on('agent-state-changed', (event, state) => {
+  if (state.user) {
+    showDashboardView(state);
+  } else {
+    showLoginView();
+  }
+});
+
+async function loadAgentState() {
+  const state = await ipcRenderer.invoke('get-agent-state');
+  if (state.serverUrl) serverUrlInput.value = state.serverUrl;
+
+  if (state.user) {
+    showDashboardView(state);
+  } else {
+    showLoginView();
+  }
+}
 
 loadAgentState();

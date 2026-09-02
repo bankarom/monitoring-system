@@ -11,11 +11,15 @@ import {
   getActivityTimeline,
   getAppAnalytics,
   getWebAnalytics,
+  getYouTubeAnalytics,
   getTimesheets,
   deleteTimesheet,
   exportTimesheetsCSV,
   getSettings,
   updateSettings,
+  addOfflineTimeAdmin,
+  deleteOfflineTimeAdmin,
+  getScrinReports,
   wipeDatabaseData
 } from '../controllers/adminController';
 import { authenticateToken, requireAdmin } from '../middleware/auth';
@@ -27,6 +31,9 @@ router.use(authenticateToken, requireAdmin);
 
 // System Reset
 router.post('/system/wipe-database', wipeDatabaseData);
+
+// Scrin Reports
+router.get('/reports/scrin', getScrinReports);
 
 // Dashboard
 router.get('/dashboard', getDashboardStats);
@@ -50,6 +57,11 @@ router.get('/timeline', getActivityTimeline);
 // Analytics
 router.get('/analytics/apps', getAppAnalytics);
 router.get('/analytics/websites', getWebAnalytics);
+router.get('/analytics/youtube', getYouTubeAnalytics);
+
+// Offline Time Admin
+router.post('/offline-time', addOfflineTimeAdmin);
+router.delete('/offline-time/:id', deleteOfflineTimeAdmin);
 
 // Timesheets & CSV Export
 router.get('/timesheets', getTimesheets);

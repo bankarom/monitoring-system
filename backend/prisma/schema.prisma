@@ -44,6 +44,7 @@ model User {
   currentApp    String?
   currentTitle  String?
   currentDomain String?
+  currentTask   String?
   avatar        String?
   isActive      Boolean      @default(true)
   createdAt     DateTime     @default(now())
@@ -52,6 +53,7 @@ model User {
   activityLogs  ActivityLog[]
   screenshots   Screenshot[]
   attendances   Attendance[]
+  offlineTimes  OfflineTime[]
 
   @@map("users")
 }
@@ -86,6 +88,8 @@ model ActivityLog {
   windowTitle     String?
   domain          String?
   url             String?
+  taskName        String?
+  comment         String?
   category        ActivityCategory @default(WORK)
   durationSeconds Int              @default(5)
   mouseClicks     Int              @default(0)
@@ -109,6 +113,7 @@ model Screenshot {
   displayIndex Int       @default(0)
   appName      String?
   windowTitle  String?
+  taskName     String?
   isIdle       Boolean   @default(false)
   takenAt      DateTime  @default(now())
   createdAt    DateTime  @default(now())
@@ -117,6 +122,24 @@ model Screenshot {
 
   @@index([userId, takenAt])
   @@map("screenshots")
+}
+
+model OfflineTime {
+  id              String           @id @default(uuid())
+  userId          String
+  date            String           // Format: YYYY-MM-DD
+  startTime       DateTime
+  endTime         DateTime
+  durationMinutes Int
+  taskName        String
+  category        ActivityCategory @default(WORK)
+  reason          String?
+  createdAt       DateTime         @default(now())
+
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+  @@map("offline_times")
 }
 
 model SystemSetting {

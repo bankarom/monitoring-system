@@ -21,6 +21,9 @@ export interface Employee {
   department: string;
   shift: string;
   status: UserStatus;
+  pauseReason?: string | null;
+  pauseComment?: string | null;
+  currentTask?: string | null;
   lastActiveAt: string | null;
   currentApp: string | null;
   currentTitle: string | null;
@@ -39,6 +42,9 @@ export interface RealtimeEmployee {
   email: string;
   department: string;
   status: UserStatus;
+  pauseReason?: string | null;
+  pauseComment?: string | null;
+  currentTask?: string | null;
   lastActiveAt: string | null;
   currentApp: string;
   currentTitle: string;
@@ -52,6 +58,7 @@ export interface RealtimeEmployee {
     takenAt: string;
     appName: string | null;
     windowTitle: string | null;
+    taskName?: string | null;
   } | null;
   clicksPerMinute?: number;
   keysPerMinute?: number;
@@ -139,6 +146,55 @@ export interface WebAnalyticsItem {
   visitCount: number;
 }
 
+export interface TimelineInterval {
+  id: string;
+  startTime: string;
+  endTime: string;
+  timeRangeFormatted: string;
+  taskName: string;
+  category: ActivityCategory;
+  isIdle: boolean;
+  isOfflineTime?: boolean;
+  appName?: string;
+  windowTitle?: string;
+  comment?: string | null;
+  durationMinutes: number;
+  durationSeconds: number;
+  clicks: number;
+  keystrokes: number;
+  screenshots: {
+    id: string;
+    filePath: string;
+    takenAt: string;
+    appName: string | null;
+    windowTitle: string | null;
+    taskName: string | null;
+  }[];
+  hasScreenshot: boolean;
+}
+
+export interface OfflineTimeRecord {
+  id: string;
+  userId: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  durationMinutes: number;
+  taskName: string;
+  category: ActivityCategory;
+  reason?: string | null;
+  createdAt: string;
+}
+
+export interface YouTubeVideoRecord {
+  title: string;
+  totalMinutes: number;
+  totalHours?: number;
+  visitCount: number;
+  lastWatchedAt: string;
+  users?: string[];
+}
+
 export interface TimesheetRecord {
   id: string;
   employeeName: string;
@@ -153,6 +209,7 @@ export interface TimesheetRecord {
   totalHours: number;
   productivityScore: number;
   status: string;
+  pauseReason?: string | null;
 }
 
 export interface SystemSettings {

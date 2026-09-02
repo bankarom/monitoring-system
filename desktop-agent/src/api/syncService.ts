@@ -82,7 +82,8 @@ export class SyncService {
     currentStatus: 'ONLINE' | 'IDLE' | 'PAUSED',
     isPaused?: boolean,
     pauseReason?: string,
-    pauseComment?: string
+    pauseComment?: string,
+    taskName?: string
   ): Promise<{ success: boolean; totalActiveSeconds?: number; totalIdleSeconds?: number }> {
     if (!this.token || activities.length === 0) return { success: false };
 
@@ -96,7 +97,8 @@ export class SyncService {
           currentStatus,
           isPaused: !!isPaused,
           pauseReason: pauseReason || null,
-          pauseComment: pauseComment || null
+          pauseComment: pauseComment || null,
+          taskName: taskName || null
         },
         {
           headers: { Authorization: `Bearer ${this.token}` },
@@ -128,6 +130,7 @@ export class SyncService {
       form.append('displayIndex', String(metadata.displayIndex || 0));
       form.append('appName', metadata.appName || '');
       form.append('windowTitle', metadata.windowTitle || '');
+      form.append('taskName', metadata.taskName || '');
       form.append('isIdle', String(metadata.isIdle || false));
       form.append('takenAt', metadata.takenAt || new Date().toISOString());
 

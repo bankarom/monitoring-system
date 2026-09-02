@@ -87,9 +87,36 @@ export const DOMAIN_CATEGORIES: Record<string, 'WORK' | 'COMMUNICATION' | 'ENTER
   'reddit.com': 'ENTERTAINMENT'
 };
 
-export function resolveAppInfo(rawProcessName: string | null | undefined, title: string | null | undefined, domain: string | null | undefined, isIdle: boolean) {
+export function extractYouTubeVideoTitle(windowTitle: string | null | undefined): string | null {
+  if (!windowTitle) return null;
+  const clean = windowTitle.trim();
+  if (clean.toLowerCase().includes('youtube')) {
+    // Remove browser suffixes like "- YouTube - Google Chrome", "- YouTube - Brave", etc.
+    const title = clean
+      .replace(/\s*-\s*YouTube.*$/i, '')
+      .replace(/^\(\d+\)\s*/, '') // Remove unread count like (1)
+      .trim();
+    return title || 'YouTube Video';
+  }
+  return null;
+}
+
+export function resolveAppInfo(
+  rawProcessName: string | null | undefined,
+  title: string | null | undefined,
+  domain: string | null | undefined,
+  isIdle: boolean,
+  customCategory?: string
+) {
   if (isIdle) {
     return { friendlyName: 'Away / Idle Break', category: 'IDLE' as const };
+  }
+
+  if (customCategory && ['WORK', 'BROWSING', 'COMMUNICATION', 'ENTERTAINMENT', 'IDLE', 'OTHER'].includes(customCategory.toUpperCase())) {
+    const cleanProcess = (rawProcessName || '').toLowerCase().trim();
+    const matched = APP_MAPPING[cleanProcess];
+    const friendlyName = matched ? matched.friendlyName : (rawProcessName || 'Active Task');
+    return { friendlyName, category: customCategory.toUpperCase() as any };
   }
 
   const cleanProcess = (rawProcessName || '').toLowerCase().trim();

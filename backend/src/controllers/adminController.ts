@@ -5,6 +5,7 @@ import fs from 'fs';
 import archiver from 'archiver';
 import { prisma } from '../config/prisma';
 import { config } from '../config/environment';
+import { extractYouTubeVideoTitle } from '../config/appCategories';
 
 // Dashboard Overview Statistics
 export async function getDashboardStats(req: Request, res: Response) {
@@ -286,6 +287,9 @@ export async function getRealtimeGrid(req: Request, res: Response) {
         email: true,
         department: true,
         status: true,
+        pauseReason: true,
+        pauseComment: true,
+        currentTask: true,
         lastActiveAt: true,
         currentApp: true,
         currentTitle: true,
@@ -306,7 +310,8 @@ export async function getRealtimeGrid(req: Request, res: Response) {
             filePath: true,
             takenAt: true,
             appName: true,
-            windowTitle: true
+            windowTitle: true,
+            taskName: true
           }
         }
       },
@@ -322,6 +327,9 @@ export async function getRealtimeGrid(req: Request, res: Response) {
         email: emp.email,
         department: emp.department,
         status: emp.status,
+        pauseReason: emp.pauseReason,
+        pauseComment: emp.pauseComment,
+        currentTask: emp.currentTask || emp.currentApp || 'Active Work',
         lastActiveAt: emp.lastActiveAt,
         currentApp: emp.currentApp || 'None',
         currentTitle: emp.currentTitle || '',
@@ -424,7 +432,144 @@ export async function exportScreenshotsZip(req: Request, res: Response) {
   }
 }
 
-// 24-Hour Visual Activity Timeline
+// Helper to construct Scrin.io granular timeline intervals with attached screenshots
+export function buildScrinTimelineIntervals(
+  logs: any[],
+  screenshots: any[],
+  offlineTimes: any[] = []
+) {
+  const sortedLogs = [...logs].sort((a, b) => new Date(a.recordedAt).getTime() - new Date(b.recordedAt).getTime());
+  const sortedScreens = [...screenshots].sort((a, b) => new Date(a.takenAt).getTime() - new Date(b.takenAt).getTime());
+
+  const intervals: any[] = [];
+  let currentGroup: any = null;
+
+  for (const log of sortedLogs) {
+    const logTime = new Date(log.recordedAt).getTime();
+    const taskName = log.taskName || log.appName || 'Active Work';
+    const category = log.category || 'WORK';
+    const isIdle = !!log.isIdle;
+
+    if (!currentGroup) {
+      currentGroup = {
+        startTime: new Date(log.recordedAt),
+        endTime: new Date(logTime + (log.durationSeconds || 20) * 1000),
+        taskName,
+        category,
+        isIdle,
+        appName: log.appName,
+        windowTitle: log.windowTitle,
+        comment: log.comment,
+        durationSeconds: log.durationSeconds || 20,
+        clicks: log.mouseClicks || 0,
+        keystrokes: log.keystrokes || 0,
+        logIds: [log.id]
+      };
+    } else {
+      const timeDiffSec = (logTime - currentGroup.endTime.getTime()) / 1000;
+      const isSameBlock =
+        currentGroup.taskName === taskName &&
+        currentGroup.category === category &&
+        currentGroup.isIdle === isIdle &&
+        timeDiffSec <= 90;
+
+      if (isSameBlock) {
+        currentGroup.endTime = new Date(logTime + (log.durationSeconds || 20) * 1000);
+        currentGroup.durationSeconds += log.durationSeconds || 20;
+        currentGroup.clicks += log.mouseClicks || 0;
+        currentGroup.keystrokes += log.keystrokes || 0;
+        currentGroup.logIds.push(log.id);
+        if (log.comment) currentGroup.comment = log.comment;
+      } else {
+        intervals.push(currentGroup);
+        currentGroup = {
+          startTime: new Date(log.recordedAt),
+          endTime: new Date(logTime + (log.durationSeconds || 20) * 1000),
+          taskName,
+          category,
+          isIdle,
+          appName: log.appName,
+          windowTitle: log.windowTitle,
+          comment: log.comment,
+          durationSeconds: log.durationSeconds || 20,
+          clicks: log.mouseClicks || 0,
+          keystrokes: log.keystrokes || 0,
+          logIds: [log.id]
+        };
+      }
+    }
+  }
+
+  if (currentGroup) {
+    intervals.push(currentGroup);
+  }
+
+  for (const off of offlineTimes) {
+    intervals.push({
+      id: off.id,
+      startTime: new Date(off.startTime),
+      endTime: new Date(off.endTime),
+      taskName: off.taskName,
+      category: off.category || 'WORK',
+      isIdle: false,
+      isOfflineTime: true,
+      appName: 'Offline Work',
+      windowTitle: off.reason || 'Offline Time Logged',
+      comment: off.reason || '',
+      durationSeconds: (off.durationMinutes || 0) * 60,
+      clicks: 0,
+      keystrokes: 0,
+      screenshots: []
+    });
+  }
+
+  intervals.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+
+  const formatTimeRange = (start: Date, end: Date) => {
+    const fmt = (d: Date) => {
+      let h = d.getHours();
+      const m = d.getMinutes().toString().padStart(2, '0');
+      const ampm = h >= 12 ? 'pm' : 'am';
+      h = h % 12 || 12;
+      return `${h}:${m}${ampm}`;
+    };
+    return `${fmt(start)} - ${fmt(end)}`;
+  };
+
+  return intervals.map((inv) => {
+    const invStartMs = inv.startTime.getTime() - 45000;
+    const invEndMs = inv.endTime.getTime() + 45000;
+
+    const matchedScreens = inv.isOfflineTime
+      ? []
+      : sortedScreens.filter((s) => {
+          const sTime = new Date(s.takenAt).getTime();
+          return sTime >= invStartMs && sTime <= invEndMs;
+        });
+
+    return {
+      id: inv.id || `${inv.startTime.toISOString()}-${inv.taskName}`,
+      startTime: inv.startTime.toISOString(),
+      endTime: inv.endTime.toISOString(),
+      timeRangeFormatted: formatTimeRange(inv.startTime, inv.endTime),
+      taskName: inv.taskName,
+      category: inv.category,
+      isIdle: inv.isIdle,
+      isOfflineTime: !!inv.isOfflineTime,
+      appName: inv.appName,
+      windowTitle: inv.windowTitle,
+      comment: inv.comment,
+      durationMinutes: Math.max(1, Math.round(inv.durationSeconds / 60)),
+      durationSeconds: inv.durationSeconds,
+      clicks: inv.clicks,
+      keystrokes: inv.keystrokes,
+      screenshots: matchedScreens,
+      hasScreenshot: matchedScreens.length > 0
+    };
+  });
+}
+
+// 24-Hour Visual Activity Timeline (Scrin.io-Style)
 export async function getActivityTimeline(req: Request, res: Response) {
   try {
     const { userId, date } = req.query as { userId: string; date?: string };
@@ -436,10 +581,10 @@ export async function getActivityTimeline(req: Request, res: Response) {
     const startOfDay = new Date(queryDate + 'T00:00:00.000Z');
     const endOfDay = new Date(queryDate + 'T23:59:59.999Z');
 
-    const [user, logs, attendance, screenshots] = await Promise.all([
+    const [user, logs, attendance, screenshots, offlineTimes] = await Promise.all([
       prisma.user.findUnique({
         where: { id: userId },
-        select: { id: true, name: true, email: true, department: true }
+        select: { id: true, name: true, email: true, department: true, shift: true, currentTask: true }
       }),
       prisma.activityLog.findMany({
         where: {
@@ -457,13 +602,22 @@ export async function getActivityTimeline(req: Request, res: Response) {
           takenAt: { gte: startOfDay, lte: endOfDay }
         },
         orderBy: { takenAt: 'asc' },
-        select: { id: true, filePath: true, appName: true, takenAt: true, isIdle: true }
+        select: { id: true, filePath: true, appName: true, windowTitle: true, taskName: true, takenAt: true, isIdle: true }
+      }),
+      prisma.offlineTime.findMany({
+        where: {
+          userId,
+          date: queryDate
+        },
+        orderBy: { startTime: 'asc' }
       })
     ]);
 
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
+
+    const intervals = buildScrinTimelineIntervals(logs, screenshots, offlineTimes);
 
     return res.status(200).json({
       success: true,
@@ -477,7 +631,9 @@ export async function getActivityTimeline(req: Request, res: Response) {
         totalWorkSeconds: 0
       },
       activityBlocks: logs,
-      screenshots
+      intervals,
+      screenshots,
+      offlineTimes
     });
   } catch (error: any) {
     return res.status(500).json({ success: false, message: error.message });
@@ -775,6 +931,314 @@ export async function updateSettings(req: Request, res: Response) {
     });
 
     return res.status(200).json({ success: true, message: 'Settings updated successfully', settings: updated });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+}
+
+// YouTube Video & Browsing Analytics
+export async function getYouTubeAnalytics(req: Request, res: Response) {
+  try {
+    const { userId, date, startDate, endDate } = req.query as { userId?: string; date?: string; startDate?: string; endDate?: string };
+    const queryDate = date || new Date().toISOString().split('T')[0];
+
+    const whereClause: any = {
+      OR: [
+        { domain: { contains: 'youtube', mode: 'insensitive' } },
+        { windowTitle: { contains: 'YouTube', mode: 'insensitive' } }
+      ]
+    };
+
+    if (startDate && endDate) {
+      whereClause.recordedAt = {
+        gte: new Date(startDate + 'T00:00:00.000Z'),
+        lte: new Date(endDate + 'T23:59:59.999Z')
+      };
+    } else {
+      whereClause.recordedAt = {
+        gte: new Date(queryDate + 'T00:00:00.000Z'),
+        lte: new Date(queryDate + 'T23:59:59.999Z')
+      };
+    }
+
+    if (userId) whereClause.userId = userId;
+
+    const ytLogs = await prisma.activityLog.findMany({
+      where: whereClause,
+      include: { user: { select: { id: true, name: true, email: true } } },
+      orderBy: { recordedAt: 'desc' }
+    });
+
+    const videoMap: Record<string, { title: string; totalSeconds: number; visitCount: number; lastWatchedAt: Date; users: Set<string> }> = {};
+
+    for (const log of ytLogs) {
+      const title = extractYouTubeVideoTitle(log.windowTitle) || 'YouTube Video';
+      if (!videoMap[title]) {
+        videoMap[title] = {
+          title,
+          totalSeconds: 0,
+          visitCount: 0,
+          lastWatchedAt: log.recordedAt,
+          users: new Set()
+        };
+      }
+      videoMap[title].totalSeconds += log.durationSeconds || 20;
+      videoMap[title].visitCount += 1;
+      videoMap[title].users.add(log.user.name);
+      if (log.recordedAt > videoMap[title].lastWatchedAt) {
+        videoMap[title].lastWatchedAt = log.recordedAt;
+      }
+    }
+
+    const videos = Object.values(videoMap).map((v) => ({
+      title: v.title,
+      totalMinutes: Math.round(v.totalSeconds / 60),
+      totalHours: parseFloat((v.totalSeconds / 3600).toFixed(2)),
+      visitCount: v.visitCount,
+      lastWatchedAt: v.lastWatchedAt,
+      users: Array.from(v.users)
+    })).sort((a, b) => b.totalMinutes - a.totalMinutes);
+
+    return res.status(200).json({ success: true, date: queryDate, totalVideos: videos.length, videos });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+}
+
+// Offline Time Management (Admin)
+export async function addOfflineTimeAdmin(req: Request, res: Response) {
+  try {
+    const { userId, date, startTime, endTime, taskName, category, reason } = req.body;
+
+    if (!userId || !date || !startTime || !endTime || !taskName) {
+      return res.status(400).json({ success: false, message: 'Missing required offline time parameters' });
+    }
+
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+    const durationMinutes = Math.max(1, Math.round((end.getTime() - start.getTime()) / 60000));
+    const durationSeconds = durationMinutes * 60;
+
+    const offlineRecord = await prisma.offlineTime.create({
+      data: {
+        userId,
+        date,
+        startTime: start,
+        endTime: end,
+        durationMinutes,
+        taskName,
+        category: category || 'WORK',
+        reason: reason || null
+      }
+    });
+
+    // Update or create Attendance
+    const existingAtt = await prisma.attendance.findUnique({
+      where: { userId_date: { userId, date } }
+    });
+
+    if (existingAtt) {
+      await prisma.attendance.update({
+        where: { id: existingAtt.id },
+        data: {
+          totalActiveSeconds: { increment: durationSeconds },
+          totalWorkSeconds: { increment: durationSeconds }
+        }
+      });
+    } else {
+      await prisma.attendance.create({
+        data: {
+          userId,
+          date,
+          clockInAt: start,
+          clockOutAt: end,
+          totalActiveSeconds: durationSeconds,
+          totalWorkSeconds: durationSeconds,
+          status: 'PRESENT'
+        }
+      });
+    }
+
+    return res.status(201).json({ success: true, message: 'Offline time recorded successfully', offlineTime: offlineRecord });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+}
+
+export async function deleteOfflineTimeAdmin(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const record = await prisma.offlineTime.findUnique({ where: { id } });
+    if (!record) return res.status(404).json({ success: false, message: 'Offline time record not found' });
+
+    const durationSeconds = (record.durationMinutes || 0) * 60;
+    await prisma.offlineTime.delete({ where: { id } });
+
+    // Decrement from attendance
+    const att = await prisma.attendance.findUnique({
+      where: { userId_date: { userId: record.userId, date: record.date } }
+    });
+
+    if (att) {
+      await prisma.attendance.update({
+        where: { id: att.id },
+        data: {
+          totalActiveSeconds: Math.max(0, att.totalActiveSeconds - durationSeconds),
+          totalWorkSeconds: Math.max(0, att.totalWorkSeconds - durationSeconds)
+        }
+      });
+    }
+
+    return res.status(200).json({ success: true, message: 'Offline time record deleted' });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+}
+
+export async function getScrinReports(req: Request, res: Response) {
+  try {
+    const { userId, date, dateFrom, dateTo } = req.query as { userId?: string; date?: string; dateFrom?: string; dateTo?: string };
+
+    const targetDate = date || new Date().toISOString().split('T')[0];
+    const whereClause: any = {};
+    if (userId) whereClause.userId = userId;
+
+    if (dateFrom && dateTo) {
+      whereClause.recordedAt = {
+        gte: new Date(`${dateFrom}T00:00:00.000Z`),
+        lte: new Date(`${dateTo}T23:59:59.999Z`)
+      };
+    } else {
+      whereClause.recordedAt = {
+        gte: new Date(`${targetDate}T00:00:00.000Z`),
+        lte: new Date(`${targetDate}T23:59:59.999Z`)
+      };
+    }
+
+    const activities = await prisma.activityLog.findMany({
+      where: whereClause,
+      include: { user: { select: { id: true, name: true, email: true } } },
+      orderBy: { recordedAt: 'asc' }
+    });
+
+    const offlineRecords = await prisma.offlineTime.findMany({
+      where: {
+        ...(userId ? { userId } : {}),
+        date: targetDate
+      },
+      include: { user: { select: { id: true, name: true, email: true } } }
+    });
+
+    // 1. Detailed Scrin.io Rows
+    const detailedRows: any[] = [];
+
+    // Group activity into continuous interval blocks
+    let currentBlock: any = null;
+
+    for (const act of activities) {
+      const actTime = new Date(act.recordedAt);
+      const appTitle = act.appName || act.windowTitle || 'vs code';
+
+      if (
+        !currentBlock ||
+        currentBlock.userId !== act.userId ||
+        currentBlock.taskName !== appTitle ||
+        actTime.getTime() - currentBlock.lastTime.getTime() > 10 * 60 * 1000
+      ) {
+        if (currentBlock) {
+          const durationMins = Math.max(1, Math.round((currentBlock.lastTime.getTime() - currentBlock.startTime.getTime()) / 60000));
+          detailedRows.push({
+            id: currentBlock.id,
+            date: currentBlock.dateStr,
+            employeeName: currentBlock.userName,
+            project: 'No project',
+            note: currentBlock.taskName,
+            from: currentBlock.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            to: currentBlock.lastTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            durationMinutes: durationMins,
+            activityPercent: Math.min(100, Math.round(((currentBlock.activeCount || 1) / (currentBlock.totalCount || 1)) * 100))
+          });
+        }
+
+        currentBlock = {
+          id: act.id,
+          userId: act.userId,
+          userName: act.user.name,
+          dateStr: act.recordedAt.toISOString().split('T')[0],
+          taskName: appTitle,
+          startTime: actTime,
+          lastTime: actTime,
+          activeCount: act.isIdle ? 0 : 1,
+          totalCount: 1
+        };
+      } else {
+        currentBlock.lastTime = actTime;
+        currentBlock.totalCount += 1;
+        if (!act.isIdle) currentBlock.activeCount += 1;
+      }
+    }
+
+    if (currentBlock) {
+      const durationMins = Math.max(1, Math.round((currentBlock.lastTime.getTime() - currentBlock.startTime.getTime()) / 60000));
+      detailedRows.push({
+        id: currentBlock.id,
+        date: currentBlock.dateStr,
+        employeeName: currentBlock.userName,
+        project: 'No project',
+        note: currentBlock.taskName,
+        from: currentBlock.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        to: currentBlock.lastTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        durationMinutes: durationMins,
+        activityPercent: Math.min(100, Math.round(((currentBlock.activeCount || 1) / (currentBlock.totalCount || 1)) * 100))
+      });
+    }
+
+    // Add Offline entries to detailed rows
+    for (const off of offlineRecords) {
+      detailedRows.push({
+        id: off.id,
+        date: off.date,
+        employeeName: off.user.name,
+        project: 'No project',
+        note: `${off.reason} [offline]`,
+        from: off.startTime,
+        to: off.endTime,
+        durationMinutes: off.durationMinutes,
+        activityPercent: 100
+      });
+    }
+
+    // 2. Apps & URLs Donut Dataset
+    const appMap: Record<string, number> = {};
+    let totalSec = 0;
+
+    for (const act of activities) {
+      const name = act.appName || act.domain || 'vs code';
+      appMap[name] = (appMap[name] || 0) + act.durationSeconds;
+      totalSec += act.durationSeconds;
+    }
+
+    const colorPalette = ['#2563eb', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#64748b'];
+
+    const appsAndUrls = Object.entries(appMap)
+      .map(([name, sec], idx) => {
+        const mins = Math.round(sec / 60);
+        const percent = totalSec > 0 ? Math.round((sec / totalSec) * 100) : 0;
+        return {
+          name,
+          minutes: mins,
+          percentage: percent,
+          color: colorPalette[idx % colorPalette.length]
+        };
+      })
+      .sort((a, b) => b.minutes - a.minutes);
+
+    return res.status(200).json({
+      success: true,
+      detailedRows,
+      appsAndUrls,
+      totalDurationMinutes: Math.round(totalSec / 60)
+    });
   } catch (error: any) {
     return res.status(500).json({ success: false, message: error.message });
   }

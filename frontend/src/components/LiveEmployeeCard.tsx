@@ -2,7 +2,7 @@ import React from 'react';
 import { RealtimeEmployee } from '../types';
 import { API_BASE_URL } from '../services/api';
 import { formatHoursToTime } from '../utils/format';
-import { Monitor, MousePointer, Keyboard, Clock, Globe, AppWindow, Maximize2 } from 'lucide-react';
+import { Monitor, MousePointer, Keyboard, Clock, Globe, AppWindow, Maximize2, Tag } from 'lucide-react';
 
 interface LiveEmployeeCardProps {
   employee: RealtimeEmployee;
@@ -30,17 +30,27 @@ export const LiveEmployeeCard: React.FC<LiveEmployeeCardProps> = ({ employee, on
     ? `${API_BASE_URL}${employee.latestScreenshot.filePath}`
     : null;
 
+  // Format relative screenshot time (e.g., "a minute ago")
+  const getRelativeTime = (isoString?: string) => {
+    if (!isoString) return '';
+    const diffSec = Math.round((Date.now() - new Date(isoString).getTime()) / 1000);
+    if (diffSec < 60) return 'just now';
+    if (diffSec < 120) return 'a minute ago';
+    if (diffSec < 3600) return `${Math.floor(diffSec / 60)} minutes ago`;
+    return `${Math.floor(diffSec / 3600)} hours ago`;
+  };
+
   return (
     <div className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col justify-between hover:border-sky-300 transition-all shadow-xs hover:shadow-md group">
       {/* Top Header */}
       <div>
         <div className="flex items-center justify-between gap-3 mb-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-sky-50 border border-sky-200 flex items-center justify-center font-extrabold text-sm text-sky-700 shadow-xs">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center font-extrabold text-sm text-emerald-700 shadow-xs">
               {employee.name.charAt(0).toUpperCase()}
             </div>
             <div>
-              <h4 className="text-sm font-bold text-slate-900 leading-tight group-hover:text-sky-600 transition-colors">
+              <h4 className="text-sm font-bold text-slate-900 leading-tight group-hover:text-emerald-600 transition-colors">
                 {employee.name}
               </h4>
               <p className="text-[11px] text-slate-500 font-medium">{employee.department}</p>
@@ -48,16 +58,27 @@ export const LiveEmployeeCard: React.FC<LiveEmployeeCardProps> = ({ employee, on
           </div>
 
           <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-bold ${statusColor}`}>
-            <span className={`w-2 h-2 rounded-full ${dotColor} ${employee.status === 'ONLINE' ? 'animate-ping' : ''}`} />
+            <span className={`w-2 h-2 rounded-full ${dotColor} ${employee.status === 'ONLINE' ? 'animate-pulse' : ''}`} />
             <span>
               {employee.status === 'PAUSED'
-                ? `PAUSED: ${(employee as any).pauseReason || 'Break'} ${(employee as any).pauseComment ? `("${(employee as any).pauseComment}")` : ''}`
+                ? `PAUSED: ${employee.pauseReason || 'Break'} ${employee.pauseComment ? `("${employee.pauseComment}")` : ''}`
                 : employee.status === 'ONLINE'
                 ? 'WORKING'
                 : employee.status}
             </span>
           </div>
         </div>
+
+        {/* Task Name Badge (Scrin.io Style) */}
+        {employee.currentTask && (
+          <div className="mb-2.5 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-between text-xs">
+            <div className="flex items-center gap-1.5 text-slate-700 font-bold truncate">
+              <Tag className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+              <span className="truncate">{employee.currentTask}</span>
+            </div>
+            <span className="text-[10px] font-bold text-emerald-700 shrink-0 ml-2">ACTIVE</span>
+          </div>
+        )}
 
         {/* Screenshot Preview */}
         <div className="relative w-full aspect-video rounded-xl bg-slate-100 border border-slate-200 overflow-hidden mb-3.5 flex items-center justify-center group/screen">
@@ -71,17 +92,24 @@ export const LiveEmployeeCard: React.FC<LiveEmployeeCardProps> = ({ employee, on
                   (e.target as HTMLElement).style.display = 'none';
                 }}
               />
+
+              {/* Scrin.io-style latest screenshot timestamp badge */}
+              <div className="absolute top-2 right-2 px-2 py-0.5 rounded-md bg-slate-900/80 backdrop-blur-xs text-[10px] font-mono text-white flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                <span>{getRelativeTime(employee.latestScreenshot?.takenAt)}</span>
+              </div>
+
               <button
                 onClick={() =>
                   onViewScreenshot(
                     fullScreenshotUrl,
-                    `${employee.name} — ${employee.currentApp}`,
+                    `${employee.name} — ${employee.currentTask || employee.currentApp || 'Desktop'}`,
                     employee.latestScreenshot?.takenAt || new Date().toISOString()
                   )
                 }
                 className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover/screen:opacity-100 flex items-center justify-center gap-2 text-xs font-bold text-white transition-opacity backdrop-blur-xs"
               >
-                <Maximize2 className="w-4 h-4 text-sky-400" /> View Fullscreen
+                <Maximize2 className="w-4 h-4 text-emerald-400" /> View Fullscreen
               </button>
             </>
           ) : (
