@@ -795,7 +795,7 @@ export async function wipeDatabaseData(req: Request, res: Response) {
     await prisma.activityLog.deleteMany({});
     await prisma.screenshot.deleteMany({});
     await prisma.attendance.deleteMany({});
-    await prisma.offlineTime.deleteMany({});
+    try { await prisma.offlineTime.deleteMany({}); } catch (e) {}
     await prisma.user.deleteMany({
       where: { role: 'EMPLOYEE' }
     });

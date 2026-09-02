@@ -20,9 +20,13 @@ async function runFullWipe() {
     const attRes = await prisma.attendance.deleteMany({});
     console.log(`✅ Deleted ${attRes.count} attendance records`);
 
-    // 4. Delete all offline time records
-    const offRes = await prisma.offlineTime.deleteMany({});
-    console.log(`✅ Deleted ${offRes.count} offline time records`);
+    // 4. Delete all offline time records (if table exists)
+    try {
+      const offRes = await prisma.offlineTime.deleteMany({});
+      console.log(`✅ Deleted ${offRes.count} offline time records`);
+    } catch (e) {
+      console.log('ℹ️ Offline time records table not created yet, skipping...');
+    }
 
     // 5. Delete all old employee users
     const empRes = await prisma.user.deleteMany({
