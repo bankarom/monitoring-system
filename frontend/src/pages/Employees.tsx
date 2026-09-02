@@ -84,6 +84,24 @@ export const Employees: React.FC = () => {
     }
   };
 
+  const handleSystemWipe = async () => {
+    if (
+      !window.confirm(
+        '⚠️ DANGER: Are you sure you want to DELETE ALL old employees, activity logs, attendance, screenshots, and telemetry to start completely from scratch?'
+      )
+    )
+      return;
+
+    try {
+      await api.post('/admin/system/wipe-database');
+      setSelectedUserId('');
+      fetchEmployees();
+      alert('✅ Database fully wiped! All old employees and records have been deleted. You can now register fresh employees.');
+    } catch (err: any) {
+      alert('Failed to wipe database: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
   const filtered = employees.filter(
     (e) =>
       e.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -113,6 +131,13 @@ export const Employees: React.FC = () => {
             className="flex items-center gap-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-md shadow-sky-600/20 transition-all"
           >
             <UserPlus className="w-4 h-4" /> Add New Employee
+          </button>
+          <button
+            onClick={handleSystemWipe}
+            className="flex items-center gap-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-extrabold text-xs px-3 py-2.5 rounded-xl transition-all shadow-xs"
+            title="Delete all old data & employees to start fresh"
+          >
+            <Trash2 className="w-4 h-4" /> Wipe All Old Data
           </button>
           <button
             onClick={fetchEmployees}
