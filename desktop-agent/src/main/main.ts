@@ -127,10 +127,25 @@ class AgentApplication {
     });
   }
 
+  private showAndFocusWindow() {
+    if (!this.mainWindow) {
+      this.createLoginWindow();
+    } else {
+      this.mainWindow.show();
+      if (this.mainWindow.isMinimized()) this.mainWindow.restore();
+      this.mainWindow.focus();
+      this.mainWindow.setAlwaysOnTop(true);
+      setTimeout(() => {
+        if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+          this.mainWindow.setAlwaysOnTop(false);
+        }
+      }, 500);
+    }
+  }
+
   private createLoginWindow() {
     if (this.mainWindow) {
-      this.mainWindow.show();
-      this.mainWindow.focus();
+      this.showAndFocusWindow();
       return;
     }
 
@@ -170,6 +185,13 @@ class AgentApplication {
       this.mainWindow.loadFile(path.join(__dirname, '../ui/login.html'));
     }
 
+    this.mainWindow.once('ready-to-show', () => {
+      if (this.mainWindow) {
+        this.mainWindow.show();
+        this.mainWindow.focus();
+      }
+    });
+
     this.mainWindow.on('closed', () => {
       this.mainWindow = null;
     });
@@ -201,11 +223,15 @@ class AgentApplication {
         );
 
     this.tray = new Tray(icon);
-    this.tray.setToolTip('Improx Monitoring Agent - Running');
+    this.tray.setToolTip('Improx Monitoring Agent - Active');
     this.updateTrayMenu();
 
+    this.tray.on('click', () => {
+      this.showAndFocusWindow();
+    });
+
     this.tray.on('double-click', () => {
-      this.createLoginWindow();
+      this.showAndFocusWindow();
     });
   }
 

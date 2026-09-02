@@ -189,7 +189,39 @@ export async function createEmployee(req: Request, res: Response) {
     });
 
     if (existing) {
-      return res.status(400).json({ success: false, message: 'An employee with this email already exists.' });
+      if (existing.role === 'ADMIN') {
+        return res.status(400).json({ success: false, message: 'This email belongs to the Super Admin. Please enter a different employee email (e.g. mansi@improx.com).' });
+      }
+
+      // Automatically update & reactivate existing employee account
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const updated = await prisma.user.update({
+        where: { id: existing.id },
+        data: {
+          name,
+          password: hashedPassword,
+          department: department || 'General',
+          shift: shift || '10:00 AM to 7:00 PM',
+          isActive: true,
+          status: 'OFFLINE'
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          department: true,
+          shift: true,
+          role: true,
+          status: true,
+          createdAt: true
+        }
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: 'Employee account updated and reactivated successfully!',
+        employee: updated
+      });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -267,6 +299,7 @@ export async function deleteEmployee(req: Request, res: Response) {
     await prisma.activityLog.deleteMany({ where: { userId: id } });
     await prisma.screenshot.deleteMany({ where: { userId: id } });
     await prisma.attendance.deleteMany({ where: { userId: id } });
+    try { await prisma.offlineTime.deleteMany({ where: { userId: id } }); } catch (e) {}
     await prisma.user.delete({ where: { id } });
 
     return res.status(200).json({ success: true, message: 'Employee permanently deleted from database' });
