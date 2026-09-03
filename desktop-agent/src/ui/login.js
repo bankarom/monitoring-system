@@ -132,15 +132,19 @@ async function loadDesktopScreenshots(dateStr) {
       return;
     }
 
-    container.innerHTML = list.map((s) => `
+    const baseUrl = (serverUrlInput && serverUrlInput.value ? serverUrlInput.value : 'http://200.141.2.53').trim().replace(/\/$/, '');
+    container.innerHTML = list.map((s) => {
+      const imgUrl = s.filePath.startsWith('http') ? s.filePath : `${baseUrl}${s.filePath}`;
+      return `
       <div style="position: relative; border-radius: 10px; overflow: hidden; border: 1px solid #cbd5e1; background: #0f172a;">
-        <img src="${s.filePath}" alt="${s.appName || 'Screen'}" style="width: 100%; height: 110px; object-fit: cover;">
+        <img src="${imgUrl}" alt="${s.appName || 'Screen'}" style="width: 100%; height: 110px; object-fit: cover;">
         <div style="padding: 6px; background: rgba(15,23,42,0.9); color: white;">
           <p style="font-size: 10px; font-weight: 700; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${s.taskName || s.appName || 'Screen'}</p>
           <span style="font-size: 9px; color: #38bdf8; font-family: monospace;">${new Date(s.takenAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
         </div>
       </div>
-    `).join('');
+    `;
+    }).join('');
   } catch (e) {
     container.innerHTML = '<p style="color: #ef4444; font-size: 11px;">Failed to load screenshots.</p>';
   }
@@ -500,17 +504,21 @@ async function loadAgentScreenshotsForDate(dateStr) {
       agentScreenshotsGrid.innerHTML = '<div style="text-align: center; padding: 20px; color: #64748b; font-size: 12px; font-weight: 600;"><p>No screenshots recorded for ' + dateStr + '.</p><p style="font-size: 10px; color: #94a3b8; margin-top: 4px;">Use the date selector above to inspect yesterday or other previous dates.</p></div>';
       return;
     }
+    const baseUrl = (serverUrlInput && serverUrlInput.value ? serverUrlInput.value : 'http://200.141.2.53').trim().replace(/\/$/, '');
     agentScreenshotsGrid.innerHTML = list
       .map(
-        (s) => `
+        (s) => {
+          const imgUrl = s.filePath.startsWith('http') ? s.filePath : `${baseUrl}${s.filePath}`;
+          return `
       <div class="shot-thumb-card" style="position: relative; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; background: #0f172a;">
-        <img src="${s.filePath}" alt="${s.taskName || s.appName || 'Screen'}" style="width: 100%; height: 120px; object-fit: cover;">
+        <img src="${imgUrl}" alt="${s.taskName || s.appName || 'Screen'}" style="width: 100%; height: 120px; object-fit: cover;">
         <div class="meta" style="padding: 8px; background: rgba(15, 23, 42, 0.9); color: white;">
           <p style="font-size: 11px; font-weight: 700; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${s.taskName || s.appName || 'Active Work'}</p>
           <span style="font-size: 10px; color: #38bdf8; font-family: monospace;">${new Date(s.takenAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
         </div>
       </div>
-    `
+    `;
+        }
       )
       .join('');
   } catch (e) {
