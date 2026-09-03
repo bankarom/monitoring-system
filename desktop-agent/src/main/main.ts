@@ -479,10 +479,12 @@ class AgentApplication {
         }
 
         this.saveConfig();
-        // Standby mode: tracking starts manually when user presses Play/Start
+        // Auto-start tracking on successful connect/login
+        this.startTracking();
         this.notifyUIState();
-        return { success: true, user: data.user };
+        return { success: true, user: data.user, isTracking: true };
       } catch (err: any) {
+        console.error('Agent login error:', err.response?.data || err.message);
         return { success: false, message: err.response?.data?.message || err.message || 'Login failed' };
       }
     });

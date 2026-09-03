@@ -538,17 +538,17 @@ loginForm.addEventListener('submit', async (e) => {
     const res = await ipcRenderer.invoke('agent-login', { serverUrl, email, password });
 
     if (res.success) {
-      successBox.textContent = '✅ Login successful!';
+      successBox.textContent = '✅ Login successful! Starting tracking...';
       successBox.classList.remove('hidden');
       setTimeout(() => {
-        showDashboardView({ user: res.user, isTracking: false, isPaused: false });
-      }, 300);
+        showDashboardView({ user: res.user, isTracking: true, isPaused: false });
+      }, 200);
     } else {
-      errorBox.textContent = res.message || 'Login failed. Please check your credentials.';
+      errorBox.textContent = `❌ ${res.message || 'Login failed. Please check your credentials.'}`;
       errorBox.classList.remove('hidden');
     }
   } catch (err) {
-    errorBox.textContent = 'Server connection failed.';
+    errorBox.textContent = '❌ Server connection failed. Check IP address.';
     errorBox.classList.remove('hidden');
   } finally {
     btnSubmit.disabled = false;
