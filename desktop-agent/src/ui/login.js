@@ -526,11 +526,13 @@ async function loadAgentScreenshotsForDate(dateStr) {
   }
 }
 
-btnOpenScreenshots.addEventListener('click', async () => {
-  screenshotsModal.classList.remove('hidden');
-  const targetDate = agentDateInput ? agentDateInput.value : new Date().toISOString().split('T')[0];
-  await loadAgentScreenshotsForDate(targetDate);
-});
+if (btnOpenScreenshots) {
+  btnOpenScreenshots.addEventListener('click', async () => {
+    if (screenshotsModal) screenshotsModal.classList.remove('hidden');
+    const targetDate = agentDateInput ? agentDateInput.value : new Date().toISOString().split('T')[0];
+    await loadAgentScreenshotsForDate(targetDate);
+  });
+}
 
 if (agentDateInput) {
   agentDateInput.addEventListener('change', async (e) => {
@@ -538,14 +540,20 @@ if (agentDateInput) {
   });
 }
 
-btnCloseShots.addEventListener('click', () => screenshotsModal.classList.add('hidden'));
+if (btnCloseShots) {
+  btnCloseShots.addEventListener('click', () => {
+    if (screenshotsModal) screenshotsModal.classList.add('hidden');
+  });
+}
 
 // Clock Out
-btnClockOut.addEventListener('click', async () => {
-  if (confirm("Are you sure you want to end today's work and clock out? Tracking will stop.")) {
-    await ipcRenderer.invoke('clock-out-agent');
-  }
-});
+if (btnClockOut) {
+  btnClockOut.addEventListener('click', async () => {
+    if (confirm("Are you sure you want to end today's work and clock out? Tracking will stop.")) {
+      await ipcRenderer.invoke('clock-out-agent');
+    }
+  });
+}
 
 async function handleLoginSubmit(e) {
   if (e) {
