@@ -520,19 +520,32 @@ btnClockOut.addEventListener('click', async () => {
   }
 });
 
-// Login Form Submit
-loginForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
+async function handleLoginSubmit(e) {
+  if (e) {
+    e.preventDefault();
+    if (e.stopPropagation) e.stopPropagation();
+  }
+
   errorBox.classList.add('hidden');
   successBox.classList.add('hidden');
+
+  let serverUrl = (serverUrlInput.value || 'http://200.141.2.53').trim().replace(/\/$/, '');
+  if (!serverUrl.startsWith('http://') && !serverUrl.startsWith('https://')) {
+    serverUrl = `http://${serverUrl}`;
+  }
+
+  const email = (emailInput.value || '').trim();
+  const password = (passwordInput.value || '').trim();
+
+  if (!email || !password) {
+    errorBox.textContent = '❌ Please enter both your email and password.';
+    errorBox.classList.remove('hidden');
+    return;
+  }
 
   btnSubmit.disabled = true;
   btnText.textContent = 'Connecting...';
   btnSpinner.classList.remove('hidden');
-
-  const serverUrl = serverUrlInput.value.trim().replace(/\/$/, '');
-  const email = emailInput.value.trim();
-  const password = passwordInput.value.trim();
 
   try {
     const res = await ipcRenderer.invoke('agent-login', { serverUrl, email, password });
@@ -555,7 +568,14 @@ loginForm.addEventListener('submit', async (e) => {
     btnText.textContent = 'Sign In & Connect';
     btnSpinner.classList.add('hidden');
   }
-});
+}
+
+if (btnSubmit) {
+  btnSubmit.addEventListener('click', handleLoginSubmit);
+}
+if (loginForm) {
+  loginForm.addEventListener('submit', handleLoginSubmit);
+}
 
 function showLoginView() {
   loginView.classList.remove('hidden');
