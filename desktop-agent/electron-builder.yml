@@ -1,5 +1,5 @@
 appId: com.improx.monitor.agent
-productName: Improx Monitoring Agent
+productName: Improx Monitoring System
 directories:
   output: release
 files:
@@ -29,7 +29,7 @@ nsis:
   perMachine: false
   createDesktopShortcut: true
   createStartMenuShortcut: true
-  shortcutName: "Improx Monitoring Agent"
+  shortcutName: "Improx Monitoring System"
   installerHeaderIcon: assets/icon.ico
   uninstallerIcon: assets/icon.ico
   runAfterFinish: true
