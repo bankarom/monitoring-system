@@ -70,13 +70,23 @@ export const LiveEmployeeCard: React.FC<LiveEmployeeCardProps> = ({ employee, on
         </div>
 
         {/* Task Name Badge (Scrin.io Style) */}
-        {employee.currentTask && (
+        {employee.status !== 'OFFLINE' && employee.currentTask ? (
           <div className="mb-2.5 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-between text-xs">
             <div className="flex items-center gap-1.5 text-slate-700 font-bold truncate">
-              <Tag className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+              <Tag className={`w-3.5 h-3.5 shrink-0 ${employee.status === 'PAUSED' ? 'text-amber-600' : 'text-emerald-600'}`} />
               <span className="truncate">{employee.currentTask}</span>
             </div>
-            <span className="text-[10px] font-bold text-emerald-700 shrink-0 ml-2">ACTIVE</span>
+            <span className={`text-[10px] font-bold shrink-0 ml-2 ${employee.status === 'PAUSED' ? 'text-amber-700' : 'text-emerald-700'}`}>
+              {employee.status === 'PAUSED' ? 'PAUSED' : 'ACTIVE'}
+            </span>
+          </div>
+        ) : (
+          <div className="mb-2.5 px-2.5 py-1 rounded-lg bg-slate-50/50 border border-slate-200/60 flex items-center justify-between text-xs">
+            <div className="flex items-center gap-1.5 text-slate-400 font-medium truncate">
+              <Tag className="w-3.5 h-3.5 text-slate-300 shrink-0" />
+              <span className="truncate">No Active Task</span>
+            </div>
+            <span className="text-[10px] font-bold text-slate-400 shrink-0 ml-2">OFFLINE</span>
           </div>
         )}
 
@@ -115,7 +125,9 @@ export const LiveEmployeeCard: React.FC<LiveEmployeeCardProps> = ({ employee, on
           ) : (
             <div className="text-center p-4">
               <Monitor className="w-8 h-8 text-slate-400 mx-auto mb-1.5" />
-              <p className="text-xs text-slate-500 font-medium">Capturing screen...</p>
+              <p className="text-xs text-slate-500 font-medium">
+                {employee.status === 'OFFLINE' ? 'Offline — Agent Not Running' : 'Capturing screen...'}
+              </p>
             </div>
           )}
         </div>
@@ -124,10 +136,12 @@ export const LiveEmployeeCard: React.FC<LiveEmployeeCardProps> = ({ employee, on
         <div className="space-y-2 text-xs mb-3">
           <div className="flex items-center gap-2 text-slate-800 bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-200">
             <AppWindow className="w-3.5 h-3.5 text-sky-600 shrink-0" />
-            <span className="truncate font-semibold">{employee.currentApp || 'Desktop'}</span>
+            <span className="truncate font-semibold">
+              {employee.status === 'OFFLINE' ? 'None (Offline)' : (employee.currentApp || 'Desktop')}
+            </span>
           </div>
 
-          {employee.currentDomain && (
+          {employee.status !== 'OFFLINE' && employee.currentDomain && (
             <div className="flex items-center gap-2 text-slate-600 bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-200">
               <Globe className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
               <span className="truncate font-medium">{employee.currentDomain}</span>
