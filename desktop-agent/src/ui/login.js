@@ -217,7 +217,9 @@ async function loadDesktopLogs(dateStr) {
   } catch (e) {
     container.innerHTML = '<p style="color: #ef4444; font-size: 11px;">Failed to load session logs.</p>';
   }
-}
+// View Panels
+const loginView = document.getElementById('loginView');
+const agentDashboardView = document.getElementById('agentDashboardView');
 
 // Login Elements
 const serverUrlInput = document.getElementById('serverUrl');
@@ -344,51 +346,54 @@ function formatHoursMins(sec) {
   return `${h}h ${m.toString().padStart(2, '0')}m`;
 }
 
-if (btnViewOnline) {
-  btnViewOnline.addEventListener('click', async () => {
-    await ipcRenderer.invoke('open-web-portal');
+// Play / Start button
+// Play / Start button
+if (btnPlay) {
+  btnPlay.addEventListener('click', async () => {
+    const task = (taskInput && taskInput.value ? taskInput.value : 'vs code').trim();
+    currentTaskName = task;
+    if (displayTaskTitle) displayTaskTitle.textContent = task;
+
+    await ipcRenderer.invoke('start-task', { taskName: task, category: currentCategory });
+    setRunningState(true);
   });
 }
 
-// Play / Start button
-btnPlay.addEventListener('click', async () => {
-  const task = (taskInput.value || 'vs code').trim();
-  currentTaskName = task;
-  displayTaskTitle.textContent = task;
-
-  await ipcRenderer.invoke('start-task', { taskName: task, category: currentCategory });
-  setRunningState(true);
-});
-
 // Enter key in task input starts tracking
-taskInput.addEventListener('keydown', async (e) => {
-  if (e.key === 'Enter') {
-    const task = (taskInput.value || 'vs code').trim();
-    currentTaskName = task;
-    displayTaskTitle.textContent = task;
-    await ipcRenderer.invoke('start-task', { taskName: task, category: currentCategory });
-    setRunningState(true);
-  }
-});
+if (taskInput) {
+  taskInput.addEventListener('keydown', async (e) => {
+    if (e.key === 'Enter') {
+      const task = (taskInput.value || 'vs code').trim();
+      currentTaskName = task;
+      if (displayTaskTitle) displayTaskTitle.textContent = task;
+      await ipcRenderer.invoke('start-task', { taskName: task, category: currentCategory });
+      setRunningState(true);
+    }
+  });
+}
 
 // Stop / Pause button
-btnStop.addEventListener('click', () => {
-  pauseModal.classList.remove('hidden');
-});
+if (btnStop) {
+  btnStop.addEventListener('click', () => {
+    if (pauseModal) pauseModal.classList.remove('hidden');
+  });
+}
 
 // Confirm Pause / Break
-btnConfirmPause.addEventListener('click', async () => {
-  const selectedRadio = document.querySelector('input[name="breakReason"]:checked');
-  const reason = selectedRadio ? selectedRadio.value : 'Break';
-  const comment = pauseCommentInput ? pauseCommentInput.value : '';
+if (btnConfirmPause) {
+  btnConfirmPause.addEventListener('click', async () => {
+    const selectedRadio = document.querySelector('input[name="breakReason"]:checked');
+    const reason = selectedRadio ? selectedRadio.value : 'Break';
+    const comment = pauseCommentInput ? pauseCommentInput.value : '';
 
-  pauseModal.classList.add('hidden');
-  await ipcRenderer.invoke('stop-task', { reason, comment });
-  setRunningState(false, true, reason);
-});
+    if (pauseModal) pauseModal.classList.add('hidden');
+    await ipcRenderer.invoke('stop-task', { reason, comment });
+    setRunningState(false, true, reason);
+  });
+}
 
-btnClosePause.addEventListener('click', () => pauseModal.classList.add('hidden'));
-btnCancelPause.addEventListener('click', () => pauseModal.classList.add('hidden'));
+if (btnClosePause) btnClosePause.addEventListener('click', () => pauseModal && pauseModal.classList.add('hidden'));
+if (btnCancelPause) btnCancelPause.addEventListener('click', () => pauseModal && pauseModal.classList.add('hidden'));
 
 function setRunningState(running, paused = false, pauseReason = '') {
   isRunning = running;
@@ -437,35 +442,34 @@ function setRunningState(running, paused = false, pauseReason = '') {
   }
 }
 
-// View online button opens browser portal
-btnViewOnline.addEventListener('click', async () => {
-  await ipcRenderer.invoke('open-web-portal');
-});
-
 // Settings Dialog
-btnOpenSettings.addEventListener('click', async () => {
-  const state = await ipcRenderer.invoke('get-agent-state');
-  if (state.userSettings) {
-    chkAutoLaunch.checked = !!state.userSettings.launchAtStartup;
-    chkAutoStart.checked = state.userSettings.autoStartTracking !== false;
-    chkTrayNotify.checked = state.userSettings.trayNotifications !== false;
-    chkMinimizeTray.checked = state.userSettings.minimizeToTray !== false;
-  }
-  settingsModal.classList.remove('hidden');
-});
-
-btnCloseSettings.addEventListener('click', () => settingsModal.classList.add('hidden'));
-btnCancelSettings.addEventListener('click', () => settingsModal.classList.add('hidden'));
-
-btnSaveSettings.addEventListener('click', async () => {
-  await ipcRenderer.invoke('save-settings', {
-    launchAtStartup: chkAutoLaunch.checked,
-    autoStartTracking: chkAutoStart.checked,
-    trayNotifications: chkTrayNotify.checked,
-    minimizeToTray: chkMinimizeTray.checked
+if (btnOpenSettings) {
+  btnOpenSettings.addEventListener('click', async () => {
+    const state = await ipcRenderer.invoke('get-agent-state');
+    if (state.userSettings) {
+      if (chkAutoLaunch) chkAutoLaunch.checked = !!state.userSettings.launchAtStartup;
+      if (chkAutoStart) chkAutoStart.checked = state.userSettings.autoStartTracking !== false;
+      if (chkTrayNotify) chkTrayNotify.checked = state.userSettings.trayNotifications !== false;
+      if (chkMinimizeTray) chkMinimizeTray.checked = state.userSettings.minimizeToTray !== false;
+    }
+    if (settingsModal) settingsModal.classList.remove('hidden');
   });
-  settingsModal.classList.add('hidden');
-});
+}
+
+if (btnCloseSettings) btnCloseSettings.addEventListener('click', () => settingsModal && settingsModal.classList.add('hidden'));
+if (btnCancelSettings) btnCancelSettings.addEventListener('click', () => settingsModal && settingsModal.classList.add('hidden'));
+
+if (btnSaveSettings) {
+  btnSaveSettings.addEventListener('click', async () => {
+    await ipcRenderer.invoke('save-settings', {
+      launchAtStartup: chkAutoLaunch ? chkAutoLaunch.checked : false,
+      autoStartTracking: chkAutoStart ? chkAutoStart.checked : false,
+      trayNotifications: chkTrayNotify ? chkTrayNotify.checked : true,
+      minimizeToTray: chkMinimizeTray ? chkMinimizeTray.checked : true
+    });
+    if (settingsModal) settingsModal.classList.add('hidden');
+  });
+}
 
 // Screenshots Quick Viewer & Past Date Picker
 const agentDateInput = document.getElementById('agentDateInput');
