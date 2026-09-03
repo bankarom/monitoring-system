@@ -188,6 +188,10 @@ class AgentApplication {
       this.mainWindow.loadFile(path.join(__dirname, '../ui/login.html'));
     }
 
+    this.mainWindow.webContents.on('console-message', (event, level, message, line, sourceId) => {
+      console.log(`[RENDERER CONSOLE] (${line}): ${message}`);
+    });
+
     this.mainWindow.once('ready-to-show', () => {
       if (this.mainWindow) {
         this.mainWindow.show();
@@ -452,10 +456,12 @@ class AgentApplication {
     });
 
     ipcMain.handle('agent-login', async (event, { serverUrl, email, password }) => {
+      console.log('>>> ipcMain received agent-login for:', email, 'server:', serverUrl);
       try {
         this.serverUrl = serverUrl;
         this.syncService.setServerUrl(serverUrl);
         const data = await this.syncService.login(email, password);
+        console.log('>>> syncService.login succeeded for user:', data.user?.name);
 
         this.currentUser = data.user;
         if (data.settings?.screenshotInterval) {

@@ -583,18 +583,21 @@ async function handleLoginSubmit(e) {
   btnSpinner.classList.remove('hidden');
 
   try {
+    console.log('>>> Invoking agent-login via IPC with:', serverUrl, email);
     const res = await ipcRenderer.invoke('agent-login', { serverUrl, email, password });
+    console.log('>>> agent-login IPC response:', res);
 
-    if (res.success) {
+    if (res && res.success) {
       successBox.textContent = '✅ Connected! Loading Workspace...';
       successBox.classList.remove('hidden');
       showDashboardView({ user: res.user, isTracking: false, isPaused: false });
     } else {
-      errorBox.textContent = res.message ? `❌ ${res.message}` : '❌ Login failed. Please check your email and password.';
+      errorBox.textContent = res && res.message ? `❌ ${res.message}` : '❌ Login failed. Please check your email and password.';
       errorBox.classList.remove('hidden');
     }
   } catch (err) {
-    errorBox.textContent = '❌ Server connection failed. Check IP address.';
+    console.error('>>> agent-login IPC caught error:', err);
+    errorBox.textContent = `❌ ${err.message || 'Connection failed. Please check server URL.'}`;
     errorBox.classList.remove('hidden');
   } finally {
     btnSubmit.disabled = false;
@@ -608,6 +611,13 @@ if (btnSubmit) {
 }
 if (loginForm) {
   loginForm.addEventListener('submit', handleLoginSubmit);
+}
+if (passwordInput) {
+  passwordInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      handleLoginSubmit(e);
+    }
+  });
 }
 
 function showLoginView() {
