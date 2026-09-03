@@ -1,3 +1,16 @@
+// Electron IPC Renderer
+let ipcRenderer;
+if (typeof require !== 'undefined') {
+  try {
+    ipcRenderer = require('electron').ipcRenderer;
+  } catch (e) {}
+}
+if (!ipcRenderer && typeof window !== 'undefined' && window.require) {
+  try {
+    ipcRenderer = window.require('electron').ipcRenderer;
+  } catch (e) {}
+}
+
 // Desktop Workspace Nav Tabs
 const navTabs = document.querySelectorAll('.nav-tab');
 const tabPanels = document.querySelectorAll('.tab-panel');
@@ -217,6 +230,8 @@ async function loadDesktopLogs(dateStr) {
   } catch (e) {
     container.innerHTML = '<p style="color: #ef4444; font-size: 11px;">Failed to load session logs.</p>';
   }
+}
+
 // View Panels
 const loginView = document.getElementById('loginView');
 const agentDashboardView = document.getElementById('agentDashboardView');
