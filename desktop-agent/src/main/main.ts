@@ -385,12 +385,6 @@ class AgentApplication {
       return await this.syncService.getMyDetailedReports(date);
     });
 
-    ipcMain.handle('open-web-portal', () => {
-      const targetUrl = this.serverUrl || 'http://200.141.2.53';
-      shell.openExternal(`${targetUrl}/portal`).catch(() => {});
-      return { success: true };
-    });
-
     ipcMain.handle('get-agent-state', () => {
       return {
         isTracking: this.isTracking,
@@ -436,12 +430,6 @@ class AgentApplication {
         this.pauseTracking('Break', '');
       }
       return { success: true, isPaused: true };
-    });
-
-    ipcMain.handle('open-web-portal', () => {
-      const targetUrl = `${this.serverUrl}/portal`;
-      shell.openExternal(targetUrl).catch(() => {});
-      return { success: true };
     });
 
     ipcMain.handle('save-settings', (event, settings) => {
