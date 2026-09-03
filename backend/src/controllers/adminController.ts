@@ -190,7 +190,7 @@ export async function createEmployee(req: Request, res: Response) {
 
     if (existing) {
       if (existing.role === 'ADMIN') {
-        return res.status(400).json({ success: false, message: 'This email belongs to the Super Admin. Please enter a different employee email (e.g. mansi@improx.com).' });
+        return res.status(400).json({ success: false, message: 'This email belongs to the Super Admin. Please enter an employee work email (e.g. employee@improxgroup.com).' });
       }
 
       // Automatically update & reactivate existing employee account

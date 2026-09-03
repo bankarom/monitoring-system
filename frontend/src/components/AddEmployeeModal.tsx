@@ -83,9 +83,7 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onCl
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
-              Email Address <span className="text-[10px] font-medium text-sky-600">(Use employee email, e.g. mansi@improx.com)</span>
-            </label>
+            <label className="block text-xs font-bold text-slate-700 mb-1">Email Address</label>
             <div className="relative">
               <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
               <input
@@ -93,7 +91,7 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onCl
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="mansi@improx.com"
+                placeholder="employee@improxgroup.com"
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-sky-500 focus:bg-white transition-all"
               />
             </div>
