@@ -183,17 +183,6 @@ export const EmployeePortal: React.FC = () => {
         </button>
 
         <button
-          onClick={() => setActiveTab('youtube')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-            activeTab === 'youtube'
-              ? 'bg-slate-900 text-white shadow-xs'
-              : 'text-slate-600 hover:bg-slate-100'
-          }`}
-        >
-          <Youtube className="w-4 h-4 text-rose-500" /> YouTube & Browsing ({youtubeVideos.length})
-        </button>
-
-        <button
           onClick={() => setActiveTab('apps')}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
             activeTab === 'apps'
@@ -201,7 +190,7 @@ export const EmployeePortal: React.FC = () => {
               : 'text-slate-600 hover:bg-slate-100'
           }`}
         >
-          <AppWindow className="w-4 h-4" /> Software & Apps ({apps.length})
+          <AppWindow className="w-4 h-4" /> Software & Websites Telemetry ({apps.length})
         </button>
 
         <button
@@ -230,99 +219,51 @@ export const EmployeePortal: React.FC = () => {
         />
       )}
 
-      {/* TAB 2: YOUTUBE & BROWSING HISTORY */}
-      {activeTab === 'youtube' && (
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Youtube className="w-5 h-5 text-rose-500" />
-              <h2 className="text-base font-extrabold text-slate-900">YouTube Video Titles & Media History</h2>
-            </div>
-            <span className="text-xs font-bold text-slate-500">{youtubeVideos.length} Videos Watched</span>
-          </div>
-
-          {youtubeVideos.length === 0 ? (
-            <div className="p-12 text-center text-slate-400 text-xs">
-              No YouTube videos watched on {selectedDate}.
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-slate-600">
-                <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200 uppercase tracking-wider">
-                  <tr>
-                    <th className="px-4 py-3">YouTube Video Title</th>
-                    <th className="px-4 py-3">Duration Spent</th>
-                    <th className="px-4 py-3">Visit Count</th>
-                    <th className="px-4 py-3">Last Watched At</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {youtubeVideos.map((v, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50">
-                      <td className="px-4 py-3 font-bold text-slate-900 flex items-center gap-2">
-                        <span className="w-6 h-6 rounded-md bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
-                          <Youtube className="w-3.5 h-3.5" />
-                        </span>
-                        <span className="truncate max-w-lg">{v.title}</span>
-                      </td>
-                      <td className="px-4 py-3 font-black text-slate-900">
-                        {v.totalMinutes} min{v.totalMinutes > 1 ? 's' : ''}
-                      </td>
-                      <td className="px-4 py-3 font-medium text-slate-600">{v.visitCount} times</td>
-                      <td className="px-4 py-3 font-mono text-slate-500 text-[11px]">
-                        {new Date(v.lastWatchedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* TAB 3: SOFTWARE & APPS */}
+      {/* TAB 2: UNIFIED SOFTWARE & WEBSITE TELEMETRY */}
       {activeTab === 'apps' && (
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <AppWindow className="w-5 h-5 text-sky-600" />
-              <h2 className="text-base font-extrabold text-slate-900">My Software & App Activity</h2>
+              <h2 className="text-base font-extrabold text-slate-900">Software, Website & Application Telemetry</h2>
             </div>
-            <span className="text-xs font-bold text-slate-500">{apps.length} Apps Used Today</span>
+            <span className="text-xs font-bold text-slate-500">{apps.length} Applications & Websites Tracked</span>
           </div>
 
           {apps.length === 0 ? (
-            <div className="p-8 text-center text-slate-400 text-xs">No app activity recorded yet.</div>
+            <div className="p-12 text-center text-slate-400 text-xs font-medium">No application or website telemetry recorded for this date yet.</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs text-slate-600">
                 <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200 uppercase tracking-wider">
                   <tr>
-                    <th className="px-4 py-3">Software / Application</th>
+                    <th className="px-4 py-3">Software / Domain Name</th>
                     <th className="px-4 py-3">Category</th>
                     <th className="px-4 py-3">Time Spent</th>
-                    <th className="px-4 py-3">Mouse Clicks</th>
+                    <th className="px-4 py-3">Mouse Activity</th>
                     <th className="px-4 py-3">Keystrokes</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 font-medium">
                   {apps.map((app, idx) => (
                     <tr key={idx} className="hover:bg-slate-50">
                       <td className="px-4 py-3 font-bold text-slate-900 flex items-center gap-2">
-                        <AppWindow className="w-4 h-4 text-sky-600" /> {app.appName}
+                        <AppWindow className="w-4 h-4 text-sky-600 shrink-0" />
+                        <span className="truncate max-w-md">{app.appName}</span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-100 text-slate-700 border border-slate-200">
                           {app.category}
                         </span>
                       </td>
                       <td className="px-4 py-3 font-black text-slate-900">{app.minutes} mins</td>
-                      <td className="px-4 py-3 font-medium text-slate-600 flex items-center gap-1">
-                        <MousePointer className="w-3.5 h-3.5 text-slate-400" /> {app.clicks}
+                      <td className="px-4 py-3 text-slate-600">
+                        <span className="flex items-center gap-1 font-mono font-semibold">
+                          <MousePointer className="w-3.5 h-3.5 text-slate-400" /> {app.clicks}
+                        </span>
                       </td>
-                      <td className="px-4 py-3 font-medium text-slate-600">
-                        <span className="flex items-center gap-1">
+                      <td className="px-4 py-3 text-slate-600">
+                        <span className="flex items-center gap-1 font-mono font-semibold">
                           <Keyboard className="w-3.5 h-3.5 text-slate-400" /> {app.keystrokes}
                         </span>
                       </td>
