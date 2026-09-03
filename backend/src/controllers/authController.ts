@@ -14,45 +14,21 @@ export async function login(req: Request, res: Response) {
     }
 
     const cleanEmail = email.toLowerCase().trim();
-    let user = await prisma.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: { email: cleanEmail }
     });
 
-    // Smart fallback: search by email prefix (e.g. mansi) or employee name if domain varies
-    if (!user && cleanEmail.includes('@')) {
-      const prefix = cleanEmail.split('@')[0];
-      user = await prisma.user.findFirst({
-        where: {
-          OR: [
-            { email: { contains: prefix, mode: 'insensitive' } },
-            { name: { contains: prefix, mode: 'insensitive' } }
-          ]
-        }
-      });
-    }
-
     if (!user) {
-      return res.status(401).json({ success: false, message: `No registered account found for '${email}'. Please add this employee in Super Admin.` });
+      return res.status(401).json({ success: false, message: `Invalid email or password. No account found for '${cleanEmail}'.` });
     }
 
-    // Auto-reactivate if account was deactivated
     if (!user.isActive) {
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { isActive: true }
-      });
+      return res.status(401).json({ success: false, message: `Account '${cleanEmail}' is deactivated. Please contact Super Admin.` });
     }
 
-    let isMatch = await bcrypt.compare(password, user.password);
-
-    // Auto-sync/heal password hash on sign-in so employee is never locked out
-    if (!isMatch && password) {
-      const newHashedPassword = await bcrypt.hash(password, 10);
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { password: newHashedPassword }
-      });
-      isMatch = true;
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ success: false, message: `Incorrect password for '${cleanEmail}'. Please enter the exact password created in Super Admin.` });
     }
 
     // Update status to ONLINE and record lastActiveAt
