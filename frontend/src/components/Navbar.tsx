@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 import { LogOut, Wifi, WifiOff, User as UserIcon } from 'lucide-react';
-
 import { useLocation, useNavigate } from 'react-router-dom';
+import { api } from '../services/api';
+import { getStoredEmployeeId, setStoredEmployeeId } from '../utils/selection';
+import { Employee } from '../types';
 
 export const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
@@ -11,6 +13,8 @@ export const Navbar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [time, setTime] = useState<string>(new Date().toLocaleTimeString());
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState<string>(getStoredEmployeeId());
 
   const isAdminOrHR = user?.role === 'ADMIN' || user?.department === 'HR' || user?.role === 'MANAGER';
 
@@ -21,12 +25,49 @@ export const Navbar: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
+  useEffect(() => {
+    if (isAdminOrHR) {
+      api.get('/admin/employees').then((res) => {
+        setEmployees(res.data.employees || []);
+      }).catch(() => {});
+    }
+
+    const handler = (e: any) => {
+      setSelectedUserId(e.detail || '');
+    };
+    window.addEventListener('improx-employee-changed', handler);
+    return () => window.removeEventListener('improx-employee-changed', handler);
+  }, [isAdminOrHR]);
+
+  const handleSelectEmployee = (id: string) => {
+    setSelectedUserId(id);
+    setStoredEmployeeId(id);
+  };
+
   return (
     <header className="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between shrink-0 sticky top-0 z-20 shadow-xs">
       <div className="flex items-center gap-4">
         <h2 className="text-sm font-bold text-slate-800 tracking-tight">
           {user?.role === 'EMPLOYEE' ? 'My Personal Workspace' : 'Management Console'}
         </h2>
+
+        {isAdminOrHR && employees.length > 0 && (
+          <div className="hidden md:flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1 rounded-xl">
+            <span className="text-[10px] font-extrabold uppercase text-slate-400">Employee:</span>
+            <select
+              value={selectedUserId}
+              onChange={(e) => handleSelectEmployee(e.target.value)}
+              className="bg-transparent border-none text-xs font-bold text-sky-700 focus:outline-none cursor-pointer"
+            >
+              <option value="">All Employees</option>
+              {employees.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.name} ({e.department || 'General'})
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       <div className="flex items-center gap-5">

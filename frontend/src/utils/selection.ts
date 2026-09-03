@@ -15,5 +15,6 @@ export function setStoredEmployeeId(id: string): void {
     } else {
       localStorage.removeItem(SELECTED_EMPLOYEE_KEY);
     }
+    window.dispatchEvent(new CustomEvent('improx-employee-changed', { detail: id }));
   } catch (e) {}
 }
