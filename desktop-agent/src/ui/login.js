@@ -538,13 +538,13 @@ loginForm.addEventListener('submit', async (e) => {
     const res = await ipcRenderer.invoke('agent-login', { serverUrl, email, password });
 
     if (res.success) {
-      successBox.textContent = '✅ Login successful! Starting tracking...';
+      successBox.textContent = '✅ Login successful!';
       successBox.classList.remove('hidden');
       setTimeout(() => {
-        showDashboardView({ user: res.user, isTracking: true, isPaused: false });
+        showDashboardView({ user: res.user, isTracking: false, isPaused: false });
       }, 200);
     } else {
-      errorBox.textContent = `❌ ${res.message || 'Login failed. Please check your credentials.'}`;
+      errorBox.textContent = res.message ? `❌ ${res.message}` : '❌ Login failed. Please check your email and password.';
       errorBox.classList.remove('hidden');
     }
   } catch (err) {

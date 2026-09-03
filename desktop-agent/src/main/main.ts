@@ -479,10 +479,9 @@ class AgentApplication {
         }
 
         this.saveConfig();
-        // Auto-start tracking on successful connect/login
-        this.startTracking();
+        // Standby mode: tracking starts manually when user types task note & presses Play/Start
         this.notifyUIState();
-        return { success: true, user: data.user, isTracking: true };
+        return { success: true, user: data.user, isTracking: false };
       } catch (err: any) {
         console.error('Agent login error:', err.response?.data || err.message);
         return { success: false, message: err.response?.data?.message || err.message || 'Login failed' };

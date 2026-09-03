@@ -17,13 +17,17 @@ export async function login(req: Request, res: Response) {
       where: { email: email.toLowerCase().trim() }
     });
 
-    if (!user || !user.isActive) {
-      return res.status(401).json({ success: false, message: 'Invalid email or password.' });
+    if (!user) {
+      return res.status(401).json({ success: false, message: `No account found for '${email}'. Please add this employee in Super Admin.` });
+    }
+
+    if (!user.isActive) {
+      return res.status(401).json({ success: false, message: `Account '${email}' is inactive. Please reactivate in Super Admin.` });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(401).json({ success: false, message: 'Invalid email or password.' });
+      return res.status(401).json({ success: false, message: `Incorrect password for '${email}'. Please check password set in Super Admin.` });
     }
 
     // Update status to ONLINE and record lastActiveAt
