@@ -4,6 +4,7 @@ import { Employee, TimelineInterval } from '../types';
 import { AddEmployeeModal } from '../components/AddEmployeeModal';
 import { EditEmployeeModal } from '../components/EditEmployeeModal';
 import { ActivityTimelineView } from '../components/ScrinTimelineView';
+import { getStoredEmployeeId, setStoredEmployeeId } from '../utils/selection';
 import { formatHoursToTime } from '../utils/format';
 import {
   Users,
@@ -22,7 +23,7 @@ import {
 
 export const Employees: React.FC = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [selectedUserId, setSelectedUserId] = useState<string>('');
+  const [selectedUserId, setSelectedUserId] = useState<string>(getStoredEmployeeId());
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -40,10 +41,23 @@ export const Employees: React.FC = () => {
   const fetchEmployees = async () => {
     try {
       const res = await api.get('/admin/employees');
-      setEmployees(res.data.employees);
-      if (res.data.employees.length > 0 && !selectedUserId) {
-        setSelectedUserId(res.data.employees[0].id);
-      }
+      const list = res.data.employees || [];
+      setEmployees(list);
+
+      setSelectedUserId((prev) => {
+        if (prev && list.some((e: any) => e.id === prev)) {
+          return prev;
+        }
+        const stored = getStoredEmployeeId();
+        if (stored && list.some((e: any) => e.id === stored)) {
+          return stored;
+        }
+        if (list.length > 0) {
+          setStoredEmployeeId(list[0].id);
+          return list[0].id;
+        }
+        return '';
+      });
     } catch (err) {
       console.error('Failed to fetch employees', err);
     } finally {
@@ -190,7 +204,10 @@ export const Employees: React.FC = () => {
                 return (
                   <div
                     key={emp.id}
-                    onClick={() => setSelectedUserId(emp.id)}
+                    onClick={() => {
+                      setSelectedUserId(emp.id);
+                      setStoredEmployeeId(emp.id);
+                    }}
                     className={`p-3.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
                       isSelected
                         ? 'bg-sky-50 border-sky-500 shadow-sm ring-1 ring-sky-500'

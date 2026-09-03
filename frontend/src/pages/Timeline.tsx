@@ -3,6 +3,7 @@ import { api } from '../services/api';
 import { Employee, TimelineInterval } from '../types';
 import { ActivityTimelineView } from '../components/ScrinTimelineView';
 import { formatHoursToTime } from '../utils/format';
+import { getStoredEmployeeId, setStoredEmployeeId } from '../utils/selection';
 import {
   Clock,
   LogIn,
@@ -16,7 +17,7 @@ import {
 
 export const Timeline: React.FC = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [selectedUserId, setSelectedUserId] = useState<string>('');
+  const [selectedUserId, setSelectedUserId] = useState<string>(getStoredEmployeeId());
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [timelineData, setTimelineData] = useState<{
     user: any;
@@ -29,9 +30,14 @@ export const Timeline: React.FC = () => {
 
   useEffect(() => {
     api.get('/admin/employees').then((res) => {
-      setEmployees(res.data.employees);
-      if (res.data.employees.length > 0) {
-        setSelectedUserId(res.data.employees[0].id);
+      const list = res.data.employees || [];
+      setEmployees(list);
+      const storedId = getStoredEmployeeId();
+      if (storedId && list.some((e: any) => e.id === storedId)) {
+        setSelectedUserId(storedId);
+      } else if (list.length > 0 && !selectedUserId) {
+        setSelectedUserId(list[0].id);
+        setStoredEmployeeId(list[0].id);
       }
     });
   }, []);
@@ -77,7 +83,10 @@ export const Timeline: React.FC = () => {
             <Users className="w-4 h-4 text-slate-400" />
             <select
               value={selectedUserId}
-              onChange={(e) => setSelectedUserId(e.target.value)}
+              onChange={(e) => {
+                setSelectedUserId(e.target.value);
+                setStoredEmployeeId(e.target.value);
+              }}
               className="bg-transparent border-none text-xs font-bold text-slate-800 focus:outline-none"
             >
               {employees.map((e) => (

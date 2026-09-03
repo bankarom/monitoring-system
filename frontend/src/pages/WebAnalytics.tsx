@@ -1,21 +1,33 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
-import { WebAnalyticsItem, YouTubeVideoRecord } from '../types';
+import { WebAnalyticsItem, YouTubeVideoRecord, Employee } from '../types';
 import { formatHoursToTime } from '../utils/format';
+import { getStoredEmployeeId, setStoredEmployeeId } from '../utils/selection';
 import { Globe, ExternalLink, RefreshCw, Youtube, Users, Clock } from 'lucide-react';
 
 export const WebAnalytics: React.FC = () => {
   const [websites, setWebsites] = useState<WebAnalyticsItem[]>([]);
   const [youtubeVideos, setYoutubeVideos] = useState<YouTubeVideoRecord[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState<string>(getStoredEmployeeId());
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [activeTab, setActiveTab] = useState<'domains' | 'youtube'>('domains');
   const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    api.get('/admin/employees').then((res) => {
+      setEmployees(res.data.employees || []);
+    }).catch(() => {});
+  }, []);
+
   const fetchAnalytics = async () => {
     try {
+      const params: any = { date: selectedDate };
+      if (selectedUserId) params.userId = selectedUserId;
+
       const [webRes, ytRes] = await Promise.all([
-        api.get('/admin/analytics/websites', { params: { date: selectedDate } }),
-        api.get('/admin/youtube', { params: { date: selectedDate } })
+        api.get('/admin/analytics/websites', { params }),
+        api.get('/admin/youtube', { params })
       ]);
 
       setWebsites(webRes.data.websites || []);
@@ -31,7 +43,7 @@ export const WebAnalytics: React.FC = () => {
     fetchAnalytics();
     const interval = setInterval(fetchAnalytics, 10000);
     return () => clearInterval(interval);
-  }, [selectedDate]);
+  }, [selectedDate, selectedUserId]);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -47,7 +59,26 @@ export const WebAnalytics: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-1.5 shadow-xs">
+            <Users className="w-4 h-4 text-slate-400" />
+            <select
+              value={selectedUserId}
+              onChange={(e) => {
+                setSelectedUserId(e.target.value);
+                setStoredEmployeeId(e.target.value);
+              }}
+              className="bg-transparent border-none text-xs font-bold text-slate-800 focus:outline-none"
+            >
+              <option value="">All Employees</option>
+              {employees.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.name} ({e.department || 'Team'})
+                </option>
+              ))}
+            </select>
+          </div>
+
           <input
             type="date"
             value={selectedDate}

@@ -2,12 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { api, API_BASE_URL } from '../services/api';
 import { ScreenshotItem, Employee } from '../types';
 import { ScreenshotModal } from '../components/ScreenshotModal';
+import { getStoredEmployeeId, setStoredEmployeeId } from '../utils/selection';
 import { Image as ImageIcon, Download, User, RefreshCw, AppWindow } from 'lucide-react';
 
 export const Screenshots: React.FC = () => {
   const [screenshots, setScreenshots] = useState<ScreenshotItem[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [selectedUserId, setSelectedUserId] = useState<string>('');
+  const [selectedUserId, setSelectedUserId] = useState<string>(getStoredEmployeeId());
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(true);
   const [activeModalIndex, setActiveModalIndex] = useState<number | null>(null);
@@ -70,7 +71,10 @@ export const Screenshots: React.FC = () => {
           <div className="relative">
             <select
               value={selectedUserId}
-              onChange={(e) => setSelectedUserId(e.target.value)}
+              onChange={(e) => {
+                setSelectedUserId(e.target.value);
+                setStoredEmployeeId(e.target.value);
+              }}
               className="bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-800 font-medium focus:outline-none focus:border-sky-500 shadow-xs"
             >
               <option value="">All Employees</option>

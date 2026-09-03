@@ -1,21 +1,30 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
-import { AppAnalyticsItem } from '../types';
+import { AppAnalyticsItem, Employee } from '../types';
 import { formatHoursToTime } from '../utils/format';
+import { getStoredEmployeeId, setStoredEmployeeId } from '../utils/selection';
 import { DonutChart } from '../components/DonutChart';
-import { PieChart, RefreshCw, Layers } from 'lucide-react';
+import { PieChart, RefreshCw, Layers, Users } from 'lucide-react';
 
 export const AppAnalytics: React.FC = () => {
   const [apps, setApps] = useState<AppAnalyticsItem[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState<string>(getStoredEmployeeId());
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    api.get('/admin/employees').then((res) => {
+      setEmployees(res.data.employees || []);
+    }).catch(() => {});
+  }, []);
+
   const fetchAppAnalytics = async () => {
     try {
-      const res = await api.get('/admin/analytics/apps', {
-        params: { date: selectedDate }
-      });
-      setApps(res.data.apps);
+      const params: any = { date: selectedDate };
+      if (selectedUserId) params.userId = selectedUserId;
+      const res = await api.get('/admin/analytics/apps', { params });
+      setApps(res.data.apps || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -27,7 +36,7 @@ export const AppAnalytics: React.FC = () => {
     fetchAppAnalytics();
     const interval = setInterval(fetchAppAnalytics, 10000);
     return () => clearInterval(interval);
-  }, [selectedDate]);
+  }, [selectedDate, selectedUserId]);
 
   return (
     <div className="space-y-6">
@@ -40,7 +49,26 @@ export const AppAnalytics: React.FC = () => {
           <p className="text-xs text-slate-500 mt-1 font-medium">Breakdown of software tools utilized across the team (Auto-refreshes every 10s)</p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-1.5 shadow-xs">
+            <Users className="w-4 h-4 text-slate-400" />
+            <select
+              value={selectedUserId}
+              onChange={(e) => {
+                setSelectedUserId(e.target.value);
+                setStoredEmployeeId(e.target.value);
+              }}
+              className="bg-transparent border-none text-xs font-bold text-slate-800 focus:outline-none"
+            >
+              <option value="">All Employees</option>
+              {employees.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.name} ({e.department || 'Team'})
+                </option>
+              ))}
+            </select>
+          </div>
+
           <input
             type="date"
             value={selectedDate}
