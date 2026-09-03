@@ -551,11 +551,9 @@ async function handleLoginSubmit(e) {
     const res = await ipcRenderer.invoke('agent-login', { serverUrl, email, password });
 
     if (res.success) {
-      successBox.textContent = '✅ Login successful!';
+      successBox.textContent = '✅ Connected! Loading Workspace...';
       successBox.classList.remove('hidden');
-      setTimeout(() => {
-        showDashboardView({ user: res.user, isTracking: false, isPaused: false });
-      }, 200);
+      showDashboardView({ user: res.user, isTracking: false, isPaused: false });
     } else {
       errorBox.textContent = res.message ? `❌ ${res.message}` : '❌ Login failed. Please check your email and password.';
       errorBox.classList.remove('hidden');
