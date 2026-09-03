@@ -457,9 +457,10 @@ export async function getMyDetailedReports(req: AuthenticatedRequest, res: Respo
             date: currentBlock.dateStr,
             employeeName: currentBlock.userName,
             project: 'No project',
-            note: currentBlock.taskName,
-            from: currentBlock.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            to: currentBlock.lastTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            from: currentBlock.startTime.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true }),
+            to: currentBlock.lastTime.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true }),
+            startTime: currentBlock.startTime.toISOString(),
+            endTime: currentBlock.lastTime.toISOString(),
             durationMinutes: durationMins,
             activityPercent: Math.min(100, Math.round(((currentBlock.activeCount || 1) / (currentBlock.totalCount || 1)) * 100))
           });
@@ -489,9 +490,10 @@ export async function getMyDetailedReports(req: AuthenticatedRequest, res: Respo
         date: currentBlock.dateStr,
         employeeName: currentBlock.userName,
         project: 'No project',
-        note: currentBlock.taskName,
-        from: currentBlock.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        to: currentBlock.lastTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        from: currentBlock.startTime.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true }),
+        to: currentBlock.lastTime.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true }),
+        startTime: currentBlock.startTime.toISOString(),
+        endTime: currentBlock.lastTime.toISOString(),
         durationMinutes: durationMins,
         activityPercent: Math.min(100, Math.round(((currentBlock.activeCount || 1) / (currentBlock.totalCount || 1)) * 100))
       });

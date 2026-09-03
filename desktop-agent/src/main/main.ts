@@ -166,6 +166,8 @@ class AgentApplication {
       }
     });
 
+    this.mainWindow.setMenu(null);
+    this.mainWindow.setMenuBarVisibility(false);
     this.mainWindow.setSkipTaskbar(false);
 
     const possiblePaths = [

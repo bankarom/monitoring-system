@@ -559,14 +559,23 @@ export function buildTimelineIntervals(
   intervals.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
 
   const formatTimeRange = (start: Date, end: Date) => {
-    const fmt = (d: Date) => {
-      let h = d.getHours();
-      const m = d.getMinutes().toString().padStart(2, '0');
+    try {
+      const fmt = (d: Date) => {
+        return d.toLocaleTimeString('en-US', {
+          timeZone: 'Asia/Kolkata',
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true
+        }).toLowerCase();
+      };
+      return `${fmt(start)} - ${fmt(end)}`;
+    } catch (e) {
+      let h = start.getHours();
+      const m = start.getMinutes().toString().padStart(2, '0');
       const ampm = h >= 12 ? 'pm' : 'am';
       h = h % 12 || 12;
-      return `${h}:${m}${ampm}`;
-    };
-    return `${fmt(start)} - ${fmt(end)}`;
+      return `${h}:${m}${ampm} - ${end.getHours() % 12 || 12}:${end.getMinutes().toString().padStart(2, '0')}`;
+    }
   };
 
   return intervals.map((inv) => {

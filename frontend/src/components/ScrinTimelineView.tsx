@@ -292,7 +292,7 @@ export const ActivityTimelineView: React.FC<ActivityTimelineViewProps> = ({
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
                   <div className="flex items-center gap-3">
                     <span className="text-xs font-bold text-slate-500 font-mono tracking-tight">
-                      {inv.timeRangeFormatted}
+                      {inv.startTime ? `${new Date(inv.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })} - ${new Date(inv.endTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}` : inv.timeRangeFormatted}
                     </span>
                     <span className={`w-2 h-2 rounded-full ${statusDotClass}`} />
                     <span className="text-sm font-black text-slate-900">

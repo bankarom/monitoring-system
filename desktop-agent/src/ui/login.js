@@ -391,15 +391,19 @@ async function loadDesktopLogs(dateStr) {
           </tr>
         </thead>
         <tbody>
-          ${list.map((r) => `
+          ${list.map((r) => {
+            const timeDisplay = (r.from && r.to)
+              ? `${r.from} - ${r.to}`
+              : (r.startTime ? `${new Date(r.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })} - ${new Date(r.endTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}` : (r.timeRangeFormatted || 'Active'));
+            return `
             <tr style="border-bottom: 1px solid #e2e8f0;">
-              <td style="padding: 10px; font-family: monospace; color: #475569;">${r.startTimeFormatted} - ${r.endTimeFormatted}</td>
-              <td style="padding: 10px; font-weight: 700; color: #0f172a;">${r.taskName || r.appName || 'Work'}</td>
-              <td style="padding: 10px;"><span style="background: ${r.category === 'IDLE' ? '#fef3c7' : '#dcfce7'}; color: ${r.category === 'IDLE' ? '#92400e' : '#166534'}; padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 10px;">${r.category || 'WORK'}</span></td>
+              <td style="padding: 10px; font-family: monospace; color: #475569;">${timeDisplay}</td>
+              <td style="padding: 10px; font-weight: 700; color: #0f172a;">${r.taskName || r.note || r.appName || 'Work'}</td>
+              <td style="padding: 10px;"><span style="background: ${(r.category === 'IDLE' || r.note === 'Away / Idle Break') ? '#fef3c7' : '#dcfce7'}; color: ${(r.category === 'IDLE' || r.note === 'Away / Idle Break') ? '#92400e' : '#166534'}; padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 10px;">${r.category || (r.note === 'Away / Idle Break' ? 'BREAK' : 'WORK')}</span></td>
               <td style="padding: 10px; font-weight: 800; color: #0284c7;">${r.durationMinutes}m</td>
-              <td style="padding: 10px;"><span style="background: ${r.activityPercent > 70 ? '#dcfce7' : '#fef3c7'}; color: ${r.activityPercent > 70 ? '#166534' : '#92400e'}; padding: 3px 8px; border-radius: 999px; font-weight: 800; font-size: 10px;">${r.activityPercent}%</span></td>
+              <td style="padding: 10px;"><span style="background: ${(r.activityPercent || 0) > 70 ? '#dcfce7' : '#fef3c7'}; color: ${(r.activityPercent || 0) > 70 ? '#166534' : '#92400e'}; padding: 3px 8px; border-radius: 999px; font-weight: 800; font-size: 10px;">${r.activityPercent || 100}%</span></td>
             </tr>
-          `).join('')}
+          `;}).join('')}
         </tbody>
       </table>
     `;
