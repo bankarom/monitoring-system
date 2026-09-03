@@ -63,15 +63,18 @@ export class SyncService {
   }
 
   public async getMyAnalytics(date?: string) {
-    if (!this.token) return [];
+    if (!this.token) return { apps: [], domains: [] };
     try {
       const res = await axios.get(`${this.serverUrl}/api/employee/analytics`, {
         headers: { Authorization: `Bearer ${this.token}` },
         params: { date }
       });
-      return res.data.apps || [];
+      return {
+        apps: res.data.apps || [],
+        domains: res.data.domains || []
+      };
     } catch (e) {
-      return [];
+      return { apps: [], domains: [] };
     }
   }
 

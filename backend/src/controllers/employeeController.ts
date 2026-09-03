@@ -199,6 +199,26 @@ export async function getMyAnalytics(req: AuthenticatedRequest, res: Response) {
       keystrokes: item._sum.keystrokes || 0
     }));
 
+    // Web domain usage breakdown
+    const domainUsage = await prisma.activityLog.groupBy({
+      by: ['domain'],
+      where: {
+        userId,
+        domain: { not: null },
+        recordedAt: { gte: startOfDay, lte: endOfDay }
+      },
+      _sum: { durationSeconds: true },
+      orderBy: { _sum: { durationSeconds: 'desc' } },
+      take: 15
+    });
+
+    const domains = domainUsage
+      .filter(d => d.domain && d.domain.trim() !== '')
+      .map(d => ({
+        domain: d.domain,
+        minutes: Math.max(1, Math.round((d._sum.durationSeconds || 0) / 60))
+      }));
+
     // Category distribution breakdown
     const categoryStats = await prisma.activityLog.groupBy({
       by: ['category'],
@@ -215,7 +235,7 @@ export async function getMyAnalytics(req: AuthenticatedRequest, res: Response) {
       hours: parseFloat(((c._sum.durationSeconds || 0) / 3600).toFixed(2))
     }));
 
-    return res.status(200).json({ success: true, date: dateStr, apps, categories });
+    return res.status(200).json({ success: true, date: dateStr, apps, domains, categories });
   } catch (error: any) {
     return res.status(500).json({ success: false, message: error.message });
   }

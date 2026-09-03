@@ -377,6 +377,18 @@ class AgentApplication {
       return await this.syncService.getMyScreenshots(date);
     });
 
+    ipcMain.handle('capture-screenshot-now', async () => {
+      try {
+        console.log('📸 Manual screenshot capture requested by employee');
+        await this.performScreenshotCapture();
+        const dateStr = new Date().toISOString().split('T')[0];
+        const shots = await this.syncService.getMyScreenshots(dateStr);
+        return { success: true, screenshots: shots };
+      } catch (e: any) {
+        return { success: false, message: e.message };
+      }
+    });
+
     ipcMain.handle('get-my-analytics', async (evt, date) => {
       return await this.syncService.getMyAnalytics(date);
     });
@@ -413,7 +425,7 @@ class AgentApplication {
     });
 
     ipcMain.handle('start-task', (event, { taskName, category }) => {
-      this.currentTask = (taskName || 'vs code').trim();
+      this.currentTask = (taskName || 'General Work').trim();
       this.taskCategory = category || 'WORK';
       this.isPaused = false;
       this.pauseReason = '';
@@ -424,6 +436,14 @@ class AgentApplication {
         this.resumeTracking();
       }
       this.notifyUIState();
+
+      // Trigger instant screenshot 2 seconds after starting work/task
+      setTimeout(() => {
+        if (this.isTracking && !this.isPaused) {
+          this.performScreenshotCapture();
+        }
+      }, 2000);
+
       return { success: true, isTracking: true, currentTask: this.currentTask };
     });
 
