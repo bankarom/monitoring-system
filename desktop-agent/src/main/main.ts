@@ -159,7 +159,7 @@ class AgentApplication {
       minWidth: 880,
       minHeight: 600,
       backgroundColor: '#ffffff',
-      title: 'Improx Monitoring Agent',
+      title: 'Improx Monitoring System',
       webPreferences: {
         nodeIntegration: true,
         contextIsolation: false
