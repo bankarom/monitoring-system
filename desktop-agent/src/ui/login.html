@@ -126,24 +126,64 @@
             <span class="view-date-sub" id="currentHeaderDate">Today's Session</span>
           </div>
 
+          <div class="greeting-clock-badge">
+            <span class="clock-icon">🕒</span>
+            <span class="clock-digits" id="liveClockDisplay">06:40:00 PM</span>
+          </div>
+
           <div class="header-stats-strip">
             <div class="stat-pill work">
               <span class="stat-label">TODAY WORK</span>
-              <span class="stat-val" id="todayActiveTime">0m</span>
+              <span class="stat-val" id="todayActiveTime">0h 00m</span>
             </div>
             <div class="stat-pill break">
               <span class="stat-label">BREAK / IDLE</span>
-              <span class="stat-val" id="todayBreakTime">0m</span>
+              <span class="stat-val" id="todayBreakTime">0h 00m</span>
             </div>
             <div class="status-indicator-pill" id="liveStatusPill">
               <span class="status-indicator-dot" id="liveStatusDot"></span>
-              <span class="status-indicator-text" id="liveStatusText">STOPPED</span>
+              <span class="status-indicator-text" id="liveStatusText">STANDBY</span>
             </div>
           </div>
         </header>
 
         <!-- TAB 1: LIVE TRACKER VIEW -->
         <div id="tabTracker" class="tab-panel active">
+
+          <!-- WARM TALKATIVE GREETING BANNER -->
+          <div class="greeting-banner">
+            <div class="greeting-left">
+              <h2 class="greeting-title" id="greetingMessage">Welcome back, Mansi! 👋</h2>
+              <p class="greeting-subtitle">Your activity and work time will be tracked when you click <strong>START WORK</strong>.</p>
+            </div>
+            <div class="greeting-right-badge">
+              <span class="kpi-pill">🛡️ Secure Work Mode</span>
+            </div>
+          </div>
+
+          <!-- KPI METRICS SUMMARY ROW -->
+          <div class="kpi-metrics-row">
+            <div class="kpi-metric-card">
+              <span class="kpi-title">TODAY WORK</span>
+              <span class="kpi-num text-emerald" id="kpiTodayWork">0h 00m</span>
+              <span class="kpi-footer">Active productive hours</span>
+            </div>
+            <div class="kpi-metric-card">
+              <span class="kpi-title">BREAK / IDLE</span>
+              <span class="kpi-num text-amber" id="kpiTodayBreak">0h 00m</span>
+              <span class="kpi-footer">Lunch & away breaks</span>
+            </div>
+            <div class="kpi-metric-card">
+              <span class="kpi-title">THIS WEEK</span>
+              <span class="kpi-num text-sky" id="kpiThisWeek">0h 00m</span>
+              <span class="kpi-footer">Weekly verified hours</span>
+            </div>
+            <div class="kpi-metric-card">
+              <span class="kpi-title">PRODUCTIVITY</span>
+              <span class="kpi-num text-purple" id="kpiProductivity">100%</span>
+              <span class="kpi-footer">Activity ratio</span>
+            </div>
+          </div>
           
           <div class="tracker-card">
             
@@ -155,14 +195,14 @@
               </div>
             </div>
 
-            <!-- Task Input -->
+            <!-- Task Input (Clean, No vs code prefill) -->
             <div class="tracker-input-box">
               <input
                 type="text"
                 id="taskInput"
                 class="modern-task-input"
-                placeholder="Type your task here (e.g. Designing Mobile App UI)..."
-                value="General Work"
+                placeholder="What task are you working on right now?"
+                value=""
               />
             </div>
 
@@ -219,11 +259,30 @@
             <div class="current-task-status-banner">
               <div class="banner-left">
                 <span class="banner-bullet"></span>
-                <span class="banner-task-title" id="displayTaskTitle">General Work</span>
+                <span class="banner-task-title" id="displayTaskTitle">Ready to track work</span>
               </div>
               <span class="banner-task-duration" id="displayTaskDuration">0h 00m</span>
             </div>
 
+          </div>
+
+          <!-- FRONT SCREEN TODAY'S ACTIVITY BREAKDOWN -->
+          <div class="today-breakdown-card">
+            <div class="breakdown-card-header">
+              <div class="breakdown-header-left">
+                <span class="breakdown-header-icon">📋</span>
+                <div>
+                  <h3 class="breakdown-card-title">Today's Work & Break Timeline</h3>
+                  <p class="breakdown-card-sub">Exact intervals of what work was completed from start to finish</p>
+                </div>
+              </div>
+              <span class="breakdown-session-count" id="frontSessionCount">0 Sessions</span>
+            </div>
+            <div class="breakdown-list-wrap" id="frontSessionList">
+              <div class="empty-breakdown-state">
+                <p>No active intervals recorded yet today. Type your task and click <strong>▶ START WORK</strong> to begin!</p>
+              </div>
+            </div>
           </div>
 
         </div>
@@ -243,10 +302,8 @@
         <div id="tabScreenshots" class="tab-panel hidden">
           <div class="panel-top-controls">
             <div class="controls-left">
-              <h3 class="panel-subtitle">Screenshots Taken Today</h3>
-              <button type="button" id="btnManualScreenshot" class="btn-take-shot">
-                <span>📸</span> Capture Screenshot Now
-              </button>
+              <h3 class="panel-subtitle">Verified Work Screenshots</h3>
+              <span class="policy-badge">🔒 Automated Enterprise Capture</span>
             </div>
             <input type="date" id="shotsDatePicker" class="custom-date-picker">
           </div>

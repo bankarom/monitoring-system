@@ -281,19 +281,60 @@ window.addEventListener('keydown', (e) => {
   }
 });
 
-// Manual Screenshot Button
-if (btnManualScreenshot) {
-  btnManualScreenshot.addEventListener('click', async () => {
-    btnManualScreenshot.disabled = true;
-    btnManualScreenshot.textContent = '📸 Capturing...';
-    try {
-      const res = await ipcRenderer.invoke('capture-screenshot-now');
-      const todayStr = shotsDatePicker ? shotsDatePicker.value : new Date().toISOString().split('T')[0];
-      await loadDesktopScreenshots(todayStr);
-    } catch (e) {}
-    btnManualScreenshot.disabled = false;
-    btnManualScreenshot.innerHTML = '<span>📸</span> Capture Screenshot Now';
-  });
+// Front Screen Activity Timeline Breakdown
+async function loadFrontBreakdown() {
+  const container = document.getElementById('frontSessionList');
+  const countBadge = document.getElementById('frontSessionCount');
+  if (!container || !ipcRenderer) return;
+
+  try {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const data = await ipcRenderer.invoke('get-my-timeline', todayStr);
+    const intervals = data?.intervals || [];
+
+    if (!intervals.length) {
+      container.innerHTML = `
+        <div class="empty-breakdown-state">
+          <p>No active intervals recorded yet today. Type your task and click <strong>▶ START WORK</strong> above to start tracking!</p>
+        </div>
+      `;
+      if (countBadge) countBadge.textContent = '0 Sessions';
+      return;
+    }
+
+    if (countBadge) countBadge.textContent = `${intervals.length} Sessions`;
+
+    container.innerHTML = `
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        ${intervals.map((inv) => {
+          const sTime = inv.startTime ? new Date(inv.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }) : '';
+          const eTime = inv.endTime ? new Date(inv.endTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }) : '';
+          const timeRange = sTime && eTime ? `${sTime} - ${eTime}` : (inv.timeRangeFormatted || 'Active');
+          const isBreak = inv.isIdle || inv.category === 'IDLE' || inv.taskName === 'Break' || (inv.note && inv.note.includes('Break'));
+          const isMeeting = inv.category === 'COMMUNICATION' || (inv.taskName && inv.taskName.toLowerCase().includes('meeting'));
+          const badgeBg = isBreak ? '#fef3c7' : (isMeeting ? '#e0f2fe' : '#dcfce7');
+          const badgeText = isBreak ? '#92400e' : (isMeeting ? '#0369a1' : '#166534');
+          const badgeLabel = isBreak ? '☕ Break' : (isMeeting ? '💬 Meeting' : '💼 Work');
+
+          return `
+            <div style="display: flex; align-items: center; justify-content: space-between; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 14px;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <span style="font-family: monospace; font-size: 11px; font-weight: 800; color: #475569;">${timeRange}</span>
+                <span style="font-size: 13px; font-weight: 700; color: #0f172a;">${inv.taskName || inv.note || 'Productive Work'}</span>
+                <span style="background: ${badgeBg}; color: ${badgeText}; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 6px;">${badgeLabel}</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 12px; font-weight: 800; color: #0284c7;">${inv.durationMinutes || 1}m</span>
+                ${inv.appName ? `<span style="font-size: 11px; color: #64748b; background: #e2e8f0; padding: 2px 6px; border-radius: 4px;">${inv.appName}</span>` : ''}
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  } catch (e) {
+    console.warn('Failed to load front breakdown:', e);
+  }
 }
 
 // Load Apps & Web History
@@ -483,10 +524,10 @@ function setRunningState(running, paused = false, pauseReason = '') {
     if (btnStop) btnStop.classList.add('hidden');
 
     if (liveStatusPill) {
-      liveStatusPill.className = 'status-indicator-pill';
-      if (liveStatusText) liveStatusText.textContent = 'STOPPED';
+      liveStatusPill.className = 'status-indicator-pill standby';
+      if (liveStatusText) liveStatusText.textContent = 'STANDBY';
     }
-    if (headerStatusDot) headerStatusDot.style.background = '#94a3b8';
+    if (headerStatusDot) headerStatusDot.style.background = '#38bdf8';
     stopDigitalTimer();
   }
 }
@@ -681,6 +722,25 @@ function showLoginView() {
   if (agentDashboardView) agentDashboardView.classList.add('hidden');
 }
 
+function updateGreeting(name) {
+  const h = new Date().getHours();
+  let greet = 'Good morning';
+  if (h >= 12 && h < 17) greet = 'Good afternoon';
+  else if (h >= 17) greet = 'Good evening';
+  const firstName = (name || 'Employee').split(' ')[0];
+  const el = document.getElementById('greetingMessage');
+  if (el) el.textContent = `${greet}, ${firstName}! 👋`;
+}
+
+function tickClock() {
+  const clockEl = document.getElementById('liveClockDisplay');
+  if (clockEl) {
+    clockEl.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+  }
+}
+setInterval(tickClock, 1000);
+tickClock();
+
 function showDashboardView(state) {
   if (loginView) loginView.classList.add('hidden');
   if (agentDashboardView) agentDashboardView.classList.remove('hidden');
@@ -690,14 +750,27 @@ function showDashboardView(state) {
   if (userAvatar) userAvatar.textContent = name.charAt(0).toUpperCase();
   if (userDepartment) userDepartment.textContent = state.user?.department || 'Design';
 
+  updateGreeting(name);
+
   if (state.currentTask) {
     currentTaskName = state.currentTask;
     if (taskInput) taskInput.value = state.currentTask;
     if (displayTaskTitle) displayTaskTitle.textContent = state.currentTask;
+  } else {
+    if (displayTaskTitle) displayTaskTitle.textContent = 'Ready to track work';
   }
 
+  const kpiWork = document.getElementById('kpiTodayWork');
+  const kpiBreak = document.getElementById('kpiTodayBreak');
+  if (kpiWork && state.activeHoursFormatted) kpiWork.textContent = state.activeHoursFormatted;
+  if (kpiBreak && state.idleHoursFormatted) kpiBreak.textContent = state.idleHoursFormatted;
+
+  loadFrontBreakdown();
   setRunningState(state.isTracking, state.isPaused, state.pauseReason);
 }
+
+// Refresh front breakdown every 30 seconds
+setInterval(loadFrontBreakdown, 30000);
 
 // Listen for state changes from Main Process
 if (ipcRenderer) {
@@ -711,6 +784,11 @@ if (ipcRenderer) {
       if (todayBreakTime && state.idleHoursFormatted) {
         todayBreakTime.textContent = state.idleHoursFormatted;
       }
+      const kpiWork = document.getElementById('kpiTodayWork');
+      const kpiBreak = document.getElementById('kpiTodayBreak');
+      if (kpiWork && state.activeHoursFormatted) kpiWork.textContent = state.activeHoursFormatted;
+      if (kpiBreak && state.idleHoursFormatted) kpiBreak.textContent = state.idleHoursFormatted;
+
       if (liveActiveAppText && state.currentApp) {
         liveActiveAppText.textContent = state.currentApp;
       }

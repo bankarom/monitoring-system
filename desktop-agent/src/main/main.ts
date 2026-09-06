@@ -19,7 +19,7 @@ class AgentApplication {
   private serverUrl = 'http://200.141.2.53';
   private configFilePath: string;
 
-  private currentTask = 'vs code';
+  private currentTask = '';
   private taskCategory = 'WORK';
   private userSettings = {
     launchAtStartup: false,
@@ -121,8 +121,16 @@ class AgentApplication {
     });
 
     powerMonitor.on('suspend', async () => {
+      if (this.isTracking && !this.isPaused) {
+        console.log('💤 Laptop entered sleep mode. Pausing tracking as Sleep Break.');
+        this.pauseTracking('Sleep Break', 'System entered sleep / lid closed');
+      }
+    });
+
+    powerMonitor.on('resume', async () => {
       if (this.isTracking) {
-        await this.syncService.logout().catch(() => {});
+        console.log('⏰ System woke up from sleep. Resuming tracking.');
+        this.resumeTracking();
       }
     });
   }

@@ -73,17 +73,20 @@ export const Settings: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                Screenshot Frequency (Minutes)
+                Screenshot Frequency (Automated Interval)
               </label>
-              <input
-                type="number"
-                min="1"
-                max="60"
+              <select
                 value={settings.screenshotInterval}
                 onChange={(e) => setSettings({ ...settings, screenshotInterval: parseInt(e.target.value, 10) || 10 })}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-sky-500 focus:bg-white"
-              />
-              <p className="text-[11px] text-slate-400 mt-1 font-medium">Standard enterprise default is 10 minutes.</p>
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-bold text-slate-900 focus:outline-none focus:border-sky-500 focus:bg-white cursor-pointer"
+              >
+                <option value={5}>Every 5 Minutes (High Monitoring)</option>
+                <option value={10}>Every 10 Minutes (Standard Enterprise - Recommended)</option>
+                <option value={15}>Every 15 Minutes (Moderate)</option>
+                <option value={30}>Every 30 Minutes (Low Overhead)</option>
+                <option value={60}>Every 60 Minutes (Hourly)</option>
+              </select>
+              <p className="text-[11px] text-slate-400 mt-1 font-medium">Controls automated screenshot interval across all connecting desktop agents.</p>
             </div>
 
             <div>

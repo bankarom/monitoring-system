@@ -42,21 +42,8 @@ export async function login(req: Request, res: Response) {
     });
 
     // Handle Attendance Clock-In for today
-    const today = now.toISOString().split('T')[0];
-    const existingAttendance = await prisma.attendance.findUnique({
-      where: { userId_date: { userId: user.id, date: today } }
-    });
-
-    if (!existingAttendance) {
-      await prisma.attendance.create({
-        data: {
-          userId: user.id,
-          date: today,
-          clockInAt: now,
-          status: 'PRESENT'
-        }
-      });
-    }
+    // Standby mode: attendance clock-in is only triggered when employee explicitly starts work
+    // (Handled when first activity batch is received from tracking start)
 
     // Fetch system settings
     let settings = await prisma.systemSetting.findUnique({ where: { id: 'global' } });
@@ -79,7 +66,7 @@ export async function login(req: Request, res: Response) {
       name: user.name
     });
 
-    socketService.broadcastUserPresence(user.id, 'ONLINE', {
+    socketService.broadcastUserPresence(user.id, 'STANDBY', {
       name: user.name,
       lastActiveAt: now
     });
@@ -95,7 +82,7 @@ export async function login(req: Request, res: Response) {
         role: user.role,
         department: user.department,
         shift: user.shift,
-        status: 'ONLINE'
+        status: 'STANDBY'
       },
       settings: {
         screenshotInterval: settings.screenshotInterval,

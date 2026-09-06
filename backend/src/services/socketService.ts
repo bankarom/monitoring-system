@@ -6,7 +6,7 @@ import { prisma } from '../config/prisma';
 export interface LiveEmployeeState {
   userId: string;
   name: string;
-  status: 'ONLINE' | 'IDLE' | 'OFFLINE';
+  status: 'ONLINE' | 'IDLE' | 'OFFLINE' | 'STANDBY';
   currentApp?: string;
   currentTitle?: string;
   currentDomain?: string;
@@ -82,7 +82,7 @@ class SocketService {
     });
   }
 
-  public broadcastUserPresence(userId: string, status: 'ONLINE' | 'IDLE' | 'OFFLINE', extraData?: Partial<LiveEmployeeState>) {
+  public broadcastUserPresence(userId: string, status: 'ONLINE' | 'IDLE' | 'OFFLINE' | 'STANDBY', extraData?: Partial<LiveEmployeeState>) {
     if (!this.io) return;
     this.io.to('room:admin').emit('employee:presence', {
       userId,
