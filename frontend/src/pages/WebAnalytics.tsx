@@ -3,15 +3,16 @@ import { api } from '../services/api';
 import { WebAnalyticsItem, YouTubeVideoRecord, Employee } from '../types';
 import { formatHoursToTime } from '../utils/format';
 import { getStoredEmployeeId, setStoredEmployeeId } from '../utils/selection';
-import { Globe, ExternalLink, RefreshCw, Youtube, Users, Clock } from 'lucide-react';
+import { Globe, ExternalLink, RefreshCw, Youtube, Users, Clock, Zap } from 'lucide-react';
 
 export const WebAnalytics: React.FC = () => {
   const [websites, setWebsites] = useState<WebAnalyticsItem[]>([]);
   const [youtubeVideos, setYoutubeVideos] = useState<YouTubeVideoRecord[]>([]);
+  const [activityStream, setActivityStream] = useState<any[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string>(getStoredEmployeeId());
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [activeTab, setActiveTab] = useState<'domains' | 'youtube'>('domains');
+  const [activeTab, setActiveTab] = useState<'domains' | 'youtube' | 'stream'>('domains');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -25,13 +26,15 @@ export const WebAnalytics: React.FC = () => {
       const params: any = { date: selectedDate };
       if (selectedUserId) params.userId = selectedUserId;
 
-      const [webRes, ytRes] = await Promise.all([
+      const [webRes, ytRes, streamRes] = await Promise.all([
         api.get('/admin/analytics/websites', { params }),
-        api.get('/admin/youtube', { params })
+        api.get('/admin/youtube', { params }),
+        api.get('/admin/analytics/stream', { params: { ...params, limit: 250 } })
       ]);
 
       setWebsites(webRes.data.websites || []);
       setYoutubeVideos(ytRes.data.videos || []);
+      setActivityStream(streamRes.data.stream || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -118,6 +121,18 @@ export const WebAnalytics: React.FC = () => {
         >
           <Youtube className="w-4 h-4 text-rose-500" /> YouTube Video Titles ({youtubeVideos.length})
         </button>
+
+        <button
+          onClick={() => setActiveTab('stream')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            activeTab === 'stream'
+              ? 'bg-sky-600 text-white shadow-xs'
+              : 'text-slate-600 hover:bg-slate-100'
+          }`}
+        >
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          ⚡ Live 20s Telemetry Stream ({activityStream.length})
+        </button>
       </div>
 
       {loading ? (
@@ -176,7 +191,7 @@ export const WebAnalytics: React.FC = () => {
             </table>
           </div>
         )
-      ) : (
+      ) : activeTab === 'youtube' ? (
         /* YOUTUBE TAB */
         youtubeVideos.length === 0 ? (
           <div className="p-12 text-center text-slate-400 text-xs bg-white border border-slate-200 rounded-2xl shadow-xs">
@@ -223,6 +238,90 @@ export const WebAnalytics: React.FC = () => {
                 ))}
               </tbody>
             </table>
+          </div>
+        )
+      ) : (
+        /* ⚡ LIVE 20-SECOND TELEMETRY STREAM TAB */
+        activityStream.length === 0 ? (
+          <div className="p-12 text-center text-slate-400 text-xs bg-white border border-slate-200 rounded-2xl shadow-xs">
+            No real-time 20-second telemetry logged for this date.
+          </div>
+        ) : (
+          <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
+            <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
+                <span className="text-xs font-black text-slate-900 uppercase tracking-wide">
+                  Live 20-Second Activity Heartbeat Stream
+                </span>
+                <span className="text-[11px] font-bold text-sky-700 bg-sky-50 border border-sky-200 px-2 py-0.5 rounded-full">
+                  {activityStream.length} Packets Logged
+                </span>
+              </div>
+              <span className="text-[11px] font-mono text-slate-400">Auto-refreshes every 10 seconds</span>
+            </div>
+            <div className="overflow-x-auto max-h-[600px]">
+              <table className="w-full text-left text-xs text-slate-600">
+                <thead className="bg-slate-100/75 text-slate-700 font-extrabold border-b border-slate-200 uppercase text-[10px] tracking-wider sticky top-0 z-10">
+                  <tr>
+                    <th className="px-5 py-3">Time</th>
+                    <th className="px-5 py-3">Employee</th>
+                    <th className="px-5 py-3">Application</th>
+                    <th className="px-5 py-3">Active Window Title</th>
+                    <th className="px-5 py-3">Domain</th>
+                    <th className="px-5 py-3">Inputs</th>
+                    <th className="px-5 py-3">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {activityStream.map((item: any, idx: number) => {
+                    const timeFormatted = item.recordedAt
+                      ? new Date(item.recordedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })
+                      : '—';
+                    return (
+                      <tr key={item.id || idx} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-5 py-3 font-mono font-bold text-slate-500 whitespace-nowrap">
+                          {timeFormatted}
+                        </td>
+                        <td className="px-5 py-3">
+                          <span className="font-bold text-slate-900 block">{item.user?.name || 'Employee'}</span>
+                          <span className="text-[10px] text-slate-400 block">{item.user?.department || item.user?.email || ''}</span>
+                        </td>
+                        <td className="px-5 py-3 font-bold text-slate-900 whitespace-nowrap">
+                          {item.appName || 'Desktop App'}
+                        </td>
+                        <td className="px-5 py-3 text-slate-700 max-w-[280px] truncate" title={item.windowTitle}>
+                          {item.windowTitle || '—'}
+                        </td>
+                        <td className="px-5 py-3 whitespace-nowrap">
+                          {item.domain ? (
+                            <span className="font-semibold text-sky-700 bg-sky-50 px-2 py-0.5 rounded border border-sky-100">
+                              {item.domain}
+                            </span>
+                          ) : (
+                            <span className="text-slate-300">—</span>
+                          )}
+                        </td>
+                        <td className="px-5 py-3 font-mono text-[11px] text-slate-500 whitespace-nowrap">
+                          {item.mouseClicks || 0} clicks • {item.keystrokes || 0} keys
+                        </td>
+                        <td className="px-5 py-3 whitespace-nowrap">
+                          <span
+                            className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold ${
+                              item.isIdle
+                                ? 'bg-amber-100 text-amber-800'
+                                : 'bg-emerald-100 text-emerald-800'
+                            }`}
+                          >
+                            {item.isIdle ? 'Idle' : 'Active'}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         )
       )}

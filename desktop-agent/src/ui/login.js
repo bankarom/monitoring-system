@@ -173,9 +173,39 @@ if (logsDatePicker) {
   logsDatePicker.addEventListener('change', (e) => loadDesktopLogs(e.target.value));
 }
 
+const btnSubTabAppsSummary = document.getElementById('btnSubTabAppsSummary');
+const btnSubTabAppsStream = document.getElementById('btnSubTabAppsStream');
+
+if (btnSubTabAppsSummary) {
+  btnSubTabAppsSummary.addEventListener('click', () => {
+    appsSubTab = 'summary';
+    btnSubTabAppsSummary.classList.add('active');
+    if (btnSubTabAppsStream) btnSubTabAppsStream.classList.remove('active');
+    const todayStr = new Date().toISOString().split('T')[0];
+    const pickerVal = appsDatePicker ? appsDatePicker.value || todayStr : todayStr;
+    loadDesktopApps(pickerVal);
+  });
+}
+
+if (btnSubTabAppsStream) {
+  btnSubTabAppsStream.addEventListener('click', () => {
+    appsSubTab = 'stream';
+    btnSubTabAppsStream.classList.add('active');
+    if (btnSubTabAppsSummary) btnSubTabAppsSummary.classList.remove('active');
+    const todayStr = new Date().toISOString().split('T')[0];
+    const pickerVal = appsDatePicker ? appsDatePicker.value || todayStr : todayStr;
+    loadDesktopApps(pickerVal);
+  });
+}
+
 // -------------------------------------------------------------
 // 2. TIMELINE, SCREENSHOTS, APPS & LOGS LOADERS
 // -------------------------------------------------------------
+
+let selectedTimelineHour = null;
+let cachedTimelineData = null;
+let cachedTimelineDate = null;
+let appsSubTab = 'summary';
 
 // Load Timeline
 async function loadDesktopTimeline(dateStr) {
@@ -185,42 +215,224 @@ async function loadDesktopTimeline(dateStr) {
 
   try {
     const data = await ipcRenderer.invoke('get-my-timeline', dateStr);
-    if (!data || !data.intervals || data.intervals.length === 0) {
-      container.innerHTML = '<div style="padding: 30px; color: #64748b; font-size: 13px; font-weight: 600;"><p>No activity timeline recorded for ' + dateStr + '.</p></div>';
-      return;
-    }
-
-    const activeMins = Math.round((data.attendance?.totalActiveSeconds || 0) / 60);
-    const idleMins = Math.round((data.attendance?.totalIdleSeconds || 0) / 60);
-    const activeHrs = (activeMins / 60).toFixed(1);
-
-    container.innerHTML = `
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px;">
-        <span style="font-size: 14px; font-weight: 800; color: #0f172a;">Total Active Work: ${activeHrs} hrs (${activeMins}m)</span>
-        <span style="font-size: 13px; font-weight: 700; color: #92400e;">Breaks / Away: ${idleMins}m</span>
-      </div>
-      <div style="display: flex; gap: 3px; align-items: flex-end; height: 75px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 8px; overflow-x: auto;">
-        ${Array.from({ length: 24 }).map((_, h) => {
-          const hrMatches = data.intervals.filter((i) => {
-            const startH = new Date(i.startTime).getHours();
-            return startH === h;
-          });
-          const hasActive = hrMatches.some((i) => i.category !== 'IDLE');
-          const hasBreak = hrMatches.some((i) => i.category === 'IDLE');
-          const bg = hasActive ? '#22c55e' : (hasBreak ? '#f59e0b' : '#e2e8f0');
-          const label = h === 0 ? '12a' : (h < 12 ? h + 'a' : (h === 12 ? '12p' : (h - 12) + 'p'));
-          return `
-            <div style="flex: 1; min-width: 14px; text-align: center; font-size: 9px; color: #64748b; font-weight: 700;">
-              <div>${label}</div>
-              <div style="height: 36px; background: ${bg}; border-radius: 4px; margin-top: 4px;"></div>
-            </div>
-          `;
-        }).join('')}
-      </div>
-    `;
+    cachedTimelineData = data;
+    cachedTimelineDate = dateStr;
+    renderDesktopTimeline(data, dateStr);
   } catch (e) {
     container.innerHTML = '<p style="color: #ef4444; font-size: 12px;">Failed to load timeline.</p>';
   }
+}
+
+window.filterTimelineHour = function(h) {
+  selectedTimelineHour = selectedTimelineHour === h ? null : h;
+  if (cachedTimelineData && cachedTimelineDate) {
+    renderDesktopTimeline(cachedTimelineData, cachedTimelineDate);
+  }
+};
+
+function renderDesktopTimeline(data, dateStr) {
+  const container = document.getElementById('desktopTimelineContainer');
+  if (!container) return;
+
+  if (!data || !data.intervals || data.intervals.length === 0) {
+    container.innerHTML = '<div style="padding: 30px; color: #64748b; font-size: 13px; font-weight: 600; text-align: center;"><p>No activity timeline recorded for ' + dateStr + '.</p></div>';
+    return;
+  }
+
+  const activeMins = Math.round((data.attendance?.totalActiveSeconds || 0) / 60);
+  const idleMins = Math.round((data.attendance?.totalIdleSeconds || 0) / 60);
+  const totalMins = activeMins + idleMins;
+  const activeHrs = (activeMins / 60).toFixed(1);
+  const prodPct = totalMins > 0 ? Math.round((activeMins / totalMins) * 100) : 100;
+  const clockIn = data.attendance?.clockInAt
+    ? new Date(data.attendance.clockInAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })
+    : '—';
+  const clockOut = data.attendance?.clockOutAt
+    ? new Date(data.attendance.clockOutAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })
+    : (data.attendance?.clockInAt ? 'Active Now' : '—');
+
+  // Compute 24 Hourly Activity
+  const hourlyStats = Array.from({ length: 24 }).map((_, h) => {
+    let activeSec = 0;
+    let breakSec = 0;
+
+    (data.intervals || []).forEach((inv) => {
+      const s = new Date(inv.startTime);
+      const e = inv.endTime ? new Date(inv.endTime) : s;
+      const sHour = s.getHours();
+      const eHour = e.getHours();
+
+      if (sHour <= h && eHour >= h) {
+        const hStart = new Date(s);
+        hStart.setHours(h, 0, 0, 0);
+        const hEnd = new Date(s);
+        hEnd.setHours(h, 59, 59, 999);
+
+        const overlapStart = Math.max(s.getTime(), hStart.getTime());
+        const overlapEnd = Math.min(e.getTime(), hEnd.getTime());
+        const durSec = Math.max(0, Math.round((overlapEnd - overlapStart) / 1000));
+
+        const isBreak = inv.isIdle || inv.category === 'IDLE' || inv.taskName === 'Break' || (inv.note && inv.note.includes('Break'));
+        if (isBreak) {
+          breakSec += durSec;
+        } else {
+          activeSec += durSec;
+        }
+      }
+    });
+
+    const workMins = Math.min(60, Math.round(activeSec / 60));
+    const breakMins = Math.min(60 - workMins, Math.round(breakSec / 60));
+    const workPct = Math.round((workMins / 60) * 100);
+    const breakPct = Math.round((breakMins / 60) * 100);
+    const label = h === 0 ? '12a' : (h < 12 ? h + 'a' : (h === 12 ? '12p' : (h - 12) + 'p'));
+
+    return { hour: h, label, workMins, breakMins, workPct, breakPct, activeSec, breakSec };
+  });
+
+  // Filter intervals if an hour is clicked
+  const filteredIntervals = selectedTimelineHour !== null
+    ? (data.intervals || []).filter((inv) => {
+        const s = new Date(inv.startTime).getHours();
+        const e = inv.endTime ? new Date(inv.endTime).getHours() : s;
+        return s <= selectedTimelineHour && e >= selectedTimelineHour;
+      })
+    : (data.intervals || []);
+
+  const baseUrl = (serverUrlInput && serverUrlInput.value ? serverUrlInput.value : 'http://200.141.2.53').trim().replace(/\/$/, '');
+
+  container.innerHTML = `
+    <!-- Attendance Overview Strip -->
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 14px;">
+      <div>
+        <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Clock In / Out</span>
+        <div style="font-size: 13px; font-weight: 800; color: #0f172a; margin-top: 2px;">${clockIn} → ${clockOut}</div>
+      </div>
+      <div>
+        <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Total Active Work</span>
+        <div style="font-size: 13px; font-weight: 800; color: #16a34a; margin-top: 2px;">${activeHrs} hrs (${activeMins}m)</div>
+      </div>
+      <div>
+        <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Breaks / Away</span>
+        <div style="font-size: 13px; font-weight: 800; color: #d97706; margin-top: 2px;">${idleMins} mins</div>
+      </div>
+      <div>
+        <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Productivity Score</span>
+        <div style="font-size: 13px; font-weight: 800; color: #0284c7; margin-top: 2px;">${prodPct}% Productive</div>
+      </div>
+    </div>
+
+    <!-- 24-Hour Segmented Bar Header -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 13px; font-weight: 800; color: #0f172a;">24-Hour Activity Bar</span>
+        <span style="font-size: 11px; color: #64748b; font-weight: 600;">(Click any hour to filter task sessions below)</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 14px; font-size: 11px; font-weight: 700;">
+        <div style="display: flex; align-items: center; gap: 5px;">
+          <span style="width: 10px; height: 10px; border-radius: 3px; background: #22c55e;"></span>
+          <span style="color: #475569;">Active Work</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 5px;">
+          <span style="width: 10px; height: 10px; border-radius: 3px; background: #f59e0b;"></span>
+          <span style="color: #475569;">Break / Idle</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 24-Hour Segmented Meter Grid -->
+    <div style="display: grid; grid-template-columns: repeat(24, 1fr); gap: 4px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 12px; padding: 10px; margin-bottom: 24px;">
+      ${hourlyStats.map((h) => {
+        const isSelected = selectedTimelineHour === h.hour;
+        const hasActivity = h.workMins > 0 || h.breakMins > 0;
+        return `
+          <div
+            onclick="filterTimelineHour(${h.hour})"
+            title="${h.label}: ${h.workMins}m Work, ${h.breakMins}m Break"
+            style="display: flex; flex-direction: column; align-items: center; justify-content: space-between; height: 80px; padding: 4px 2px; border-radius: 8px; cursor: pointer; background: ${isSelected ? '#ffffff' : 'transparent'}; border: ${isSelected ? '2px solid #0284c7' : '1px solid transparent'}; transition: all 0.2s;"
+          >
+            <span style="font-size: 9px; font-weight: 800; color: #475569;">${h.label}</span>
+            <div style="width: 100%; height: 44px; background: #e2e8f0; border-radius: 4px; overflow: hidden; display: flex; flex-direction: column-reverse; margin: 2px 0;">
+              ${hasActivity ? `
+                <div style="height: ${h.workPct}%; background: #22c55e; width: 100%;"></div>
+                <div style="height: ${h.breakPct}%; background: #f59e0b; width: 100%;"></div>
+              ` : ''}
+            </div>
+            <span style="font-size: 9px; font-weight: 800; color: ${h.workMins > 0 ? '#16a34a' : '#94a3b8'};">
+              ${h.workMins > 0 ? `${h.workMins}m` : '·'}
+            </span>
+          </div>
+        `;
+      }).join('')}
+    </div>
+
+    <!-- Task Sessions Feed Header -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 13px; font-weight: 800; color: #0f172a;">
+          ${selectedTimelineHour !== null ? `Hour ${hourlyStats[selectedTimelineHour].label} Sessions (${filteredIntervals.length})` : `All Task Sessions (${filteredIntervals.length})`}
+        </span>
+      </div>
+      ${selectedTimelineHour !== null ? `
+        <button onclick="filterTimelineHour(${selectedTimelineHour})" style="background: #e2e8f0; border: none; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; color: #0f172a; cursor: pointer;">✕ Show All Hours</button>
+      ` : ''}
+    </div>
+
+    <!-- Task Sessions List with Screenshots -->
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      ${filteredIntervals.length === 0 ? `
+        <div style="padding: 20px; text-align: center; color: #64748b; font-size: 12px;">No task sessions recorded for this time slice.</div>
+      ` : filteredIntervals.map((inv) => {
+        const sTime = inv.startTime ? new Date(inv.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }) : '';
+        const eTime = inv.endTime ? new Date(inv.endTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }) : '';
+        const timeRange = sTime && eTime ? `${sTime} - ${eTime}` : (inv.timeRangeFormatted || 'Active');
+        const isBreak = inv.isIdle || inv.category === 'IDLE' || inv.taskName === 'Break' || (inv.note && inv.note.includes('Break'));
+        const isMeeting = inv.category === 'COMMUNICATION' || (inv.taskName && inv.taskName.toLowerCase().includes('meeting'));
+        const badgeBg = isBreak ? '#fef3c7' : (isMeeting ? '#e0f2fe' : '#dcfce7');
+        const badgeText = isBreak ? '#92400e' : (isMeeting ? '#0369a1' : '#166534');
+        const badgeLabel = isBreak ? '☕ Break' : (isMeeting ? '💬 Meeting' : '💼 Work');
+
+        // Match screenshots taken during this interval
+        const intervalStart = new Date(inv.startTime).getTime();
+        const intervalEnd = inv.endTime ? new Date(inv.endTime).getTime() : intervalStart + 60000;
+        const matchingShots = (data.screenshots || []).filter((s) => {
+          const t = new Date(s.takenAt).getTime();
+          return t >= intervalStart - 5000 && t <= intervalEnd + 5000;
+        });
+
+        return `
+          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-family: monospace; font-size: 11px; font-weight: 800; color: #475569;">${timeRange}</span>
+                <span style="font-size: 13px; font-weight: 700; color: #0f172a;">${inv.taskName || inv.note || 'Productive Work'}</span>
+                <span style="background: ${badgeBg}; color: ${badgeText}; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 6px;">${badgeLabel}</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 12px; font-weight: 800; color: #0284c7;">${inv.durationMinutes || 1}m</span>
+                ${inv.appName ? `<span style="font-size: 11px; color: #64748b; background: #f1f5f9; padding: 2px 8px; border-radius: 4px;">${inv.appName}</span>` : ''}
+              </div>
+            </div>
+            ${matchingShots.length > 0 ? `
+              <div style="display: flex; gap: 8px; margin-top: 10px; overflow-x: auto; padding-top: 6px; border-top: 1px dashed #f1f5f9;">
+                ${matchingShots.map((s) => {
+                  const imgUrl = s.filePath.startsWith('http') ? s.filePath : `${baseUrl}${s.filePath}`;
+                  const shotTime = new Date(s.takenAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
+                  const shotTask = s.taskName || inv.taskName || 'Screen Capture';
+                  return `
+                    <div style="position: relative; cursor: pointer;" onclick="openScreenshotLightbox('${imgUrl}', '${shotTask.replace(/'/g, "\\\\'")}', '${shotTime}')">
+                      <img src="${imgUrl}" alt="Thumbnail" style="width: 110px; height: 62px; object-fit: cover; border-radius: 6px; border: 1px solid #cbd5e1;" onerror="this.src='https://via.placeholder.com/110x62?text=Screenshot'">
+                      <span style="position: absolute; bottom: 2px; right: 2px; background: rgba(0,0,0,0.65); color: #fff; font-size: 8px; font-weight: 700; padding: 1px 4px; border-radius: 3px; font-family: monospace;">${shotTime}</span>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
 }
 
 // Load Screenshots Gallery
@@ -341,8 +553,70 @@ async function loadFrontBreakdown() {
 async function loadDesktopApps(dateStr) {
   const container = document.getElementById('desktopAppsContainer');
   if (!container || !ipcRenderer) return;
-  container.innerHTML = '<p style="color: #64748b; font-size: 12px; font-weight: 600;">Loading applications and web history for ' + dateStr + '...</p>';
 
+  if (appsSubTab === 'stream') {
+    container.innerHTML = '<p style="color: #64748b; font-size: 12px; font-weight: 600;">Loading 20-second live telemetry stream for ' + dateStr + '...</p>';
+    try {
+      const data = await ipcRenderer.invoke('get-my-timeline', dateStr);
+      const blocks = (data && data.activityBlocks) ? data.activityBlocks : [];
+      if (blocks.length === 0) {
+        container.innerHTML = '<div style="padding: 40px; color: #64748b; font-size: 13px; font-weight: 600; text-align: center;"><p>No 20-second telemetry heartbeat packets recorded yet for ' + dateStr + '.</p></div>';
+        return;
+      }
+
+      container.innerHTML = `
+        <div style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #22c55e;"></span>
+            <span style="font-size: 13px; font-weight: 800; color: #0f172a;">Real-Time 20-Second Activity Stream</span>
+            <span style="background: #e0f2fe; color: #0369a1; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 12px;">${blocks.length} packets</span>
+          </div>
+          <span style="font-size: 11px; font-weight: 600; color: #64748b;">Updates every 20 seconds</span>
+        </div>
+        <div style="max-height: 480px; overflow-y: auto;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
+            <thead style="position: sticky; top: 0; background: #f8fafc; z-index: 2;">
+              <tr style="border-bottom: 2px solid #cbd5e1; color: #475569; font-size: 10px; text-transform: uppercase;">
+                <th style="padding: 8px 10px;">Time</th>
+                <th style="padding: 8px 10px;">Application</th>
+                <th style="padding: 8px 10px;">Active Window Title</th>
+                <th style="padding: 8px 10px;">Domain</th>
+                <th style="padding: 8px 10px;">Input Activity</th>
+                <th style="padding: 8px 10px;">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${[...blocks].reverse().slice(0, 150).map((b) => {
+                const timeStr = b.recordedAt
+                  ? new Date(b.recordedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })
+                  : '—';
+                return `
+                  <tr style="border-bottom: 1px solid #e2e8f0;">
+                    <td style="padding: 8px 10px; font-family: monospace; font-size: 11px; font-weight: 700; color: #64748b; white-space: nowrap;">${timeStr}</td>
+                    <td style="padding: 8px 10px; font-weight: 800; color: #0f172a; white-space: nowrap;">${b.appName || 'Desktop App'}</td>
+                    <td style="padding: 8px 10px; color: #334155; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${b.windowTitle || ''}">${b.windowTitle || '—'}</td>
+                    <td style="padding: 8px 10px; font-weight: 700; color: #0284c7; white-space: nowrap;">${b.domain || '—'}</td>
+                    <td style="padding: 8px 10px; font-family: monospace; font-size: 11px; color: #64748b; white-space: nowrap;">${b.mouseClicks || 0} clicks • ${b.keystrokes || 0} keys</td>
+                    <td style="padding: 8px 10px; white-space: nowrap;">
+                      <span style="background: ${b.isIdle ? '#fef3c7' : '#dcfce7'}; color: ${b.isIdle ? '#92400e' : '#166534'}; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 800;">
+                        ${b.isIdle ? 'IDLE' : 'ACTIVE'}
+                      </span>
+                    </td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    } catch (e) {
+      container.innerHTML = '<p style="color: #ef4444; font-size: 12px;">Failed to load live 20s stream.</p>';
+    }
+    return;
+  }
+
+  // Summary sub-tab
+  container.innerHTML = '<p style="color: #64748b; font-size: 12px; font-weight: 600;">Loading applications and web history for ' + dateStr + '...</p>';
   try {
     const data = await ipcRenderer.invoke('get-my-analytics', dateStr);
     const appsList = Array.isArray(data) ? data : (data.apps || []);
@@ -407,49 +681,193 @@ async function loadDesktopApps(dateStr) {
   }
 }
 
-// Load Detailed Logs
+// Load Detailed Logs & Employee Timesheet
 async function loadDesktopLogs(dateStr) {
   const container = document.getElementById('desktopLogsContainer');
   if (!container || !ipcRenderer) return;
-  container.innerHTML = '<p style="color: #64748b; font-size: 12px; font-weight: 600;">Loading timesheet logs for ' + dateStr + '...</p>';
+  container.innerHTML = '<p style="color: #64748b; font-size: 12px; font-weight: 600;">Loading timesheet and productivity data for ' + dateStr + '...</p>';
 
   try {
-    const list = await ipcRenderer.invoke('get-my-reports', dateStr);
-    if (!list || list.length === 0) {
-      container.innerHTML = '<div style="padding: 30px; color: #64748b; font-size: 13px; font-weight: 600; text-align: center;"><p>No timesheet intervals recorded for ' + dateStr + '.</p></div>';
+    const [timelineData, reportsList] = await Promise.all([
+      ipcRenderer.invoke('get-my-timeline', dateStr).catch(() => null),
+      ipcRenderer.invoke('get-my-reports', dateStr).catch(() => [])
+    ]);
+
+    const attendance = timelineData?.attendance || {};
+    const intervals = timelineData?.intervals || [];
+    const list = (reportsList && reportsList.length > 0) ? reportsList : intervals;
+
+    if ((!list || list.length === 0) && (!attendance || !attendance.clockInAt)) {
+      container.innerHTML = '<div style="padding: 30px; color: #64748b; font-size: 13px; font-weight: 600; text-align: center;"><p>No timesheet or activity logs recorded for ' + dateStr + '.</p></div>';
       return;
     }
 
+    const clockIn = attendance.clockInAt
+      ? new Date(attendance.clockInAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })
+      : '—';
+    const clockOut = attendance.clockOutAt
+      ? new Date(attendance.clockOutAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })
+      : (attendance.clockInAt ? 'Currently Working' : '—');
+
+    const activeSec = attendance.totalActiveSeconds || 0;
+    const idleSec = (attendance.totalIdleSeconds || 0) + (attendance.manualPauseSeconds || 0);
+    const totalSec = attendance.totalWorkSeconds || (activeSec + idleSec);
+    const activeHrs = (activeSec / 3600).toFixed(1);
+    const activeMins = Math.round(activeSec / 60);
+    const idleMins = Math.round(idleSec / 60);
+    const prodScore = totalSec > 0 ? Math.min(100, Math.round((activeSec / totalSec) * 100)) : (activeSec > 0 ? 100 : 0);
+    const status = attendance.status || (activeSec > 0 ? 'PRESENT' : 'STANDBY');
+
+    // Calculate Hourly Productivity Graph (8 AM to 8 PM)
+    const hourlyGraph = Array.from({ length: 13 }).map((_, idx) => {
+      const h = idx + 8; // 8 AM to 8 PM
+      let hActiveSec = 0;
+      let hIdleSec = 0;
+
+      intervals.forEach((inv) => {
+        const s = new Date(inv.startTime);
+        const e = inv.endTime ? new Date(inv.endTime) : s;
+        if (s.getHours() <= h && e.getHours() >= h) {
+          const hStart = new Date(s); hStart.setHours(h, 0, 0, 0);
+          const hEnd = new Date(s); hEnd.setHours(h, 59, 59, 999);
+          const oStart = Math.max(s.getTime(), hStart.getTime());
+          const oEnd = Math.min(e.getTime(), hEnd.getTime());
+          const dur = Math.max(0, Math.round((oEnd - oStart) / 1000));
+          const isBreak = inv.isIdle || inv.category === 'IDLE' || inv.taskName === 'Break' || (inv.note && inv.note.includes('Break'));
+          if (isBreak) hIdleSec += dur;
+          else hActiveSec += dur;
+        }
+      });
+
+      const hWorkMins = Math.min(60, Math.round(hActiveSec / 60));
+      const hTotalMins = Math.min(60, Math.round((hActiveSec + hIdleSec) / 60));
+      const hScore = hTotalMins > 0 ? Math.round((hWorkMins / hTotalMins) * 100) : (hWorkMins > 0 ? 100 : 0);
+      const label = h === 12 ? '12 PM' : (h > 12 ? `${h - 12} PM` : `${h} AM`);
+
+      return { hour: h, label, hWorkMins, hTotalMins, hScore };
+    });
+
     container.innerHTML = `
-      <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
-        <thead>
-          <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; color: #475569; font-size: 11px; text-transform: uppercase;">
-            <th style="padding: 10px;">Time Range</th>
-            <th style="padding: 10px;">Task / Activity</th>
-            <th style="padding: 10px;">Category</th>
-            <th style="padding: 10px;">Duration</th>
-            <th style="padding: 10px;">Activity %</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${list.map((r) => {
-            const timeDisplay = (r.from && r.to)
-              ? `${r.from} - ${r.to}`
-              : (r.startTime ? `${new Date(r.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })} - ${new Date(r.endTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}` : (r.timeRangeFormatted || 'Active'));
+      <!-- 1. COMPREHENSIVE TIMESHEET SUMMARY CARD -->
+      <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); margin-bottom: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
+          <div>
+            <h4 style="font-size: 15px; font-weight: 800; color: #0f172a; margin: 0;">Daily Timesheet Summary</h4>
+            <p style="font-size: 12px; color: #64748b; margin: 2px 0 0 0;">Official attendance and logged hours for ${dateStr}</p>
+          </div>
+          <span style="background: ${status === 'PRESENT' ? '#dcfce7' : (status === 'COMPLETED' ? '#e0f2fe' : '#f1f5f9')}; color: ${status === 'PRESENT' ? '#166534' : (status === 'COMPLETED' ? '#0369a1' : '#475569')}; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 999px;">
+            ● ${status}
+          </span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;">
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px;">
+            <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Clock In & Out</span>
+            <div style="font-size: 14px; font-weight: 800; color: #0f172a; margin-top: 4px;">${clockIn}</div>
+            <div style="font-size: 11px; font-weight: 600; color: #94a3b8; margin-top: 2px;">Out: ${clockOut}</div>
+          </div>
+
+          <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 14px;">
+            <span style="font-size: 11px; font-weight: 700; color: #166534; text-transform: uppercase;">Productive Work</span>
+            <div style="font-size: 14px; font-weight: 800; color: #15803d; margin-top: 4px;">${activeHrs} hrs</div>
+            <div style="font-size: 11px; font-weight: 600; color: #16a34a; margin-top: 2px;">${activeMins} active minutes</div>
+          </div>
+
+          <div style="background: #fffbeb; border: 1px solid #fef3c7; border-radius: 12px; padding: 14px;">
+            <span style="font-size: 11px; font-weight: 700; color: #92400e; text-transform: uppercase;">Breaks & Idle</span>
+            <div style="font-size: 14px; font-weight: 800; color: #b45309; margin-top: 4px;">${idleMins} mins</div>
+            <div style="font-size: 11px; font-weight: 600; color: #d97706; margin-top: 2px;">Pause & Away time</div>
+          </div>
+
+          <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 12px; padding: 14px;">
+            <span style="font-size: 11px; font-weight: 700; color: #0369a1; text-transform: uppercase;">Productivity Score</span>
+            <div style="font-size: 14px; font-weight: 800; color: #0284c7; margin-top: 4px;">${prodScore}%</div>
+            <div style="width: 100%; height: 5px; background: #e0f2fe; border-radius: 3px; overflow: hidden; margin-top: 4px;">
+              <div style="height: 100%; width: ${prodScore}%; background: #0284c7; border-radius: 3px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. TIME-WISE PRODUCTIVITY GRAPH -->
+      <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); margin-bottom: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <div>
+            <h4 style="font-size: 14px; font-weight: 800; color: #0f172a; margin: 0;">Time-Wise Hourly Productivity Graph</h4>
+            <p style="font-size: 11px; color: #64748b; margin: 2px 0 0 0;">Productivity percentage and active work minutes throughout the day</p>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px; font-size: 11px; font-weight: 700;">
+            <div style="display: flex; align-items: center; gap: 5px;">
+              <span style="width: 10px; height: 10px; border-radius: 3px; background: #0284c7;"></span>
+              <span style="color: #475569;">Productivity Rate</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: flex-end; gap: 8px; height: 120px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px 12px 10px 12px;">
+          ${hourlyGraph.map((h) => {
+            const barHeight = Math.max(8, Math.round((h.hWorkMins / 60) * 70));
+            const hasData = h.hTotalMins > 0;
             return `
-            <tr style="border-bottom: 1px solid #e2e8f0;">
-              <td style="padding: 10px; font-family: monospace; color: #475569;">${timeDisplay}</td>
-              <td style="padding: 10px; font-weight: 700; color: #0f172a;">${r.taskName || r.note || r.appName || 'Work'}</td>
-              <td style="padding: 10px;"><span style="background: ${(r.category === 'IDLE' || r.note === 'Away / Idle Break') ? '#fef3c7' : '#dcfce7'}; color: ${(r.category === 'IDLE' || r.note === 'Away / Idle Break') ? '#92400e' : '#166534'}; padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 10px;">${r.category || (r.note === 'Away / Idle Break' ? 'BREAK' : 'WORK')}</span></td>
-              <td style="padding: 10px; font-weight: 800; color: #0284c7;">${r.durationMinutes}m</td>
-              <td style="padding: 10px;"><span style="background: ${(r.activityPercent || 0) > 70 ? '#dcfce7' : '#fef3c7'}; color: ${(r.activityPercent || 0) > 70 ? '#166534' : '#92400e'}; padding: 3px 8px; border-radius: 999px; font-weight: 800; font-size: 10px;">${r.activityPercent || 100}%</span></td>
-            </tr>
-          `;}).join('')}
-        </tbody>
-      </table>
+              <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%;" title="${h.label}: ${h.hWorkMins}m active (${h.hScore}% productive)">
+                <span style="font-size: 9px; font-weight: 800; color: ${hasData ? '#0284c7' : '#94a3b8'}; margin-bottom: 4px;">
+                  ${hasData ? `${h.hScore}%` : ''}
+                </span>
+                <div style="width: 100%; max-width: 28px; height: ${hasData ? barHeight : 4}px; background: ${hasData ? (h.hScore > 75 ? '#0284c7' : '#f59e0b') : '#e2e8f0'}; border-radius: 4px; transition: height 0.3s;"></div>
+                <span style="font-size: 9px; font-weight: 700; color: #64748b; margin-top: 6px; white-space: nowrap;">${h.label}</span>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+
+      <!-- 3. DETAILED ACTIVITY LOGS TABLE -->
+      <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.04);">
+        <h4 style="font-size: 14px; font-weight: 800; color: #0f172a; margin: 0 0 14px 0;">Detailed Timesheet Interval Records</h4>
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
+            <thead>
+              <tr style="background: #f8fafc; border-bottom: 2px solid #cbd5e1; color: #475569; font-size: 10px; text-transform: uppercase;">
+                <th style="padding: 10px;">Time Range</th>
+                <th style="padding: 10px;">Task / Activity</th>
+                <th style="padding: 10px;">Category</th>
+                <th style="padding: 10px;">Duration</th>
+                <th style="padding: 10px;">Productivity %</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${list.map((r) => {
+                const timeDisplay = (r.from && r.to)
+                  ? `${r.from} - ${r.to}`
+                  : (r.startTime ? `${new Date(r.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })} - ${new Date(r.endTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}` : (r.timeRangeFormatted || 'Active'));
+                const isBreak = r.category === 'IDLE' || r.taskName === 'Break' || r.note === 'Away / Idle Break' || (r.note && r.note.includes('Break'));
+                const isMeeting = r.category === 'COMMUNICATION' || (r.taskName && r.taskName.toLowerCase().includes('meeting'));
+                const catBg = isBreak ? '#fef3c7' : (isMeeting ? '#e0f2fe' : '#dcfce7');
+                const catText = isBreak ? '#92400e' : (isMeeting ? '#0369a1' : '#166534');
+                const catLabel = isBreak ? 'BREAK' : (isMeeting ? 'MEETING' : (r.category || 'WORK'));
+                const actPercent = r.activityPercent !== undefined ? r.activityPercent : (isBreak ? 0 : 100);
+
+                return `
+                  <tr style="border-bottom: 1px solid #e2e8f0;">
+                    <td style="padding: 10px; font-family: monospace; font-size: 11px; font-weight: 700; color: #475569; white-space: nowrap;">${timeDisplay}</td>
+                    <td style="padding: 10px; font-weight: 700; color: #0f172a;">${r.taskName || r.note || r.appName || 'Work'}</td>
+                    <td style="padding: 10px;"><span style="background: ${catBg}; color: ${catText}; padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 10px;">${catLabel}</span></td>
+                    <td style="padding: 10px; font-weight: 800; color: #0284c7;">${r.durationMinutes || 1}m</td>
+                    <td style="padding: 10px;">
+                      <span style="background: ${actPercent > 70 ? '#dcfce7' : (actPercent > 40 ? '#fef3c7' : '#fee2e2')}; color: ${actPercent > 70 ? '#166534' : (actPercent > 40 ? '#92400e' : '#991b1b')}; padding: 3px 8px; border-radius: 999px; font-weight: 800; font-size: 10px;">
+                        ${actPercent}%
+                      </span>
+                    </td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
     `;
   } catch (e) {
-    container.innerHTML = '<p style="color: #ef4444; font-size: 12px;">Failed to load session logs.</p>';
+    container.innerHTML = '<p style="color: #ef4444; font-size: 12px;">Failed to load timesheet logs.</p>';
   }
 }
 

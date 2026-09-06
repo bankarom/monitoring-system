@@ -316,7 +316,13 @@
         <!-- TAB 4: APPS & WEB HISTORY -->
         <div id="tabApps" class="tab-panel hidden">
           <div class="panel-top-controls">
-            <h3 class="panel-subtitle">Applications & Visited Websites</h3>
+            <div class="controls-left">
+              <h3 class="panel-subtitle">Applications & Visited Websites</h3>
+              <div class="sub-tab-group">
+                <button type="button" class="sub-tab-btn active" id="btnSubTabAppsSummary">📊 App & Web Summary</button>
+                <button type="button" class="sub-tab-btn" id="btnSubTabAppsStream">⚡ Live 20s Activity Stream</button>
+              </div>
+            </div>
             <input type="date" id="appsDatePicker" class="custom-date-picker">
           </div>
           <div id="desktopAppsContainer" class="panel-card-box">
@@ -327,7 +333,7 @@
         <!-- TAB 5: TIMESHEETS & LOGS -->
         <div id="tabLogs" class="tab-panel hidden">
           <div class="panel-top-controls">
-            <h3 class="panel-subtitle">Detailed Daily Activity Logs</h3>
+            <h3 class="panel-subtitle">Employee Timesheet & Activity Logs</h3>
             <input type="date" id="logsDatePicker" class="custom-date-picker">
           </div>
           <div id="desktopLogsContainer" class="panel-card-box">

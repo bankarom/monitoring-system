@@ -190,6 +190,7 @@ export const Timeline: React.FC = () => {
             date={selectedDate}
             attendance={timelineData.attendance}
             intervals={timelineData.intervals || []}
+            activityBlocks={timelineData.activityBlocks || []}
             onRefresh={fetchTimeline}
             isAdmin={true}
           />

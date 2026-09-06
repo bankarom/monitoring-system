@@ -1286,3 +1286,32 @@ export async function getDetailedReports(req: Request, res: Response) {
     return res.status(500).json({ success: false, message: error.message });
   }
 }
+
+export async function getActivityStream(req: Request, res: Response) {
+  try {
+    const { userId, date, limit } = req.query as { userId?: string; date?: string; limit?: string };
+    const queryDate = date || new Date().toISOString().split('T')[0];
+    const startOfDay = new Date(queryDate + 'T00:00:00.000Z');
+    const endOfDay = new Date(queryDate + 'T23:59:59.999Z');
+
+    const whereClause: any = {
+      recordedAt: { gte: startOfDay, lte: endOfDay }
+    };
+    if (userId) {
+      whereClause.userId = userId;
+    }
+
+    const stream = await prisma.activityLog.findMany({
+      where: whereClause,
+      include: {
+        user: { select: { id: true, name: true, email: true, department: true } }
+      },
+      orderBy: { recordedAt: 'desc' },
+      take: limit ? parseInt(limit, 10) : 300
+    });
+
+    return res.status(200).json({ success: true, stream });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+}

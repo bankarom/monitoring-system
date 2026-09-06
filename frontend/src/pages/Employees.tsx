@@ -35,6 +35,7 @@ export const Employees: React.FC = () => {
     user: any;
     attendance: any;
     intervals: TimelineInterval[];
+    activityBlocks?: any[];
     screenshots: any[];
   } | null>(null);
 
@@ -345,6 +346,7 @@ export const Employees: React.FC = () => {
                   date={selectedDate}
                   attendance={timelineData?.attendance}
                   intervals={timelineData?.intervals || []}
+                  activityBlocks={timelineData?.activityBlocks || []}
                   onRefresh={fetchSelectedEmployeeTimeline}
                   isAdmin={true}
                 />

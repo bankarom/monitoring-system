@@ -35,6 +35,7 @@ interface ActivityTimelineViewProps {
     totalWorkSeconds: number;
   };
   intervals: TimelineInterval[];
+  activityBlocks?: any[];
   onRefresh?: () => void;
   isAdmin?: boolean;
 }
@@ -53,10 +54,12 @@ export const ActivityTimelineView: React.FC<ActivityTimelineViewProps> = ({
   date,
   attendance,
   intervals = [],
+  activityBlocks = [],
   onRefresh,
   isAdmin = false
 }) => {
   const [selectedHour, setSelectedHour] = useState<number | null>(null);
+  const [viewMode, setViewMode] = useState<'intervals' | 'stream'>('intervals');
   const [selectedScreenshot, setSelectedScreenshot] = useState<{
     url: string;
     title: string;
@@ -203,50 +206,86 @@ export const ActivityTimelineView: React.FC<ActivityTimelineViewProps> = ({
           </div>
         </div>
 
-        {/* 24-Hour Horizontal Bar Grid */}
-        <div className="grid grid-cols-12 md:grid-cols-24 gap-1 p-2 bg-slate-50 border border-slate-200 rounded-xl">
+        {/* 24-Hour Interactive Segmented Scrubber Bar */}
+        <div className="grid grid-cols-12 md:grid-cols-24 gap-1 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl shadow-inner">
           {hourlyActivity.map((h) => {
             const isSelected = selectedHour === h.hour;
-            let barBg = 'bg-slate-200 hover:bg-slate-300';
-            if (h.hasWork) barBg = 'bg-emerald-500 hover:bg-emerald-600';
-            else if (h.hasBreak) barBg = 'bg-amber-400 hover:bg-amber-500';
+            const totalWorkMins = Math.min(60, Math.round(h.activeSec / 60));
+            const totalBreakMins = Math.min(60 - totalWorkMins, Math.round(h.breakSec / 60));
+            const workPct = Math.round((totalWorkMins / 60) * 100);
+            const breakPct = Math.round((totalBreakMins / 60) * 100);
+            const hasActivity = totalWorkMins > 0 || totalBreakMins > 0;
 
             return (
               <div
                 key={h.hour}
                 onClick={() => setSelectedHour(isSelected ? null : h.hour)}
-                className={`relative flex flex-col items-center justify-between h-14 rounded-lg p-1 transition-all cursor-pointer ${
-                  isSelected ? 'ring-2 ring-sky-500 bg-sky-50 shadow-xs' : ''
+                className={`relative flex flex-col items-center justify-between h-20 rounded-xl p-1 transition-all cursor-pointer select-none group ${
+                  isSelected
+                    ? 'ring-2 ring-sky-500 bg-white shadow-md'
+                    : 'hover:bg-white hover:shadow-xs'
                 }`}
-                title={`${h.label}: ${Math.round(h.activeSec / 60)}m active work, ${Math.round(h.breakSec / 60)}m break`}
+                title={`${h.label}: ${totalWorkMins}m Active Work, ${totalBreakMins}m Break / Idle`}
               >
-                <span className="text-[9px] font-extrabold text-slate-500">{h.label}</span>
-                <div className={`w-full h-5 rounded-md transition-all ${barBg}`} />
-                <span className="text-[8px] font-bold text-slate-400">
-                  {h.activeSec > 0 ? `${Math.round(h.activeSec / 60)}m` : '—'}
-                </span>
+                <span className="text-[10px] font-black text-slate-600">{h.label}</span>
+
+                {/* Vertical Segmented Meter */}
+                <div className="w-full flex-1 max-h-10 bg-slate-200 rounded-md overflow-hidden flex flex-col-reverse relative my-1 border border-slate-300/60">
+                  {hasActivity ? (
+                    <>
+                      <div
+                        style={{ height: `${workPct}%` }}
+                        className="w-full bg-emerald-500 transition-all duration-300"
+                      />
+                      <div
+                        style={{ height: `${breakPct}%` }}
+                        className="w-full bg-amber-400 transition-all duration-300"
+                      />
+                    </>
+                  ) : (
+                    <div className="w-full h-full bg-slate-200/80" />
+                  )}
+                </div>
+
+                <div className="text-[9px] font-bold leading-tight text-center">
+                  {totalWorkMins > 0 ? (
+                    <span className="text-emerald-700 font-extrabold">{totalWorkMins}m</span>
+                  ) : totalBreakMins > 0 ? (
+                    <span className="text-amber-700 font-extrabold">{totalBreakMins}m</span>
+                  ) : (
+                    <span className="text-slate-300">—</span>
+                  )}
+                </div>
               </div>
             );
           })}
         </div>
       </div>
 
-      {/* 2. ACTION CONTROLS & FILTER BAR */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex flex-wrap items-center gap-2">
-          {['ALL', 'WORK', 'COMMUNICATION', 'BROWSING', 'IDLE'].map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setFilterCategory(cat)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                filterCategory === cat
-                  ? 'bg-slate-900 text-white shadow-xs'
-                  : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
-              }`}
-            >
-              {cat === 'ALL' ? 'All Activities' : categoryColors[cat as ActivityCategory]?.label || cat}
-            </button>
-          ))}
+      {/* 2. VIEW MODE TOGGLE & ACTION CONTROLS */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white border border-slate-200 rounded-2xl p-4 shadow-xs">
+        <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-xl">
+          <button
+            onClick={() => setViewMode('intervals')}
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+              viewMode === 'intervals'
+                ? 'bg-white text-slate-900 shadow-sm'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            📋 Task Intervals & Screenshots ({filteredIntervals.length})
+          </button>
+          <button
+            onClick={() => setViewMode('stream')}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+              viewMode === 'stream'
+                ? 'bg-white text-sky-700 shadow-sm'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            ⚡ Live 20s Telemetry Stream ({activityBlocks.length})
+          </button>
         </div>
 
         <div className="flex items-center gap-3">
@@ -266,7 +305,87 @@ export const ActivityTimelineView: React.FC<ActivityTimelineViewProps> = ({
         </div>
       </div>
 
-      {/* 3. CHRONOLOGICAL SCRIN.IO INTERVAL ENTRIES LIST */}
+      {viewMode === 'stream' ? (
+        /* LIVE 20-SECOND TELEMETRY STREAM TABLE */
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-3">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-sky-500 animate-ping" />
+              <h4 className="text-sm font-black text-slate-900">Real-Time 20-Second Activity Stream</h4>
+            </div>
+            <span className="text-xs font-bold text-slate-400 font-mono">Updates 3x per minute</span>
+          </div>
+
+          {activityBlocks.length === 0 ? (
+            <div className="text-center py-10 text-slate-400 text-xs">
+              No 20-second telemetry packets logged yet for this date.
+            </div>
+          ) : (
+            <div className="overflow-x-auto max-h-[500px]">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[10px] font-extrabold sticky top-0 z-10">
+                  <tr>
+                    <th className="p-3">Time</th>
+                    <th className="p-3">Application</th>
+                    <th className="p-3">Active Window Title</th>
+                    <th className="p-3">Domain</th>
+                    <th className="p-3">Activity</th>
+                    <th className="p-3">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {[...activityBlocks].reverse().slice(0, 100).map((block: any, idx: number) => {
+                    const blockTime = block.recordedAt
+                      ? new Date(block.recordedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })
+                      : '—';
+                    return (
+                      <tr key={block.id || idx} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="p-3 font-mono font-bold text-slate-500">{blockTime}</td>
+                        <td className="p-3 font-bold text-slate-900">{block.appName || 'Desktop'}</td>
+                        <td className="p-3 text-slate-600 max-w-[320px] truncate" title={block.windowTitle}>
+                          {block.windowTitle || '—'}
+                        </td>
+                        <td className="p-3 text-sky-700 font-semibold">{block.domain || '—'}</td>
+                        <td className="p-3 font-mono text-[11px] text-slate-500">
+                          {block.mouseClicks || 0} clicks • {block.keystrokes || 0} keys
+                        </td>
+                        <td className="p-3">
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                              block.isIdle
+                                ? 'bg-amber-100 text-amber-800'
+                                : 'bg-emerald-100 text-emerald-800'
+                            }`}
+                          >
+                            {block.isIdle ? 'Idle' : 'Active'}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      ) : (
+        /* CATEGORY FILTER BAR & INTERVALS LIST */
+        <>
+          <div className="flex flex-wrap items-center gap-2">
+            {['ALL', 'WORK', 'COMMUNICATION', 'BROWSING', 'IDLE'].map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setFilterCategory(cat)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  filterCategory === cat
+                    ? 'bg-slate-900 text-white shadow-xs'
+                    : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                {cat === 'ALL' ? 'All Activities' : categoryColors[cat as ActivityCategory]?.label || cat}
+              </button>
+            ))}
+          </div>
       <div className="space-y-4">
         {filteredIntervals.length === 0 ? (
           <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center shadow-xs">
@@ -392,6 +511,8 @@ export const ActivityTimelineView: React.FC<ActivityTimelineViewProps> = ({
           })
         )}
       </div>
+      </>
+      )}
 
       {/* 4. LIGHTBOX SCREENSHOT MODAL */}
       {selectedScreenshot && (
