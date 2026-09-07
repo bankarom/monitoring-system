@@ -179,7 +179,7 @@ class AgentApplication {
       minWidth: 880,
       minHeight: 600,
       backgroundColor: '#ffffff',
-      title: 'Improx Monitoring System',
+      title: 'improX Pro — Enterprise Work Tracker',
       webPreferences: {
         nodeIntegration: true,
         contextIsolation: false

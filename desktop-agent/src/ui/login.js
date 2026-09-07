@@ -451,7 +451,7 @@ async function loadDesktopScreenshots(dateStr) {
   try {
     const list = await ipcRenderer.invoke('get-my-screenshots', dateStr);
     if (!list || list.length === 0) {
-      container.innerHTML = '<div style="padding: 40px; color: #64748b; font-size: 13px; font-weight: 600; grid-column: 1 / -1; text-align: center;"><p>No screenshots recorded for ' + dateStr + '.</p><p style="font-size: 11px; color: #94a3b8; margin-top: 6px;">Screenshots capture automatically every 10 minutes while working, or you can click "Capture Screenshot Now" above.</p></div>';
+      container.innerHTML = '<div style="padding: 50px 20px; color: #64748b; font-size: 13px; font-weight: 600; grid-column: 1 / -1; text-align: center; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; margin-top: 12px;"><p style="font-size: 14px; font-weight: 800; color: #1e293b;">No screenshots recorded for ' + dateStr + '</p><p style="font-size: 12px; color: #64748b; margin-top: 6px;">Click <span style="color: #10b981; font-weight: 800;">▶ START WORK</span> on Live Tracker to start automated screen captures.</p></div>';
       return;
     }
 
