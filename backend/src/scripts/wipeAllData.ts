@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { prisma } from '../config/prisma';
 
 async function wipeAllData() {

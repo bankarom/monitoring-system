@@ -54,7 +54,7 @@ const ProtectedLayout: React.FC = () => {
                 <Route path="/screenshots" element={<Screenshots />} />
                 <Route path="/timeline" element={<Timeline />} />
                 <Route path="/analytics/apps" element={<AppAnalytics />} />
-                <Route path="/analytics/websites" element={<WebAnalytics />} />
+                <Route path="/analytics/websites" element={<Navigate to="/timeline" replace />} />
                 <Route path="/timesheets" element={<Timesheets />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="*" element={<Navigate to="/" replace />} />

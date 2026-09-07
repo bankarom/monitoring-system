@@ -59,7 +59,11 @@ export const ActivityTimelineView: React.FC<ActivityTimelineViewProps> = ({
   isAdmin = false
 }) => {
   const [selectedHour, setSelectedHour] = useState<number | null>(null);
+  const [hoveredHour, setHoveredHour] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<'intervals' | 'stream'>('intervals');
+  const [streamSortOrder, setStreamSortOrder] = useState<'asc' | 'desc'>('asc'); // Default: Morning -> Evening
+  const [streamSearchQuery, setStreamSearchQuery] = useState('');
+  const [streamFilterStatus, setStreamFilterStatus] = useState<'ALL' | 'ACTIVE' | 'IDLE'>('ALL');
   const [selectedScreenshot, setSelectedScreenshot] = useState<{
     url: string;
     title: string;
@@ -207,9 +211,10 @@ export const ActivityTimelineView: React.FC<ActivityTimelineViewProps> = ({
         </div>
 
         {/* 24-Hour Interactive Segmented Scrubber Bar */}
-        <div className="grid grid-cols-12 md:grid-cols-24 gap-1 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl shadow-inner">
+        <div className="grid grid-cols-12 md:grid-cols-24 gap-1 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl shadow-inner relative">
           {hourlyActivity.map((h) => {
             const isSelected = selectedHour === h.hour;
+            const isHovered = hoveredHour === h.hour;
             const totalWorkMins = Math.min(60, Math.round(h.activeSec / 60));
             const totalBreakMins = Math.min(60 - totalWorkMins, Math.round(h.breakSec / 60));
             const workPct = Math.round((totalWorkMins / 60) * 100);
@@ -220,13 +225,31 @@ export const ActivityTimelineView: React.FC<ActivityTimelineViewProps> = ({
               <div
                 key={h.hour}
                 onClick={() => setSelectedHour(isSelected ? null : h.hour)}
+                onMouseEnter={() => setHoveredHour(h.hour)}
+                onMouseLeave={() => setHoveredHour(null)}
                 className={`relative flex flex-col items-center justify-between h-20 rounded-xl p-1 transition-all cursor-pointer select-none group ${
                   isSelected
                     ? 'ring-2 ring-sky-500 bg-white shadow-md'
                     : 'hover:bg-white hover:shadow-xs'
                 }`}
-                title={`${h.label}: ${totalWorkMins}m Active Work, ${totalBreakMins}m Break / Idle`}
               >
+                {/* Custom Floating React Tooltip (ONLY shown on hover, NO native title box!) */}
+                {isHovered && (
+                  <div className="absolute -top-10 left-1/2 -translate-x-1/2 z-30 pointer-events-none whitespace-nowrap bg-slate-900 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg shadow-xl border border-slate-700 animate-fade-in flex items-center gap-1.5">
+                    <span className="text-sky-400 font-mono">{h.label}</span>
+                    <span className="text-slate-400">•</span>
+                    {hasActivity ? (
+                      <>
+                        {totalWorkMins > 0 && <span className="text-emerald-400">{totalWorkMins}m Work</span>}
+                        {totalWorkMins > 0 && totalBreakMins > 0 && <span className="text-slate-400">|</span>}
+                        {totalBreakMins > 0 && <span className="text-amber-400">{totalBreakMins}m Break</span>}
+                      </>
+                    ) : (
+                      <span className="text-slate-300 font-normal">No Activity Logged</span>
+                    )}
+                  </div>
+                )}
+
                 <span className="text-[10px] font-black text-slate-600">{h.label}</span>
 
                 {/* Vertical Segmented Meter */}
@@ -306,67 +329,186 @@ export const ActivityTimelineView: React.FC<ActivityTimelineViewProps> = ({
       </div>
 
       {viewMode === 'stream' ? (
-        /* LIVE 20-SECOND TELEMETRY STREAM TABLE */
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-3">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-sky-500 animate-ping" />
-              <h4 className="text-sm font-black text-slate-900">Real-Time 20-Second Activity Stream</h4>
+        /* LIVE 20-SECOND TELEMETRY STREAM VIEW */
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
+          {/* Header Controls Bar */}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+            <div className="flex items-center gap-2.5">
+              <span className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+              </span>
+              <div>
+                <h4 className="text-sm font-black text-slate-900 tracking-tight">Real-Time 20-Second Activity Stream</h4>
+                <p className="text-[11px] text-slate-500 font-medium">Logged heartbeats for {date} • Total {activityBlocks.length} records</p>
+              </div>
             </div>
-            <span className="text-xs font-bold text-slate-400 font-mono">Updates 3x per minute</span>
+
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              {/* Search Box */}
+              <input
+                type="text"
+                value={streamSearchQuery}
+                onChange={(e) => setStreamSearchQuery(e.target.value)}
+                placeholder="Search app, window, domain..."
+                className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-sky-500 focus:bg-white w-44 md:w-56"
+              />
+
+              {/* Status Filter Buttons */}
+              <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200">
+                {(['ALL', 'ACTIVE', 'IDLE'] as const).map((st) => (
+                  <button
+                    key={st}
+                    onClick={() => setStreamFilterStatus(st)}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
+                      streamFilterStatus === st
+                        ? 'bg-white text-slate-900 shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    {st === 'ALL' ? 'All' : st === 'ACTIVE' ? 'Active' : 'Idle'}
+                  </button>
+                ))}
+              </div>
+
+              {/* Sort Order Toggle Button */}
+              <button
+                onClick={() => setStreamSortOrder(streamSortOrder === 'asc' ? 'desc' : 'asc')}
+                className="flex items-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-colors border border-slate-200"
+                title="Toggle time sorting order"
+              >
+                <span>{streamSortOrder === 'asc' ? '⬇️ Morning → Evening (Oldest First)' : '⬆️ Evening → Morning (Newest First)'}</span>
+              </button>
+            </div>
           </div>
 
-          {activityBlocks.length === 0 ? (
-            <div className="text-center py-10 text-slate-400 text-xs">
-              No 20-second telemetry packets logged yet for this date.
-            </div>
-          ) : (
-            <div className="overflow-x-auto max-h-[500px]">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[10px] font-extrabold sticky top-0 z-10">
-                  <tr>
-                    <th className="p-3">Time</th>
-                    <th className="p-3">Application</th>
-                    <th className="p-3">Active Window Title</th>
-                    <th className="p-3">Domain</th>
-                    <th className="p-3">Activity</th>
-                    <th className="p-3">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {[...activityBlocks].reverse().slice(0, 100).map((block: any, idx: number) => {
-                    const blockTime = block.recordedAt
-                      ? new Date(block.recordedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })
-                      : '—';
-                    return (
-                      <tr key={block.id || idx} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="p-3 font-mono font-bold text-slate-500">{blockTime}</td>
-                        <td className="p-3 font-bold text-slate-900">{block.appName || 'Desktop'}</td>
-                        <td className="p-3 text-slate-600 max-w-[320px] truncate" title={block.windowTitle}>
-                          {block.windowTitle || '—'}
-                        </td>
-                        <td className="p-3 text-sky-700 font-semibold">{block.domain || '—'}</td>
-                        <td className="p-3 font-mono text-[11px] text-slate-500">
-                          {block.mouseClicks || 0} clicks • {block.keystrokes || 0} keys
-                        </td>
-                        <td className="p-3">
-                          <span
-                            className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
-                              block.isIdle
-                                ? 'bg-amber-100 text-amber-800'
-                                : 'bg-emerald-100 text-emerald-800'
-                            }`}
-                          >
-                            {block.isIdle ? 'Idle' : 'Active'}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
+          {/* Processed Stream Records */}
+          {(() => {
+            const processedBlocks = [...activityBlocks]
+              .filter((block) => {
+                if (streamFilterStatus === 'ACTIVE' && block.isIdle) return false;
+                if (streamFilterStatus === 'IDLE' && !block.isIdle) return false;
+                if (streamSearchQuery) {
+                  const q = streamSearchQuery.toLowerCase();
+                  const app = (block.appName || '').toLowerCase();
+                  const win = (block.windowTitle || '').toLowerCase();
+                  const dom = (block.domain || '').toLowerCase();
+                  const usr = (block.user?.name || '').toLowerCase();
+                  return app.includes(q) || win.includes(q) || dom.includes(q) || usr.includes(q);
+                }
+                return true;
+              })
+              .sort((a, b) => {
+                const tA = new Date(a.recordedAt || 0).getTime();
+                const tB = new Date(b.recordedAt || 0).getTime();
+                return streamSortOrder === 'asc' ? tA - tB : tB - tA;
+              });
+
+            if (processedBlocks.length === 0) {
+              return (
+                <div className="text-center py-14 text-slate-400 text-xs bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                  <Clock className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                  <p className="font-bold text-slate-600">No 20-second telemetry records match your filter criteria.</p>
+                  <p className="text-[11px] text-slate-400 mt-1">Try resetting the search or status filters above.</p>
+                </div>
+              );
+            }
+
+            return (
+              <div className="overflow-x-auto max-h-[580px] rounded-xl border border-slate-200/80">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead className="bg-slate-100/90 text-slate-600 uppercase text-[10px] font-black tracking-wider sticky top-0 z-10 border-b border-slate-200">
+                    <tr>
+                      <th className="py-3 px-4">Time</th>
+                      <th className="py-3 px-4">Application</th>
+                      <th className="py-3 px-4">Active Window Title</th>
+                      <th className="py-3 px-4">Website / Domain</th>
+                      <th className="py-3 px-4">Input Intensity</th>
+                      <th className="py-3 px-4">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 bg-white">
+                    {processedBlocks.map((block: any, idx: number) => {
+                      const blockTime = block.recordedAt
+                        ? new Date(block.recordedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })
+                        : '—';
+                      const clicks = block.mouseClicks || 0;
+                      const keys = block.keystrokes || 0;
+                      const appName = block.appName || 'Desktop App';
+                      const appLower = appName.toLowerCase();
+
+                      // Icon helper
+                      let appIcon = '⚡';
+                      let appBadgeStyle = 'bg-slate-100 text-slate-800 border-slate-200';
+                      if (appLower.includes('chrome') || appLower.includes('edge') || appLower.includes('firefox')) {
+                        appIcon = '🌐';
+                        appBadgeStyle = 'bg-sky-50 text-sky-800 border-sky-200';
+                      } else if (appLower.includes('code') || appLower.includes('visual studio')) {
+                        appIcon = '💻';
+                        appBadgeStyle = 'bg-indigo-50 text-indigo-800 border-indigo-200';
+                      } else if (appLower.includes('slack') || appLower.includes('teams') || appLower.includes('zoom')) {
+                        appIcon = '💬';
+                        appBadgeStyle = 'bg-emerald-50 text-emerald-800 border-emerald-200';
+                      } else if (appLower.includes('figma')) {
+                        appIcon = '🎨';
+                        appBadgeStyle = 'bg-purple-50 text-purple-800 border-purple-200';
+                      }
+
+                      return (
+                        <tr key={block.id || idx} className="hover:bg-slate-50/90 transition-colors">
+                          <td className="py-3.5 px-4 font-mono font-bold text-slate-600 whitespace-nowrap">
+                            {blockTime}
+                          </td>
+                          <td className="py-3.5 px-4 whitespace-nowrap">
+                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-extrabold border ${appBadgeStyle}`}>
+                              <span>{appIcon}</span>
+                              <span>{appName}</span>
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 text-slate-800 font-medium max-w-sm">
+                            <span className="line-clamp-1" title={block.windowTitle || ''}>
+                              {block.windowTitle || '—'}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 whitespace-nowrap">
+                            {block.domain ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-sky-50 text-sky-700 border border-sky-200 text-[11px] font-bold">
+                                <span>🌐</span> {block.domain}
+                              </span>
+                            ) : (
+                              <span className="text-slate-300">—</span>
+                            )}
+                          </td>
+                          <td className="py-3.5 px-4 whitespace-nowrap font-mono text-[11px] text-slate-600">
+                            <div className="flex items-center gap-2">
+                              <span>{clicks} clicks • {keys} keys</span>
+                              <div className="w-12 bg-slate-100 h-1.5 rounded-full overflow-hidden shrink-0">
+                                <div
+                                  className={`h-full rounded-full ${clicks + keys > 20 ? 'bg-emerald-500' : 'bg-sky-400'}`}
+                                  style={{ width: `${Math.min(100, (clicks + keys) * 3)}%` }}
+                                />
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-3.5 px-4 whitespace-nowrap">
+                            <span
+                              className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wide border ${
+                                block.isIdle
+                                  ? 'bg-amber-50 text-amber-800 border-amber-200'
+                                  : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                              }`}
+                            >
+                              ● {block.isIdle ? 'Idle' : 'Active'}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })()}
         </div>
       ) : (
         /* CATEGORY FILTER BAR & INTERVALS LIST */

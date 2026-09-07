@@ -348,7 +348,6 @@ function renderDesktopTimeline(data, dateStr) {
         return `
           <div
             onclick="filterTimelineHour(${h.hour})"
-            title="${h.label}: ${h.workMins}m Work, ${h.breakMins}m Break"
             style="display: flex; flex-direction: column; align-items: center; justify-content: space-between; height: 80px; padding: 4px 2px; border-radius: 8px; cursor: pointer; background: ${isSelected ? '#ffffff' : 'transparent'}; border: ${isSelected ? '2px solid #0284c7' : '1px solid transparent'}; transition: all 0.2s;"
           >
             <span style="font-size: 9px; font-weight: 800; color: #475569;">${h.label}</span>
@@ -586,7 +585,7 @@ async function loadDesktopApps(dateStr) {
               </tr>
             </thead>
             <tbody>
-              ${[...blocks].reverse().slice(0, 150).map((b) => {
+              ${[...blocks].sort((a, b) => new Date(a.recordedAt || 0) - new Date(b.recordedAt || 0)).slice(0, 200).map((b) => {
                 const timeStr = b.recordedAt
                   ? new Date(b.recordedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })
                   : '—';
@@ -594,7 +593,7 @@ async function loadDesktopApps(dateStr) {
                   <tr style="border-bottom: 1px solid #e2e8f0;">
                     <td style="padding: 8px 10px; font-family: monospace; font-size: 11px; font-weight: 700; color: #64748b; white-space: nowrap;">${timeStr}</td>
                     <td style="padding: 8px 10px; font-weight: 800; color: #0f172a; white-space: nowrap;">${b.appName || 'Desktop App'}</td>
-                    <td style="padding: 8px 10px; color: #334155; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${b.windowTitle || ''}">${b.windowTitle || '—'}</td>
+                    <td style="padding: 8px 10px; color: #334155; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${b.windowTitle || '—'}</td>
                     <td style="padding: 8px 10px; font-weight: 700; color: #0284c7; white-space: nowrap;">${b.domain || '—'}</td>
                     <td style="padding: 8px 10px; font-family: monospace; font-size: 11px; color: #64748b; white-space: nowrap;">${b.mouseClicks || 0} clicks • ${b.keystrokes || 0} keys</td>
                     <td style="padding: 8px 10px; white-space: nowrap;">

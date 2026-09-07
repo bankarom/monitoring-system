@@ -30,7 +30,6 @@ const adminNavigation: NavItem[] = [
   { name: 'Screenshots', href: '/screenshots', icon: Image },
   { name: '24h Timeline', href: '/timeline', icon: Clock },
   { name: 'App Analytics', href: '/analytics/apps', icon: PieChart },
-  { name: 'Web History', href: '/analytics/websites', icon: Globe },
   { name: 'Timesheets', href: '/timesheets', icon: CalendarCheck },
   { name: 'System Settings', href: '/settings', icon: Settings },
 ];
