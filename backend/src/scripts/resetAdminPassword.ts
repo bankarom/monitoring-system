@@ -3,22 +3,26 @@ import bcrypt from 'bcryptjs';
 import { prisma } from '../config/prisma';
 
 async function resetAdmin() {
-  const adminEmail = 'admin@improx.com';
-  const hashedPassword = await bcrypt.hash('admin123', 10);
+  const adminEmail = 'monitoradmin@improxgroup.com1234';
+  const adminPass = '#admin0089000#';
+  const hashedPassword = await bcrypt.hash(adminPass, 10);
 
-  const existing = await prisma.user.findUnique({ where: { email: adminEmail } });
+  // First check if an admin account with role ADMIN exists
+  const existingAdmin = await prisma.user.findFirst({ where: { role: 'ADMIN' } });
 
-  if (existing) {
+  if (existingAdmin) {
     await prisma.user.update({
-      where: { id: existing.id },
+      where: { id: existingAdmin.id },
       data: {
+        name: 'Super Admin',
+        email: adminEmail,
         password: hashedPassword,
         role: 'ADMIN',
         isActive: true,
         status: 'OFFLINE'
       }
     });
-    console.log('✅ Super Admin password reset successfully to: admin123');
+    console.log(`✅ Super Admin account set to: ${adminEmail} / ${adminPass}`);
   } else {
     await prisma.user.create({
       data: {
@@ -32,7 +36,7 @@ async function resetAdmin() {
         status: 'OFFLINE'
       }
     });
-    console.log('✅ Super Admin account created: admin@improx.com / admin123');
+    console.log(`✅ Super Admin created: ${adminEmail} / ${adminPass}`);
   }
 
   process.exit(0);
