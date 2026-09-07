@@ -3,13 +3,14 @@ import { api, API_BASE_URL } from '../services/api';
 import { ScreenshotItem, Employee } from '../types';
 import { ScreenshotModal } from '../components/ScreenshotModal';
 import { getStoredEmployeeId, setStoredEmployeeId } from '../utils/selection';
+import { getTodayLocalDateString } from '../utils/format';
 import { Image as ImageIcon, Download, User, RefreshCw, AppWindow } from 'lucide-react';
 
 export const Screenshots: React.FC = () => {
   const [screenshots, setScreenshots] = useState<ScreenshotItem[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string>(getStoredEmployeeId());
-  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState<string>(getTodayLocalDateString());
   const [loading, setLoading] = useState(true);
   const [activeModalIndex, setActiveModalIndex] = useState<number | null>(null);
 

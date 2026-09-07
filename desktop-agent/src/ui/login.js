@@ -100,8 +100,16 @@ let isPaused = false;
 let sessionSeconds = 0;
 let timerInterval = null;
 
-// Initialize Date Pickers to Today
-const todayISO = new Date().toISOString().split('T')[0];
+// Helper for accurate local YYYY-MM-DD date string
+function getLocalDateString(d = new Date()) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+// Initialize Date Pickers to Today (Local Time)
+const todayISO = getLocalDateString();
 if (timelineDatePicker) timelineDatePicker.value = todayISO;
 if (shotsDatePicker) shotsDatePicker.value = todayISO;
 if (appsDatePicker) appsDatePicker.value = todayISO;
@@ -142,7 +150,7 @@ navTabs.forEach((tab) => {
       currentViewTitle.textContent = tabTitles[targetTabId];
     }
 
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getLocalDateString();
 
     if (targetTabId === 'tabTimeline') {
       const pickerVal = timelineDatePicker ? timelineDatePicker.value || todayStr : todayStr;
@@ -181,7 +189,7 @@ if (btnSubTabAppsSummary) {
     appsSubTab = 'summary';
     btnSubTabAppsSummary.classList.add('active');
     if (btnSubTabAppsStream) btnSubTabAppsStream.classList.remove('active');
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getLocalDateString();
     const pickerVal = appsDatePicker ? appsDatePicker.value || todayStr : todayStr;
     loadDesktopApps(pickerVal);
   });
@@ -192,7 +200,7 @@ if (btnSubTabAppsStream) {
     appsSubTab = 'stream';
     btnSubTabAppsStream.classList.add('active');
     if (btnSubTabAppsSummary) btnSubTabAppsSummary.classList.remove('active');
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getLocalDateString();
     const pickerVal = appsDatePicker ? appsDatePicker.value || todayStr : todayStr;
     loadDesktopApps(pickerVal);
   });
@@ -492,6 +500,67 @@ window.addEventListener('keydown', (e) => {
   }
 });
 
+// Helper to consolidate micro-intervals into continuous sessions
+function consolidateAgentFrontSessions(intervals) {
+  if (!intervals || !intervals.length) return [];
+  const sorted = [...intervals].sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+  const sessions = [];
+  let current = null;
+
+  sorted.forEach((inv) => {
+    const isBreak = inv.isIdle || inv.category === 'IDLE' || inv.taskName === 'Break' || (inv.note && inv.note.includes('Break'));
+    const isMeeting = inv.category === 'COMMUNICATION' || (inv.taskName && (inv.taskName.toLowerCase().includes('meeting') || inv.taskName.toLowerCase().includes('call')));
+    const taskName = (inv.taskName || inv.note || 'Productive Work').trim();
+    const cat = isBreak ? 'IDLE' : (isMeeting ? 'COMMUNICATION' : (inv.category || 'WORK'));
+    const appName = inv.appName || '';
+
+    const sTime = new Date(inv.startTime);
+    const eTime = inv.endTime ? new Date(inv.endTime) : new Date(sTime.getTime() + (inv.durationMinutes || 1) * 60000);
+    const mins = inv.durationMinutes || Math.max(1, Math.round((eTime - sTime) / 60000));
+
+    if (!current) {
+      current = {
+        startTime: sTime,
+        endTime: eTime,
+        taskName,
+        category: cat,
+        isBreak,
+        isMeeting,
+        totalMinutes: mins,
+        apps: appName ? [appName] : []
+      };
+    } else {
+      const prevEnd = current.endTime.getTime();
+      const currStart = sTime.getTime();
+      const isContiguous = (currStart - prevEnd) <= 5 * 60 * 1000;
+      const isSameTask = current.taskName === taskName && current.category === cat;
+
+      if (isContiguous && isSameTask) {
+        current.endTime = eTime;
+        current.totalMinutes += mins;
+        if (appName && !current.apps.includes(appName)) {
+          current.apps.push(appName);
+        }
+      } else {
+        sessions.push(current);
+        current = {
+          startTime: sTime,
+          endTime: eTime,
+          taskName,
+          category: cat,
+          isBreak,
+          isMeeting,
+          totalMinutes: mins,
+          apps: appName ? [appName] : []
+        };
+      }
+    }
+  });
+
+  if (current) sessions.push(current);
+  return sessions;
+}
+
 // Front Screen Activity Timeline Breakdown
 async function loadFrontBreakdown() {
   const container = document.getElementById('frontSessionList');
@@ -499,7 +568,7 @@ async function loadFrontBreakdown() {
   if (!container || !ipcRenderer) return;
 
   try {
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getLocalDateString();
     const data = await ipcRenderer.invoke('get-my-timeline', todayStr);
     const intervals = data?.intervals || [];
 
@@ -513,30 +582,30 @@ async function loadFrontBreakdown() {
       return;
     }
 
-    if (countBadge) countBadge.textContent = `${intervals.length} Sessions`;
+    const sessions = consolidateAgentFrontSessions(intervals);
+    if (countBadge) countBadge.textContent = `${sessions.length} Session${sessions.length > 1 ? 's' : ''}`;
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 8px;">
-        ${intervals.map((inv) => {
-          const sTime = inv.startTime ? new Date(inv.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }) : '';
-          const eTime = inv.endTime ? new Date(inv.endTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }) : '';
-          const timeRange = sTime && eTime ? `${sTime} - ${eTime}` : (inv.timeRangeFormatted || 'Active');
-          const isBreak = inv.isIdle || inv.category === 'IDLE' || inv.taskName === 'Break' || (inv.note && inv.note.includes('Break'));
-          const isMeeting = inv.category === 'COMMUNICATION' || (inv.taskName && inv.taskName.toLowerCase().includes('meeting'));
-          const badgeBg = isBreak ? '#fef3c7' : (isMeeting ? '#e0f2fe' : '#dcfce7');
-          const badgeText = isBreak ? '#92400e' : (isMeeting ? '#0369a1' : '#166534');
-          const badgeLabel = isBreak ? '☕ Break' : (isMeeting ? '💬 Meeting' : '💼 Work');
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        ${sessions.map((sess) => {
+          const sTime = sess.startTime.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
+          const eTime = sess.endTime.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
+          const timeRange = `${sTime} - ${eTime}`;
+          const badgeBg = sess.isBreak ? '#fef3c7' : (sess.isMeeting ? '#e0f2fe' : '#dcfce7');
+          const badgeText = sess.isBreak ? '#92400e' : (sess.isMeeting ? '#0369a1' : '#166534');
+          const badgeLabel = sess.isBreak ? '☕ Break' : (sess.isMeeting ? '💬 Meeting' : '💼 Work');
+          const appsStr = sess.apps.length > 0 ? sess.apps.join(', ') : '';
 
           return `
-            <div style="display: flex; align-items: center; justify-content: space-between; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 14px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
               <div style="display: flex; align-items: center; gap: 12px;">
                 <span style="font-family: monospace; font-size: 11px; font-weight: 800; color: #475569;">${timeRange}</span>
-                <span style="font-size: 13px; font-weight: 700; color: #0f172a;">${inv.taskName || inv.note || 'Productive Work'}</span>
-                <span style="background: ${badgeBg}; color: ${badgeText}; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 6px;">${badgeLabel}</span>
+                <span style="font-size: 13px; font-weight: 800; color: #0f172a;">${sess.taskName}</span>
+                <span style="background: ${badgeBg}; color: ${badgeText}; font-size: 10px; font-weight: 800; padding: 3px 9px; border-radius: 6px;">${badgeLabel}</span>
               </div>
               <div style="display: flex; align-items: center; gap: 10px;">
-                <span style="font-size: 12px; font-weight: 800; color: #0284c7;">${inv.durationMinutes || 1}m</span>
-                ${inv.appName ? `<span style="font-size: 11px; color: #64748b; background: #e2e8f0; padding: 2px 6px; border-radius: 4px;">${inv.appName}</span>` : ''}
+                <span style="font-size: 13px; font-weight: 800; color: #0284c7;">${sess.totalMinutes}m</span>
+                ${appsStr ? `<span style="font-size: 11px; font-weight: 600; color: #64748b; background: #f1f5f9; padding: 3px 8px; border-radius: 6px;">${appsStr}</span>` : ''}
               </div>
             </div>
           `;

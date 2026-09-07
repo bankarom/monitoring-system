@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { api, API_BASE_URL } from '../services/api';
 import { TimesheetRecord } from '../types';
-import { formatHoursToTime } from '../utils/format';
+import { formatHoursToTime, getTodayLocalDateString } from '../utils/format';
 import { CalendarCheck, Download, RefreshCw, Trash2, Camera, ChevronDown, ChevronUp, Clock, UserCheck } from 'lucide-react';
 
 export const Timesheets: React.FC = () => {
   const [timesheets, setTimesheets] = useState<TimesheetRecord[]>([]);
-  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState<string>(getTodayLocalDateString());
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
 

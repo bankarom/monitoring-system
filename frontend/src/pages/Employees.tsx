@@ -5,7 +5,7 @@ import { AddEmployeeModal } from '../components/AddEmployeeModal';
 import { EditEmployeeModal } from '../components/EditEmployeeModal';
 import { ActivityTimelineView } from '../components/ScrinTimelineView';
 import { getStoredEmployeeId, setStoredEmployeeId } from '../utils/selection';
-import { formatHoursToTime } from '../utils/format';
+import { formatHoursToTime, getTodayLocalDateString } from '../utils/format';
 import {
   Users,
   UserPlus,
@@ -25,7 +25,7 @@ export const Employees: React.FC = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string>(getStoredEmployeeId());
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState<string>(getTodayLocalDateString());
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);

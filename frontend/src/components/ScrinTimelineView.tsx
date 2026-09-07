@@ -437,7 +437,6 @@ export const ActivityTimelineView: React.FC<ActivityTimelineViewProps> = ({
                       const appName = block.appName || 'Desktop App';
                       const appLower = appName.toLowerCase();
 
-                      // Icon helper
                       let appIcon = '⚡';
                       let appBadgeStyle = 'bg-slate-100 text-slate-800 border-slate-200';
                       if (appLower.includes('chrome') || appLower.includes('edge') || appLower.includes('firefox')) {
@@ -513,6 +512,72 @@ export const ActivityTimelineView: React.FC<ActivityTimelineViewProps> = ({
       ) : (
         /* CATEGORY FILTER BAR & INTERVALS LIST */
         <>
+          {/* Hourly Breakdown Card when an hour block is selected */}
+          {selectedHour !== null && (
+            <div className="bg-slate-900 text-white border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4 animate-fade-in">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-sky-400" />
+                  <h4 className="text-sm font-black tracking-tight text-white">
+                    Selected Hour Breakdown — {hourlyActivity[selectedHour].label} ({selectedHour}:00 - {selectedHour}:59)
+                  </h4>
+                </div>
+                <button
+                  onClick={() => setSelectedHour(null)}
+                  className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-lg text-xs transition-all border border-slate-700"
+                >
+                  ✕ Show All Hours
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                <div className="bg-slate-800/80 p-3.5 rounded-xl border border-slate-700/80">
+                  <span className="text-[10px] font-bold uppercase text-slate-400">Productive Work</span>
+                  <p className="text-lg font-black text-emerald-400 mt-0.5">{Math.round((hourlyActivity[selectedHour].activeSec || 0) / 60)} mins</p>
+                </div>
+                <div className="bg-slate-800/80 p-3.5 rounded-xl border border-slate-700/80">
+                  <span className="text-[10px] font-bold uppercase text-slate-400">Breaks & Away Time</span>
+                  <p className="text-lg font-black text-amber-400 mt-0.5">{Math.round((hourlyActivity[selectedHour].breakSec || 0) / 60)} mins</p>
+                </div>
+                <div className="bg-slate-800/80 p-3.5 rounded-xl border border-slate-700/80">
+                  <span className="text-[10px] font-bold uppercase text-slate-400">Activity Sessions</span>
+                  <p className="text-lg font-black text-sky-400 mt-0.5">{hourlyActivity[selectedHour].count} Intervals</p>
+                </div>
+              </div>
+
+              {/* Software App Usage Breakdown for this hour */}
+              {(() => {
+                const hourBlocks = activityBlocks.filter((b) => {
+                  if (!b.recordedAt) return false;
+                  return new Date(b.recordedAt).getHours() === selectedHour;
+                });
+
+                const appCounts: Record<string, number> = {};
+                hourBlocks.forEach((b) => {
+                  const app = b.appName || 'Desktop App';
+                  appCounts[app] = (appCounts[app] || 0) + 0.33;
+                });
+
+                const appList = Object.entries(appCounts).sort((a, b) => b[1] - a[1]);
+
+                if (appList.length === 0) return null;
+
+                return (
+                  <div className="pt-2 border-t border-slate-800">
+                    <span className="text-[11px] font-extrabold uppercase text-slate-400 tracking-wider">Software App Usage in Hour {hourlyActivity[selectedHour].label}</span>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {appList.map(([app, mins]) => (
+                        <span key={app} className="px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                          <span>💻</span> {app} <span className="text-sky-400 font-mono">({Math.max(1, Math.round(mins))}m)</span>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
           <div className="flex flex-wrap items-center gap-2">
             {['ALL', 'WORK', 'COMMUNICATION', 'BROWSING', 'IDLE'].map((cat) => (
               <button

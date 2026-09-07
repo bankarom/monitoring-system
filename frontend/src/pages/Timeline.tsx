@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { Employee, TimelineInterval } from '../types';
 import { ActivityTimelineView } from '../components/ScrinTimelineView';
-import { formatHoursToTime } from '../utils/format';
+import { formatHoursToTime, getTodayLocalDateString } from '../utils/format';
 import { getStoredEmployeeId, setStoredEmployeeId } from '../utils/selection';
 import {
   Clock,
@@ -18,7 +18,7 @@ import {
 export const Timeline: React.FC = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string>(getStoredEmployeeId());
-  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState<string>(getTodayLocalDateString());
   const [timelineData, setTimelineData] = useState<{
     user: any;
     attendance: any;

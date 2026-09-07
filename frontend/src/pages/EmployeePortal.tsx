@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { api, API_BASE_URL } from '../services/api';
-import { formatHoursToTime } from '../utils/format';
+import { formatHoursToTime, getTodayLocalDateString } from '../utils/format';
 import { ActivityTimelineView } from '../components/ScrinTimelineView';
 import { ScreenshotModal } from '../components/ScreenshotModal';
 import { TimelineInterval, YouTubeVideoRecord } from '../types';
@@ -28,7 +28,7 @@ export const EmployeePortal: React.FC = () => {
   const [screenshots, setScreenshots] = useState<any[]>([]);
   const [apps, setApps] = useState<any[]>([]);
   const [youtubeVideos, setYoutubeVideos] = useState<YouTubeVideoRecord[]>([]);
-  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState<string>(getTodayLocalDateString());
   const [activeTab, setActiveTab] = useState<'timeline' | 'youtube' | 'apps' | 'screenshots'>('timeline');
   const [loading, setLoading] = useState(true);
   const [selectedScreenshot, setSelectedScreenshot] = useState<{

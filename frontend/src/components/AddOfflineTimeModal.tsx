@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Clock, Calendar, Tag, FileText, CheckCircle } from 'lucide-react';
 import { api } from '../services/api';
 import { ActivityCategory } from '../types';
+import { getTodayLocalDateString } from '../utils/format';
 
 interface AddOfflineTimeModalProps {
   isOpen: boolean;
@@ -18,7 +19,7 @@ export const AddOfflineTimeModal: React.FC<AddOfflineTimeModalProps> = ({
   defaultDate,
   userId
 }) => {
-  const [date, setDate] = useState(defaultDate || new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(defaultDate || getTodayLocalDateString());
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('10:00');
   const [taskName, setTaskName] = useState('');

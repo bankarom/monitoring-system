@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { WebAnalyticsItem, YouTubeVideoRecord, Employee } from '../types';
-import { formatHoursToTime } from '../utils/format';
+import { formatHoursToTime, getTodayLocalDateString } from '../utils/format';
 import { getStoredEmployeeId, setStoredEmployeeId } from '../utils/selection';
 import { Globe, ExternalLink, RefreshCw, Youtube, Users, Clock, Zap } from 'lucide-react';
 
@@ -11,7 +11,7 @@ export const WebAnalytics: React.FC = () => {
   const [activityStream, setActivityStream] = useState<any[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string>(getStoredEmployeeId());
-  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState<string>(getTodayLocalDateString());
   const [activeTab, setActiveTab] = useState<'domains' | 'youtube' | 'stream'>('domains');
   const [loading, setLoading] = useState(true);
 

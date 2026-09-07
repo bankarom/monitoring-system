@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { DashboardStats } from '../types';
 import { StatCard } from '../components/StatCard';
-import { formatHoursToTime } from '../utils/format';
+import { formatHoursToTime, getTodayLocalDateString } from '../utils/format';
 import {
   Users,
   Radio,
@@ -27,7 +27,7 @@ import {
 export const Dashboard: React.FC = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [chartType, setChartType] = useState<'area' | 'bar'>('area');
-  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState<string>(getTodayLocalDateString());
   const [loading, setLoading] = useState(true);
 
   const fetchStats = async (dateStr?: string) => {
