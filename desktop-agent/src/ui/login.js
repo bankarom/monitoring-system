@@ -462,10 +462,12 @@ async function loadDesktopScreenshots(dateStr) {
       const timeFormatted = new Date(s.takenAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
       const taskLabel = s.taskName || s.appName || 'Active Work';
       const isIdle = s.isIdle || s.category === 'IDLE';
-      const rawCalc = Math.round((((s.clicks || 0) * 2 + (s.keystrokes || 0)) / 35) * 100);
+      // 10-minute baseline target: 50 clicks (100 pts) + 50 keypresses (50 pts) = 150 pts for 100% activity
+      const score = ((s.clicks || 0) * 2) + (s.keystrokes || 0);
+      const rawCalc = Math.round((score / 150) * 100);
       const actLevel = typeof s.activityLevel === 'number'
         ? s.activityLevel
-        : (isIdle ? 0 : (rawCalc > 0 ? Math.min(100, rawCalc) : 100));
+        : (isIdle ? 0 : (score > 0 ? Math.min(100, rawCalc) : 100));
       const strokeColor = actLevel >= 70 ? '#10b981' : (actLevel >= 30 ? '#f59e0b' : '#ef4444');
       const radius = 12;
       const circumference = 2 * Math.PI * radius;

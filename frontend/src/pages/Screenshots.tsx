@@ -147,10 +147,11 @@ export const Screenshots: React.FC = () => {
                 {(() => {
                   const sAny = s as any;
                   const isIdle = sAny.isIdle || sAny.category === 'IDLE';
-                  const rawCalc = Math.round((((sAny.clicks || 0) * 2 + (sAny.keystrokes || 0)) / 35) * 100);
+                  const score = ((sAny.clicks || 0) * 2) + (sAny.keystrokes || 0);
+                  const rawCalc = Math.round((score / 150) * 100);
                   const actLevel = typeof sAny.activityLevel === 'number'
                     ? sAny.activityLevel
-                    : (isIdle ? 0 : (rawCalc > 0 ? Math.min(100, rawCalc) : 100));
+                    : (isIdle ? 0 : (score > 0 ? Math.min(100, rawCalc) : 100));
                   const strokeColor = actLevel >= 70 ? '#10b981' : actLevel >= 30 ? '#f59e0b' : '#ef4444';
                   const radius = 12;
                   const circumference = 2 * Math.PI * radius;
