@@ -462,12 +462,21 @@ async function loadDesktopScreenshots(dateStr) {
       const timeFormatted = new Date(s.takenAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
       const taskLabel = s.taskName || s.appName || 'Active Work';
       const isIdle = s.isIdle || s.category === 'IDLE';
-      // 10-minute baseline target: 50 clicks (100 pts) + 50 keypresses (50 pts) = 150 pts for 100% activity
-      const score = ((s.clicks || 0) * 2) + (s.keystrokes || 0);
-      const rawCalc = Math.round((score / 150) * 100);
-      const actLevel = typeof s.activityLevel === 'number'
-        ? s.activityLevel
-        : (isIdle ? 0 : (score > 0 ? Math.min(100, rawCalc) : 100));
+      // 10-minute activity target formula: 70 keys (60%), 25 clicks (40%) = 100%
+      const totalKeys = typeof s.intervalKeys === 'number' ? s.intervalKeys : (s.keystrokes || 0);
+      const totalClicks = typeof s.intervalClicks === 'number' ? s.intervalClicks : (s.clicks || s.mouseClicks || 0);
+
+      let actLevel = 0;
+      if (typeof s.activityPercent === 'number') {
+        actLevel = s.activityPercent;
+      } else if (!isIdle && (totalKeys > 0 || totalClicks > 0)) {
+        const keyScore = Math.min(1.0, totalKeys / 70);
+        const clickScore = Math.min(1.0, totalClicks / 25);
+        actLevel = (totalKeys >= 70 && totalClicks >= 25) ? 100 : Math.round((keyScore * 60) + (clickScore * 40));
+      } else {
+        actLevel = 0;
+      }
+      actLevel = Math.min(100, Math.max(0, actLevel));
       const strokeColor = actLevel >= 70 ? '#10b981' : (actLevel >= 30 ? '#f59e0b' : '#ef4444');
       const radius = 12;
       const circumference = 2 * Math.PI * radius;
