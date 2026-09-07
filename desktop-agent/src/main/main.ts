@@ -40,6 +40,7 @@ class AgentApplication {
   private idleThresholdMinutes = 3; // 3 minutes idle/break threshold
   private sampleDurationSeconds = 20; // 20 seconds sample duration (3 logs per min)
   private lastSample: TrackerSample | null = null;
+  private lastScreenshotTime = 0;
 
   constructor() {
     this.offlineQueue = new OfflineQueue();
@@ -465,10 +466,13 @@ class AgentApplication {
       }
       this.notifyUIState();
 
-      // Trigger instant screenshot 2 seconds after starting work/task
+      // Trigger instant screenshot 2 seconds after starting work/task (if not captured recently)
       setTimeout(() => {
         if (this.isTracking && !this.isPaused) {
-          this.performScreenshotCapture();
+          const now = Date.now();
+          if (now - this.lastScreenshotTime > 15000) {
+            this.performScreenshotCapture();
+          }
         }
       }, 2000);
 
@@ -613,6 +617,12 @@ class AgentApplication {
       console.log('⏸️ Tracking is paused. Skipping screenshot capture.');
       return;
     }
+    const now = Date.now();
+    if (now - this.lastScreenshotTime < 10000) {
+      console.log('⏸️ Skipping duplicate screenshot capture (captured <10s ago).');
+      return;
+    }
+    this.lastScreenshotTime = now;
     try {
       console.log('📸 Taking screen capture...');
       const screens = await this.screenshotEngine.captureAllScreens();
