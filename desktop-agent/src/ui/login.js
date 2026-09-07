@@ -35,8 +35,8 @@ const userName = document.getElementById('userName');
 const userAvatar = document.getElementById('userAvatar');
 const userDepartment = document.getElementById('userDepartment');
 const headerStatusDot = document.getElementById('headerStatusDot');
-const currentViewTitle = document.getElementById('currentViewTitle');
-const currentHeaderDate = document.getElementById('currentHeaderDate');
+const currentViewTitle = document.getElementById('currentViewTitle') || document.getElementById('pageTitle');
+const currentHeaderDate = document.getElementById('currentHeaderDate') || document.getElementById('headerDate');
 
 // Metrics Strip
 const todayActiveTime = document.getElementById('todayActiveTime');
@@ -57,7 +57,7 @@ const liveActiveAppText = document.getElementById('liveActiveAppText');
 
 // Left Navigation Tabs & Panels
 const navTabs = document.querySelectorAll('.nav-tab');
-const tabPanels = document.querySelectorAll('.tab-panel');
+const tabPanels = document.querySelectorAll('.tab-content, .tab-panel');
 
 // Date Pickers
 const timelineDatePicker = document.getElementById('timelineDatePicker');
@@ -217,7 +217,7 @@ let appsSubTab = 'summary';
 
 // Load Timeline
 async function loadDesktopTimeline(dateStr) {
-  const container = document.getElementById('desktopTimelineContainer');
+  const container = (document.getElementById('desktopTimelineContainer') || document.getElementById('timelineScrubberBar'));
   if (!container || !ipcRenderer) return;
   container.innerHTML = '<p style="color: #64748b; font-size: 12px; font-weight: 600;">Loading timeline for ' + dateStr + '...</p>';
 
@@ -239,7 +239,7 @@ window.filterTimelineHour = function(h) {
 };
 
 function renderDesktopTimeline(data, dateStr) {
-  const container = document.getElementById('desktopTimelineContainer');
+  const container = (document.getElementById('desktopTimelineContainer') || document.getElementById('timelineScrubberBar'));
   if (!container) return;
 
   if (!data || !data.intervals || data.intervals.length === 0) {
