@@ -264,7 +264,25 @@ export async function updateEmployee(req: Request, res: Response) {
 
     const updateData: any = {};
     if (name) updateData.name = name;
-    if (email) updateData.email = email.toLowerCase().trim();
+    
+    if (email) {
+      const formattedEmail = email.toLowerCase().trim();
+      const existingWithEmail = await prisma.user.findFirst({
+        where: {
+          email: formattedEmail,
+          NOT: { id }
+        }
+      });
+
+      if (existingWithEmail) {
+        return res.status(400).json({
+          success: false,
+          message: `The email "${formattedEmail}" is already assigned to another employee (${existingWithEmail.name}). Please enter a unique email address.`
+        });
+      }
+      updateData.email = formattedEmail;
+    }
+
     if (department) updateData.department = department;
     if (shift) updateData.shift = shift;
     if (typeof isActive === 'boolean') updateData.isActive = isActive;
@@ -285,7 +303,7 @@ export async function updateEmployee(req: Request, res: Response) {
       }
     });
 
-    return res.status(200).json({ success: true, message: 'Employee updated', employee: updated });
+    return res.status(200).json({ success: true, message: 'Employee details updated successfully!', employee: updated });
   } catch (error: any) {
     return res.status(500).json({ success: false, message: error.message });
   }
@@ -295,14 +313,24 @@ export async function deleteEmployee(req: Request, res: Response) {
   try {
     const { id } = req.params;
 
-    // Hard delete all dependent logs, screenshots, and attendance records
+    const user = await prisma.user.findUnique({ where: { id } });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'Employee not found.' });
+    }
+
+    // Hard delete all dependent logs, screenshots, and attendance records cleanly
     await prisma.activityLog.deleteMany({ where: { userId: id } });
     await prisma.screenshot.deleteMany({ where: { userId: id } });
     await prisma.attendance.deleteMany({ where: { userId: id } });
     try { await prisma.offlineTime.deleteMany({ where: { userId: id } }); } catch (e) {}
+    
+    // Delete user from database, freeing up the email for future use
     await prisma.user.delete({ where: { id } });
 
-    return res.status(200).json({ success: true, message: 'Employee permanently deleted from database' });
+    return res.status(200).json({
+      success: true,
+      message: `Employee ${user.name} (${user.email}) permanently deleted. Email is now free for re-assignment.`
+    });
   } catch (error: any) {
     return res.status(500).json({ success: false, message: error.message });
   }
