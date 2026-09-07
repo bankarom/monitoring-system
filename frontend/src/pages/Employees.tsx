@@ -148,15 +148,9 @@ export const Employees: React.FC = () => {
             <UserPlus className="w-4 h-4" /> Add New Employee
           </button>
           <button
-            onClick={handleSystemWipe}
-            className="flex items-center gap-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-extrabold text-xs px-3 py-2.5 rounded-xl transition-all shadow-xs"
-            title="Delete all old data & employees to start fresh"
-          >
-            <Trash2 className="w-4 h-4" /> Wipe All Old Data
-          </button>
-          <button
             onClick={fetchEmployees}
             className="p-2.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 rounded-xl transition-colors shadow-xs"
+            title="Refresh employee directory"
           >
             <RefreshCw className="w-4 h-4" />
           </button>

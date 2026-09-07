@@ -682,11 +682,20 @@ export const ActivityTimelineView: React.FC<ActivityTimelineViewProps> = ({
                               alt={shot.appName || 'Screenshot'}
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                             />
-                            {/* Scrin.io-style thumbnail overlay pill */}
-                            <div className="absolute top-2 right-2 px-2 py-0.5 rounded-md bg-slate-900/80 backdrop-blur-xs text-[10px] font-mono text-white flex items-center gap-1.5">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                              <span>{timeStr}</span>
-                            </div>
+                            {/* Scrin.io-style thumbnail overlay pill with Activity Level % */}
+                            {(() => {
+                              const sAny = shot as any;
+                              const calcLevel = Math.min(100, Math.max(10, Math.round((((sAny.clicks || 0) * 2 + (sAny.keystrokes || 0)) / 35) * 100)));
+                              const actLevel = typeof sAny.activityLevel === 'number' ? sAny.activityLevel : calcLevel;
+                              const dotColor = actLevel >= 70 ? 'bg-emerald-400' : actLevel >= 30 ? 'bg-amber-400' : 'bg-rose-500';
+                              return (
+                                <div className="absolute top-2 right-2 px-2 py-0.5 rounded-md bg-slate-950/85 backdrop-blur-xs text-[10px] font-mono text-white flex items-center gap-1.5 border border-white/10 shadow-sm" title={`Activity Level: ${actLevel}%`}>
+                                  <span className={`w-2 h-2 rounded-full ${dotColor}`} />
+                                  <span className="font-extrabold">{timeStr}</span>
+                                  <span className="text-[9px] text-slate-300 font-sans border-l border-slate-700 pl-1">Activity Level: {actLevel}%</span>
+                                </div>
+                              );
+                            })()}
 
                             <div className="absolute inset-x-0 bottom-0 p-2 bg-gradient-to-t from-slate-950/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-between text-white text-[10px]">
                               <span className="truncate">{shot.appName || 'Desktop'}</span>

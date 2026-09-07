@@ -461,9 +461,17 @@ async function loadDesktopScreenshots(dateStr) {
       const imgUrl = s.filePath.startsWith('http') ? s.filePath : `${baseUrl}${s.filePath}`;
       const timeFormatted = new Date(s.takenAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       const taskLabel = s.taskName || s.appName || 'Active Work';
+      const actLevel = typeof s.activityLevel === 'number' ? s.activityLevel : Math.min(100, Math.max(10, Math.round((((s.clicks || 0) * 2 + (s.keystrokes || 0)) / 35) * 100)));
+      const dotColor = actLevel >= 70 ? '#22c55e' : (actLevel >= 30 ? '#f59e0b' : '#ef4444');
+
       return `
-        <div class="shot-card-item" onclick="openScreenshotLightbox('${imgUrl}', '${taskLabel.replace(/'/g, "\\\\'")}', '${timeFormatted}')">
+        <div class="shot-card-item" style="position: relative;" onclick="openScreenshotLightbox('${imgUrl}', '${taskLabel.replace(/'/g, "\\\\'")}', '${timeFormatted}')">
           <img src="${imgUrl}" alt="${taskLabel}" onerror="this.src='https://via.placeholder.com/300x160?text=Screen+Preview'">
+          <div style="position: absolute; top: 6px; right: 6px; background: rgba(15, 23, 42, 0.88); backdrop-filter: blur(4px); color: #fff; font-size: 9px; font-weight: 800; padding: 2px 7px; border-radius: 6px; font-family: monospace; display: flex; align-items: center; gap: 5px; border: 1px solid rgba(255,255,255,0.15);">
+            <span style="width: 6px; height: 6px; border-radius: 50%; background: ${dotColor};"></span>
+            <span>${timeFormatted}</span>
+            <span style="border-left: 1px solid #475569; padding-left: 5px; color: #e2e8f0; font-family: system-ui;">Activity Level: ${actLevel}%</span>
+          </div>
           <div class="shot-card-meta">
             <span class="shot-card-title" title="${taskLabel}">${taskLabel}</span>
             <span class="shot-card-time">${timeFormatted}</span>
