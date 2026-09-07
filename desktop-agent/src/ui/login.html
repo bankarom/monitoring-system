@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -1276,7 +1276,7 @@ input:checked + .slider:before {
 
           <div class="input-group">
             <label>Password</label>
-            <input type="password" id="password" placeholder="ΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇó" required>
+            <input type="password" id="password" placeholder="" required>
           </div>
 
           <button type="button" id="btnSubmit" class="btn-primary">
@@ -1320,19 +1320,19 @@ input:checked + .slider:before {
             <span class="nav-label">Live Tracker</span>
           </button>
           <button type="button" class="nav-tab" data-tab="tabTimeline">
-            <span class="nav-icon">📊</span>
+            <span class="nav-icon"></span>
             <span class="nav-label">24h Timeline</span>
           </button>
           <button type="button" class="nav-tab" data-tab="tabScreenshots">
-            <span class="nav-icon">🖼️</span>
+            <span class="nav-icon"></span>
             <span class="nav-label">My Screenshots</span>
           </button>
           <button type="button" class="nav-tab" data-tab="tabApps">
-            <span class="nav-icon">🌐</span>
+            <span class="nav-icon"></span>
             <span class="nav-label">Apps & Web</span>
           </button>
           <button type="button" class="nav-tab" data-tab="tabLogs">
-            <span class="nav-icon">📋</span>
+            <span class="nav-icon"></span>
             <span class="nav-label">Timesheets & Logs</span>
           </button>
         </nav>
@@ -1340,11 +1340,11 @@ input:checked + .slider:before {
         <!-- SIDEBAR BOTTOM ACTIONS -->
         <div class="sidebar-bottom">
           <button type="button" id="btnOpenSettings" class="sidebar-btn-action">
-            <span class="action-icon">ΓÜÖ∩╕Å</span>
+            <span class="action-icon">⚙</span>
             <span>Settings</span>
           </button>
           <button type="button" id="btnClockOut" class="sidebar-btn-action danger">
-            <span class="action-icon">ΓÅ╣∩╕Å</span>
+            <span class="action-icon"></span>
             <span>Clock Out for Today</span>
           </button>
         </div>
@@ -1360,10 +1360,7 @@ input:checked + .slider:before {
             <span class="view-date-sub" id="currentHeaderDate">Today's Session</span>
           </div>
 
-          <div class="greeting-clock-badge">
-            <span class="clock-icon">🕒</span>
-            <span class="clock-digits" id="liveClockDisplay">06:40:00 PM</span>
-          </div>
+          <div class="greeting-clock-badge"><span></span> <span>Secure Work Mode</span></div>
 
           <div class="header-stats-strip">
             <div class="stat-pill work">
@@ -1387,11 +1384,11 @@ input:checked + .slider:before {
           <!-- WARM TALKATIVE GREETING BANNER -->
           <div class="greeting-banner">
             <div class="greeting-left">
-              <h2 class="greeting-title" id="greetingMessage">Welcome back, Mansi! ≡ƒæï</h2>
+              <h2 class="greeting-title" id="greetingMessage">Welcome back, Mansi! </h2>
               <p class="greeting-subtitle">Your activity and work time will be tracked when you click <strong>START WORK</strong>.</p>
             </div>
             <div class="greeting-right-badge">
-              <span class="kpi-pill">≡ƒ¢í∩╕Å Secure Work Mode</span>
+              <span class="kpi-pill"> Secure Work Mode</span>
             </div>
           </div>
 
@@ -1424,7 +1421,7 @@ input:checked + .slider:before {
             <div class="tracker-card-header">
               <label class="section-label">What task are you working on right now?</label>
               <div class="active-app-chip">
-                <span class="app-chip-icon">≡ƒ¬ƒ</span>
+                <span class="app-chip-icon">¬ƒ</span>
                 <span id="liveActiveAppText">Desktop</span>
               </div>
             </div>
@@ -1445,7 +1442,7 @@ input:checked + .slider:before {
               <span class="selector-title">Activity Mode:</span>
               <div class="category-cards-row">
                 <button type="button" class="cat-pill active" data-cat="WORK">
-                  <span class="pill-icon">≡ƒÆ╝</span>
+                  <span class="pill-icon"></span>
                   <div class="pill-texts">
                     <strong>Active Work</strong>
                     <small>Productive task time</small>
@@ -1453,7 +1450,7 @@ input:checked + .slider:before {
                 </button>
 
                 <button type="button" class="cat-pill" data-cat="COMMUNICATION">
-                  <span class="pill-icon">≡ƒÆ¼</span>
+                  <span class="pill-icon"></span>
                   <div class="pill-texts">
                     <strong>Meeting / Call</strong>
                     <small>Active work (Not break)</small>
@@ -1479,11 +1476,11 @@ input:checked + .slider:before {
 
               <div class="action-buttons-wrap">
                 <button type="button" id="btnPlay" class="btn-action-big start" title="Start Tracking">
-                  <span class="btn-icon">⏹</span>
+                  <span class="btn-icon"></span>
                   <span class="btn-label">START WORK</span>
                 </button>
                 <button type="button" id="btnStop" class="btn-action-big pause hidden" title="Take a Break / Pause Tracking">
-                  <span class="btn-icon">⏹</span>
+                  <span class="btn-icon"></span>
                   <span class="btn-label">TAKE BREAK</span>
                 </button>
               </div>
@@ -1504,7 +1501,7 @@ input:checked + .slider:before {
           <div class="today-breakdown-card">
             <div class="breakdown-card-header">
               <div class="breakdown-header-left">
-                <span class="breakdown-header-icon">≡ƒôï</span>
+                <span class="breakdown-header-icon"></span>
                 <div>
                   <h3 class="breakdown-card-title">Today's Work & Break Timeline</h3>
                   <p class="breakdown-card-sub">Exact intervals of what work was completed from start to finish</p>
@@ -1514,7 +1511,7 @@ input:checked + .slider:before {
             </div>
             <div class="breakdown-list-wrap" id="frontSessionList">
               <div class="empty-breakdown-state">
-                <p>No active intervals recorded yet today. Type your task and click <strong>Γû╢ START WORK</strong> to begin!</p>
+                <p>No active intervals recorded yet today. Type your task and click <strong> START WORK</strong> to begin!</p>
               </div>
             </div>
           </div>
@@ -1537,7 +1534,7 @@ input:checked + .slider:before {
           <div class="panel-top-controls">
             <div class="controls-left">
               <h3 class="panel-subtitle">Verified Work Screenshots</h3>
-              <span class="policy-badge">≡ƒöÆ Automated Enterprise Capture</span>
+              <span class="policy-badge"> Automated Enterprise Capture</span>
             </div>
             <input type="date" id="shotsDatePicker" class="custom-date-picker">
           </div>
@@ -1553,8 +1550,8 @@ input:checked + .slider:before {
             <div class="controls-left">
               <h3 class="panel-subtitle">Applications & Visited Websites</h3>
               <div class="sub-tab-group">
-                <button type="button" class="sub-tab-btn active" id="btnSubTabAppsSummary">≡ƒôè App & Web Summary</button>
-                <button type="button" class="sub-tab-btn" id="btnSubTabAppsStream">ΓÜí Live 20s Activity Stream</button>
+                <button type="button" class="sub-tab-btn active" id="btnSubTabAppsSummary"> App & Web Summary</button>
+                <button type="button" class="sub-tab-btn" id="btnSubTabAppsStream">⚡ Live 20s Activity Stream</button>
               </div>
             </div>
             <input type="date" id="appsDatePicker" class="custom-date-picker">
@@ -1587,7 +1584,7 @@ input:checked + .slider:before {
             <span class="lightbox-task" id="lightboxTaskName">Screenshot Preview</span>
             <span class="lightbox-time" id="lightboxTimestamp">10:00 AM</span>
           </div>
-          <button type="button" id="btnCloseLightbox" class="close-btn" title="Close Preview (Esc)">Γ£ò</button>
+          <button type="button" id="btnCloseLightbox" class="close-btn" title="Close Preview (Esc)">✕</button>
         </div>
         <div class="lightbox-image-wrap">
           <img id="lightboxImg" src="" alt="Full Resolution Screenshot">
@@ -1600,7 +1597,7 @@ input:checked + .slider:before {
       <div class="settings-dialog">
         <div class="settings-dialog-header">
           <span>Agent Preferences</span>
-          <button type="button" id="btnCloseSettings" class="close-btn">Γ£ò</button>
+          <button type="button" id="btnCloseSettings" class="close-btn">✕</button>
         </div>
         <div class="settings-dialog-body">
           <div class="settings-option">
@@ -1649,14 +1646,14 @@ input:checked + .slider:before {
       <div class="pause-dialog">
         <div class="settings-dialog-header">
           <span>Take a Break / Pause</span>
-          <button type="button" id="btnClosePause" class="close-btn">Γ£ò</button>
+          <button type="button" id="btnClosePause" class="close-btn">✕</button>
         </div>
         <div class="pause-dialog-body">
           <p class="pause-prompt">Select what you are doing while away:</p>
           <div class="pause-options">
             <label class="pause-option-item">
               <input type="radio" name="breakReason" value="Lunch Break" checked>
-              <span>≡ƒì╜∩╕Å Lunch / Meal Break</span>
+              <span> Lunch / Meal Break</span>
             </label>
             <label class="pause-option-item">
               <input type="radio" name="breakReason" value="Short Break">
@@ -1664,7 +1661,7 @@ input:checked + .slider:before {
             </label>
             <label class="pause-option-item">
               <input type="radio" name="breakReason" value="Offline Work">
-              <span>≡ƒôÜ Offline Work / Discussion</span>
+              <span> Offline Work / Discussion</span>
             </label>
           </div>
           <div class="input-group mt-3">
