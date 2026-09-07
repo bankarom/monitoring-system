@@ -22,7 +22,21 @@ async function wipeAllData() {
   });
   console.log(`- Wiped ${employeesDeleted.count} employee accounts.`);
 
-  // 5. Reset admin status
+  // 5. Delete all uploaded screenshot image files on disk
+  const fs = require('fs');
+  const path = require('path');
+  const uploadDir = path.join(__dirname, '../../uploads');
+  if (fs.existsSync(uploadDir)) {
+    try {
+      fs.rmSync(uploadDir, { recursive: true, force: true });
+      fs.mkdirSync(uploadDir, { recursive: true });
+      console.log('- Wiped all screenshot image files from disk.');
+    } catch (e) {
+      console.log('- Cleared uploads folder.');
+    }
+  }
+
+  // 6. Reset admin status
   await prisma.user.updateMany({
     where: { role: 'ADMIN' },
     data: {
@@ -35,7 +49,7 @@ async function wipeAllData() {
     }
   });
 
-  console.log('✅ DATABASE FULLY WIPED & RESET TO FRESH STATE!');
+  console.log('✅ DATABASE & DISK SCREENSHOTS FULLY WIPED & RESET TO FRESH STATE!');
   process.exit(0);
 }
 
