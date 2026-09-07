@@ -104,6 +104,8 @@ app.use('/api/employee', employeeRoutes);
 // Initialize WebSockets
 socketService.initialize(server, config.corsOrigin);
 
+import { purgeOldBackups } from './scripts/purgeOldBackups';
+
 // Start server
 server.listen(config.port, async () => {
   console.log('====================================================');
@@ -115,6 +117,10 @@ server.listen(config.port, async () => {
 
   await seedInitialAdmin();
   startHeartbeatSupervisor();
+
+  // Run 60-day backup archival purge on startup & every 24 hours
+  purgeOldBackups();
+  setInterval(purgeOldBackups, 24 * 60 * 60 * 1000);
 });
 
 export { app, server };

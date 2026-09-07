@@ -313,23 +313,70 @@ export async function deleteEmployee(req: Request, res: Response) {
   try {
     const { id } = req.params;
 
-    const user = await prisma.user.findUnique({ where: { id } });
+    const user = await prisma.user.findUnique({
+      where: { id },
+      include: {
+        attendances: true,
+        activityLogs: true,
+        screenshots: true,
+        offlineTimes: true
+      }
+    });
+
     if (!user) {
       return res.status(404).json({ success: false, message: 'Employee not found.' });
     }
 
-    // Hard delete all dependent logs, screenshots, and attendance records cleanly
-    await prisma.activityLog.deleteMany({ where: { userId: id } });
-    await prisma.screenshot.deleteMany({ where: { userId: id } });
-    await prisma.attendance.deleteMany({ where: { userId: id } });
-    try { await prisma.offlineTime.deleteMany({ where: { userId: id } }); } catch (e) {}
-    
-    // Delete user from database, freeing up the email for future use
-    await prisma.user.delete({ where: { id } });
+    // 1. Create VPS Archival Backup Directory
+    const backupDir = path.join(__dirname, '../../backups/deleted_employees');
+    if (!fs.existsSync(backupDir)) {
+      fs.mkdirSync(backupDir, { recursive: true });
+    }
+
+    const timestamp = Date.now();
+    const safeName = user.name.replace(/[^a-zA-Z0-9]/g, '_');
+    const backupFileName = `backup_${safeName}_${timestamp}.json`;
+    const backupFilePath = path.join(backupDir, backupFileName);
+
+    const backupPayload = {
+      backupCreatedDate: new Date().toISOString(),
+      retentionExpiryDate: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(), // 60 days
+      employee: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        department: user.department,
+        shift: user.shift,
+        createdAt: user.createdAt
+      },
+      counts: {
+        attendances: user.attendances.length,
+        activityLogs: user.activityLogs.length,
+        screenshots: user.screenshots.length
+      },
+      attendances: user.attendances,
+      activityLogs: user.activityLogs,
+      screenshots: user.screenshots,
+      offlineTimes: user.offlineTimes
+    };
+
+    fs.writeFileSync(backupFilePath, JSON.stringify(backupPayload, null, 2), 'utf-8');
+    console.log(`📦 Created 60-day VPS backup archive: ${backupFilePath}`);
+
+    // 2. Soft-delete employee: Hide from Super Admin panel & alter email so original email is freed for instant re-creation
+    const freedEmail = `deleted_${timestamp}_${user.email}`;
+    await prisma.user.update({
+      where: { id },
+      data: {
+        isActive: false,
+        status: 'OFFLINE',
+        email: freedEmail
+      }
+    });
 
     return res.status(200).json({
       success: true,
-      message: `Employee ${user.name} (${user.email}) permanently deleted. Email is now free for re-assignment.`
+      message: `Employee ${user.name} removed from Super Admin panel. All records backed up to VPS archive (${backupFileName}) with 60-day retention.`
     });
   } catch (error: any) {
     return res.status(500).json({ success: false, message: error.message });
