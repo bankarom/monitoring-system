@@ -134,27 +134,68 @@ export const Screenshots: React.FC = () => {
                 onClick={() => setActiveModalIndex(index)}
                 className="group bg-white border border-slate-200 rounded-2xl overflow-hidden cursor-pointer hover:border-sky-400 hover:shadow-lg transition-all flex flex-col justify-between shadow-xs"
               >
-                <div className="relative aspect-video bg-slate-100 overflow-hidden">
+                {/* Clean Screenshot Preview Image */}
+                <div className="relative aspect-video bg-slate-900 overflow-hidden">
                   <img
                     src={fullUrl}
                     alt={s.appName || 'Screen capture'}
                     className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
-                  <div className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-md bg-slate-900/80 backdrop-blur text-[10px] font-mono text-white">
-                    {new Date(s.takenAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                  </div>
                 </div>
 
-                <div className="p-3 bg-white border-t border-slate-100">
-                  <p className="text-xs font-bold text-slate-900 truncate flex items-center gap-1.5">
-                    <User className="w-3 h-3 text-sky-600 shrink-0" />
-                    {s.user.name}
-                  </p>
-                  <p className="text-[11px] text-slate-500 truncate mt-1 flex items-center gap-1.5 font-medium">
-                    <AppWindow className="w-3 h-3 text-slate-400 shrink-0" />
-                    {s.appName || 'Desktop'}
-                  </p>
-                </div>
+                {/* Footer Bar Below Image: Employee Name, Time, App & Circular SVG Activity Ring */}
+                {(() => {
+                  const sAny = s as any;
+                  const calcLevel = Math.min(100, Math.max(10, Math.round((((sAny.clicks || 0) * 2 + (sAny.keystrokes || 0)) / 35) * 100)));
+                  const actLevel = typeof sAny.activityLevel === 'number' ? sAny.activityLevel : calcLevel;
+                  const strokeColor = actLevel >= 70 ? '#10b981' : actLevel >= 30 ? '#f59e0b' : '#ef4444';
+                  const radius = 12;
+                  const circumference = 2 * Math.PI * radius;
+                  const strokeDashoffset = circumference - (actLevel / 100) * circumference;
+                  const timeFormatted = new Date(s.takenAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+                  return (
+                    <div className="p-3 bg-slate-50/90 border-t border-slate-100 flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-xs font-black text-slate-900 truncate flex items-center gap-1">
+                          <User className="w-3 h-3 text-sky-600 shrink-0" />
+                          {s.user.name}
+                        </p>
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <span className="text-[11px] font-mono font-bold text-slate-700">{timeFormatted}</span>
+                          <span className="text-[10px] text-slate-400">•</span>
+                          <span className="text-[10px] text-slate-500 font-medium truncate">{s.appName || 'Desktop'}</span>
+                        </div>
+                      </div>
+
+                      {/* Circular SVG Activity Progress Ring Meter */}
+                      <div className="relative w-8 h-8 flex items-center justify-center shrink-0" title={`Activity Level: ${actLevel}%`}>
+                        <svg className="w-8 h-8 transform -rotate-90">
+                          <circle
+                            cx="16"
+                            cy="16"
+                            r={radius}
+                            stroke="#e2e8f0"
+                            strokeWidth="3"
+                            fill="transparent"
+                          />
+                          <circle
+                            cx="16"
+                            cy="16"
+                            r={radius}
+                            stroke={strokeColor}
+                            strokeWidth="3"
+                            fill="transparent"
+                            strokeDasharray={circumference}
+                            strokeDashoffset={strokeDashoffset}
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                        <span className="absolute text-[8px] font-black text-slate-800 font-mono">{actLevel}%</span>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             );
           })}

@@ -459,22 +459,35 @@ async function loadDesktopScreenshots(dateStr) {
 
     container.innerHTML = list.map((s) => {
       const imgUrl = s.filePath.startsWith('http') ? s.filePath : `${baseUrl}${s.filePath}`;
-      const timeFormatted = new Date(s.takenAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const timeFormatted = new Date(s.takenAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
       const taskLabel = s.taskName || s.appName || 'Active Work';
       const actLevel = typeof s.activityLevel === 'number' ? s.activityLevel : Math.min(100, Math.max(10, Math.round((((s.clicks || 0) * 2 + (s.keystrokes || 0)) / 35) * 100)));
-      const dotColor = actLevel >= 70 ? '#22c55e' : (actLevel >= 30 ? '#f59e0b' : '#ef4444');
+      const strokeColor = actLevel >= 70 ? '#10b981' : (actLevel >= 30 ? '#f59e0b' : '#ef4444');
+      const radius = 12;
+      const circumference = 2 * Math.PI * radius;
+      const strokeDashoffset = circumference - (actLevel / 100) * circumference;
 
       return `
-        <div class="shot-card-item" style="position: relative;" onclick="openScreenshotLightbox('${imgUrl}', '${taskLabel.replace(/'/g, "\\\\'")}', '${timeFormatted}')">
-          <img src="${imgUrl}" alt="${taskLabel}" onerror="this.src='https://via.placeholder.com/300x160?text=Screen+Preview'">
-          <div style="position: absolute; top: 6px; right: 6px; background: rgba(15, 23, 42, 0.88); backdrop-filter: blur(4px); color: #fff; font-size: 9px; font-weight: 800; padding: 2px 7px; border-radius: 6px; font-family: monospace; display: flex; align-items: center; gap: 5px; border: 1px solid rgba(255,255,255,0.15);">
-            <span style="width: 6px; height: 6px; border-radius: 50%; background: ${dotColor};"></span>
-            <span>${timeFormatted}</span>
-            <span style="border-left: 1px solid #475569; padding-left: 5px; color: #e2e8f0; font-family: system-ui;">Activity Level: ${actLevel}%</span>
+        <div class="shot-card-item" style="border: 1px solid #cbd5e1; border-radius: 14px; overflow: hidden; background: #ffffff; display: flex; flex-direction: column; cursor: pointer;" onclick="openScreenshotLightbox('${imgUrl}', '${taskLabel.replace(/'/g, "\\\\'")}', '${timeFormatted}')">
+          <div style="width: 100%; aspect-ratio: 16/9; background: #0f172a; overflow: hidden;">
+            <img src="${imgUrl}" alt="${taskLabel}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='https://via.placeholder.com/300x160?text=Screen+Preview'">
           </div>
-          <div class="shot-card-meta">
-            <span class="shot-card-title" title="${taskLabel}">${taskLabel}</span>
-            <span class="shot-card-time">${timeFormatted}</span>
+          <div style="padding: 10px 12px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+            <div style="min-width: 0;">
+              <div style="font-size: 11px; font-family: monospace; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 4px;">
+                <span style="width: 6px; height: 6px; border-radius: 50%; background: #0284c7;"></span>
+                <span>${timeFormatted}</span>
+              </div>
+              <div style="font-size: 10px; font-weight: 700; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px;">${taskLabel}</div>
+            </div>
+            
+            <div style="position: relative; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; shrink: 0;" title="Activity Level: ${actLevel}%">
+              <svg style="width: 32px; height: 32px; transform: rotate(-90deg);">
+                <circle cx="16" cy="16" r="${radius}" stroke="#e2e8f0" stroke-width="3" fill="transparent" />
+                <circle cx="16" cy="16" r="${radius}" stroke="${strokeColor}" stroke-width="3" fill="transparent" stroke-dasharray="${circumference}" stroke-dashoffset="${strokeDashoffset}" stroke-linecap="round" />
+              </svg>
+              <span style="position: absolute; font-size: 8px; font-weight: 900; color: #0f172a; font-family: monospace;">${actLevel}%</span>
+            </div>
           </div>
         </div>
       `;

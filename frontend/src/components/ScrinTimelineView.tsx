@@ -675,32 +675,65 @@ export const ActivityTimelineView: React.FC<ActivityTimelineViewProps> = ({
                                 timestamp: shot.takenAt
                               })
                             }
-                            className="group relative w-48 aspect-video rounded-xl bg-slate-100 border border-slate-200 overflow-hidden cursor-pointer shadow-xs hover:shadow-md transition-all"
+                            className="group w-52 rounded-2xl bg-white border border-slate-200 overflow-hidden cursor-pointer shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
                           >
-                            <img
-                              src={fullUrl}
-                              alt={shot.appName || 'Screenshot'}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                            />
-                            {/* Scrin.io-style thumbnail overlay pill with Activity Level % */}
+                            {/* Clean Full Preview Image (NO text on top of image!) */}
+                            <div className="w-full aspect-video bg-slate-900 overflow-hidden relative">
+                              <img
+                                src={fullUrl}
+                                alt={shot.appName || 'Screenshot'}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                              />
+                            </div>
+
+                            {/* Footer Bar Below Image: Time, App Name, and Filled Circular Activity Ring Meter */}
                             {(() => {
                               const sAny = shot as any;
                               const calcLevel = Math.min(100, Math.max(10, Math.round((((sAny.clicks || 0) * 2 + (sAny.keystrokes || 0)) / 35) * 100)));
                               const actLevel = typeof sAny.activityLevel === 'number' ? sAny.activityLevel : calcLevel;
-                              const dotColor = actLevel >= 70 ? 'bg-emerald-400' : actLevel >= 30 ? 'bg-amber-400' : 'bg-rose-500';
+                              const strokeColor = actLevel >= 70 ? '#10b981' : actLevel >= 30 ? '#f59e0b' : '#ef4444';
+                              const radius = 12;
+                              const circumference = 2 * Math.PI * radius;
+                              const strokeDashoffset = circumference - (actLevel / 100) * circumference;
+
                               return (
-                                <div className="absolute top-2 right-2 px-2 py-0.5 rounded-md bg-slate-950/85 backdrop-blur-xs text-[10px] font-mono text-white flex items-center gap-1.5 border border-white/10 shadow-sm" title={`Activity Level: ${actLevel}%`}>
-                                  <span className={`w-2 h-2 rounded-full ${dotColor}`} />
-                                  <span className="font-extrabold">{timeStr}</span>
-                                  <span className="text-[9px] text-slate-300 font-sans border-l border-slate-700 pl-1">Activity Level: {actLevel}%</span>
+                                <div className="p-2.5 bg-slate-50/90 border-t border-slate-100 flex items-center justify-between gap-2">
+                                  <div className="min-w-0">
+                                    <div className="flex items-center gap-1">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-sky-500" />
+                                      <span className="text-[11px] font-mono font-black text-slate-800">{timeStr}</span>
+                                    </div>
+                                    <p className="text-[10px] font-bold text-slate-500 truncate mt-0.5">{shot.appName || shot.taskName || 'Desktop'}</p>
+                                  </div>
+
+                                  {/* Circular SVG Activity Progress Ring */}
+                                  <div className="relative w-8 h-8 flex items-center justify-center shrink-0" title={`Activity Level: ${actLevel}%`}>
+                                    <svg className="w-8 h-8 transform -rotate-90">
+                                      <circle
+                                        cx="16"
+                                        cy="16"
+                                        r={radius}
+                                        stroke="#e2e8f0"
+                                        strokeWidth="3"
+                                        fill="transparent"
+                                      />
+                                      <circle
+                                        cx="16"
+                                        cy="16"
+                                        r={radius}
+                                        stroke={strokeColor}
+                                        strokeWidth="3"
+                                        fill="transparent"
+                                        strokeDasharray={circumference}
+                                        strokeDashoffset={strokeDashoffset}
+                                        strokeLinecap="round"
+                                      />
+                                    </svg>
+                                    <span className="absolute text-[8px] font-black text-slate-800 font-mono">{actLevel}%</span>
+                                  </div>
                                 </div>
                               );
                             })()}
-
-                            <div className="absolute inset-x-0 bottom-0 p-2 bg-gradient-to-t from-slate-950/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-between text-white text-[10px]">
-                              <span className="truncate">{shot.appName || 'Desktop'}</span>
-                              <Camera className="w-3 h-3 text-sky-400 shrink-0" />
-                            </div>
                           </div>
                         );
                       })}
