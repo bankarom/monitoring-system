@@ -101,6 +101,24 @@ app.use('/api/activity', activityRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/employee', employeeRoutes);
 
+// Serve Built Frontend React Web App (SPA Fallback)
+const frontendDistPath = path.join(__dirname, '../../frontend/dist');
+if (fs.existsSync(frontendDistPath)) {
+  app.use(express.static(frontendDistPath));
+  app.get('*', (req, res, next) => {
+    if (
+      req.path.startsWith('/api') ||
+      req.path.startsWith('/uploads') ||
+      req.path.startsWith('/downloads') ||
+      req.path.startsWith('/updates') ||
+      req.path.startsWith('/download')
+    ) {
+      return next();
+    }
+    res.sendFile(path.join(frontendDistPath, 'index.html'));
+  });
+}
+
 // Initialize WebSockets
 socketService.initialize(server, config.corsOrigin);
 
