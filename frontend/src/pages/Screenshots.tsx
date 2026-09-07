@@ -146,8 +146,11 @@ export const Screenshots: React.FC = () => {
                 {/* Footer Bar Below Image: Employee Name, Time, App & Circular SVG Activity Ring */}
                 {(() => {
                   const sAny = s as any;
-                  const calcLevel = Math.min(100, Math.max(10, Math.round((((sAny.clicks || 0) * 2 + (sAny.keystrokes || 0)) / 35) * 100)));
-                  const actLevel = typeof sAny.activityLevel === 'number' ? sAny.activityLevel : calcLevel;
+                  const isIdle = sAny.isIdle || sAny.category === 'IDLE';
+                  const rawCalc = Math.round((((sAny.clicks || 0) * 2 + (sAny.keystrokes || 0)) / 35) * 100);
+                  const actLevel = typeof sAny.activityLevel === 'number'
+                    ? sAny.activityLevel
+                    : (isIdle ? 0 : (rawCalc > 0 ? Math.min(100, rawCalc) : 100));
                   const strokeColor = actLevel >= 70 ? '#10b981' : actLevel >= 30 ? '#f59e0b' : '#ef4444';
                   const radius = 12;
                   const circumference = 2 * Math.PI * radius;

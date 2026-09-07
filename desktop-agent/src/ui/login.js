@@ -461,7 +461,11 @@ async function loadDesktopScreenshots(dateStr) {
       const imgUrl = s.filePath.startsWith('http') ? s.filePath : `${baseUrl}${s.filePath}`;
       const timeFormatted = new Date(s.takenAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
       const taskLabel = s.taskName || s.appName || 'Active Work';
-      const actLevel = typeof s.activityLevel === 'number' ? s.activityLevel : Math.min(100, Math.max(10, Math.round((((s.clicks || 0) * 2 + (s.keystrokes || 0)) / 35) * 100)));
+      const isIdle = s.isIdle || s.category === 'IDLE';
+      const rawCalc = Math.round((((s.clicks || 0) * 2 + (s.keystrokes || 0)) / 35) * 100);
+      const actLevel = typeof s.activityLevel === 'number'
+        ? s.activityLevel
+        : (isIdle ? 0 : (rawCalc > 0 ? Math.min(100, rawCalc) : 100));
       const strokeColor = actLevel >= 70 ? '#10b981' : (actLevel >= 30 ? '#f59e0b' : '#ef4444');
       const radius = 12;
       const circumference = 2 * Math.PI * radius;
