@@ -1,0 +1,48 @@
+name: Build Enterprise Desktop Agent (Windows EXE & macOS DMG)
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-agent:
+    name: Build Desktop Agent (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            build_script: dist
+            artifact_name: Windows-EXE-Installer
+            artifact_path: desktop-agent/release/*.exe
+          - os: macos-latest
+            build_script: dist:mac
+            artifact_name: macOS-DMG-Installer
+            artifact_path: desktop-agent/release/*.dmg
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Desktop Agent Dependencies
+        run: |
+          cd desktop-agent
+          npm install
+
+      - name: Build Installer Binary (${{ matrix.os }})
+        run: |
+          cd desktop-agent
+          npm run ${{ matrix.build_script }}
+
+      - name: Upload Build Artifact (${{ matrix.artifact_name }})
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_path }}
