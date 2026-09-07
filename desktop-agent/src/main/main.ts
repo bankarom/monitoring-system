@@ -5,6 +5,7 @@ import { OfflineQueue } from '../storage/offlineQueue';
 import { SyncService } from '../api/syncService';
 import { ScreenshotEngine } from '../tracking/screenshotEngine';
 import { NativeTrackerSupervisor, TrackerSample } from '../tracking/activeWindow';
+import { AutoUpdateManager } from '../tracking/autoUpdater';
 
 class AgentApplication {
   private mainWindow: BrowserWindow | null = null;
@@ -13,6 +14,7 @@ class AgentApplication {
   private syncService: SyncService;
   private screenshotEngine: ScreenshotEngine;
   private tracker: NativeTrackerSupervisor;
+  private autoUpdater: AutoUpdateManager;
 
   private isTracking = false;
   private currentUser: any = null;
@@ -44,6 +46,7 @@ class AgentApplication {
     this.syncService = new SyncService(this.serverUrl, this.offlineQueue);
     this.screenshotEngine = new ScreenshotEngine();
     this.tracker = new NativeTrackerSupervisor(this.idleThresholdMinutes);
+    this.autoUpdater = new AutoUpdateManager(this.serverUrl);
 
     const userDataPath = app ? app.getPath('userData') : path.join(process.env.APPDATA || '.', 'ImproxAgent');
     if (!fs.existsSync(userDataPath)) {
@@ -103,6 +106,9 @@ class AgentApplication {
       this.setupIpcHandlers();
       this.setupAutoStart();
 
+      // Start background silent auto-update checker
+      this.autoUpdater.startPeriodicChecks();
+
       // Require explicit employee manual action to start work
       this.createLoginWindow();
     });
@@ -111,12 +117,18 @@ class AgentApplication {
       if (this.isTracking) {
         await this.syncService.logout().catch(() => {});
       }
+      if (this.autoUpdater.hasPendingUpdate()) {
+        this.autoUpdater.applyUpdateIfPending();
+      }
       this.tracker.destroy();
     });
 
     powerMonitor.on('shutdown', async () => {
       if (this.isTracking) {
         await this.syncService.logout().catch(() => {});
+      }
+      if (this.autoUpdater.hasPendingUpdate()) {
+        this.autoUpdater.applyUpdateIfPending();
       }
     });
 
@@ -325,6 +337,12 @@ class AgentApplication {
     this.updateTrayMenu();
     this.notifyUIState();
     console.log(`🟡 Tracking paused: ${this.pauseReason} (${this.pauseComment})`);
+    
+    // Apply downloaded updates silently during breaks
+    if (this.autoUpdater.hasPendingUpdate()) {
+      console.log('⏸️ Employee paused/took a break. Applying background auto-update now...');
+      this.autoUpdater.applyUpdateIfPending();
+    }
   }
 
   public resumeTracking() {

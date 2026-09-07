@@ -25,14 +25,42 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Ensure upload directory exists
+// Ensure upload and updates directory exist
 if (!fs.existsSync(config.uploadDir)) {
   fs.mkdirSync(config.uploadDir, { recursive: true });
 }
+const updatesDir = path.join(__dirname, '../updates');
+if (!fs.existsSync(updatesDir)) {
+  fs.mkdirSync(updatesDir, { recursive: true });
+}
 
-// Serve uploaded screenshots statically
+// Serve uploaded screenshots, downloads & auto-update manifests statically
 app.use('/uploads', express.static(config.uploadDir));
 app.use('/downloads', express.static(path.join(__dirname, '../downloads')));
+app.use('/updates', express.static(updatesDir));
+
+// Direct Desktop Agent Download Route
+app.get(['/download/agent', '/api/download/agent'], (req, res) => {
+  const possiblePaths = [
+    path.join(updatesDir, 'Improx Monitoring System Setup 1.0.0.exe'),
+    path.join(__dirname, '../../desktop-agent/release/Improx Monitoring System Setup 1.0.0.exe'),
+    path.join(updatesDir, 'Improx-Agent-Setup.exe')
+  ];
+
+  let foundPath = '';
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) {
+      foundPath = p;
+      break;
+    }
+  }
+
+  if (foundPath) {
+    res.download(foundPath, 'Improx-Agent-Setup.exe');
+  } else {
+    res.status(404).json({ error: 'Agent installer binary not found on server.' });
+  }
+});
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
