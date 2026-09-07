@@ -39,8 +39,8 @@ app.use('/uploads', express.static(config.uploadDir));
 app.use('/downloads', express.static(path.join(__dirname, '../downloads')));
 app.use('/updates', express.static(updatesDir));
 
-// Direct Desktop Agent Download Route
-app.get(['/download/agent', '/api/download/agent'], (req, res) => {
+// Direct Desktop Agent Download Route (Windows .exe)
+app.get(['/download/agent', '/api/download/agent', '/download/agent/win'], (req, res) => {
   const possiblePaths = [
     path.join(updatesDir, 'Improx Monitoring System Setup 1.0.0.exe'),
     path.join(__dirname, '../../desktop-agent/release/Improx Monitoring System Setup 1.0.0.exe'),
@@ -58,7 +58,30 @@ app.get(['/download/agent', '/api/download/agent'], (req, res) => {
   if (foundPath) {
     res.download(foundPath, 'Improx-Agent-Setup.exe');
   } else {
-    res.status(404).json({ error: 'Agent installer binary not found on server.' });
+    res.status(404).json({ error: 'Windows Agent installer binary not found on server.' });
+  }
+});
+
+// Direct Desktop Agent Download Route (macOS .dmg)
+app.get(['/download/agent/mac', '/api/download/agent/mac'], (req, res) => {
+  const possiblePaths = [
+    path.join(updatesDir, 'Improx Monitoring System-1.0.0.dmg'),
+    path.join(updatesDir, 'Improx-Agent-Setup.dmg'),
+    path.join(__dirname, '../../desktop-agent/release/Improx Monitoring System-1.0.0.dmg')
+  ];
+
+  let foundPath = '';
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) {
+      foundPath = p;
+      break;
+    }
+  }
+
+  if (foundPath) {
+    res.download(foundPath, 'Improx-Agent-Setup.dmg');
+  } else {
+    res.status(404).json({ error: 'macOS Agent installer binary (.dmg) not found on server.' });
   }
 });
 
