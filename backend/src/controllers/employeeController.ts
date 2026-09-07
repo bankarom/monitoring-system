@@ -53,7 +53,47 @@ export async function getMyScreenshots(req: AuthenticatedRequest, res: Response)
       orderBy: { takenAt: 'desc' }
     });
 
-    return res.status(200).json({ success: true, date: dateStr, screenshots });
+    // Compute exact 10-minute activity score (70 keys, 25 clicks = 100%) for each screenshot
+    const enrichedScreenshots = await Promise.all(
+      screenshots.map(async (shot) => {
+        const windowStart = new Date(shot.takenAt.getTime() - 10 * 60 * 1000);
+        const windowEnd = shot.takenAt;
+
+        const agg = await prisma.activityLog.aggregate({
+          where: {
+            userId,
+            recordedAt: { gte: windowStart, lte: windowEnd }
+          },
+          _sum: {
+            keystrokes: true,
+            mouseClicks: true
+          }
+        });
+
+        const totalKeys = agg._sum.keystrokes || 0;
+        const totalClicks = agg._sum.mouseClicks || 0;
+
+        const keyScore = Math.min(1.0, totalKeys / 70);
+        const clickScore = Math.min(1.0, totalClicks / 25);
+
+        let activityPercent = Math.round((keyScore * 60) + (clickScore * 40));
+        if (totalKeys >= 70 && totalClicks >= 25) {
+          activityPercent = 100;
+        }
+        if (shot.isIdle || (totalKeys === 0 && totalClicks === 0)) {
+          activityPercent = 0;
+        }
+
+        return {
+          ...shot,
+          activityPercent: Math.min(100, Math.max(0, activityPercent)),
+          intervalKeys: totalKeys,
+          intervalClicks: totalClicks
+        };
+      })
+    );
+
+    return res.status(200).json({ success: true, date: dateStr, screenshots: enrichedScreenshots });
   } catch (error: any) {
     return res.status(500).json({ success: false, message: error.message });
   }
