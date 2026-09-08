@@ -600,16 +600,12 @@ class AgentApplication {
       this.notifyUIState();
     }, this.sampleDurationSeconds * 1000);
 
-    // 2. Screenshot Capture Interval
+    // 2. Screenshot Capture Interval (Every 10 minutes)
     const msInterval = this.screenshotIntervalMinutes * 60 * 1000;
+    if (this.screenshotTimer) clearInterval(this.screenshotTimer);
     this.screenshotTimer = setInterval(async () => {
       await this.performScreenshotCapture();
     }, msInterval);
-
-    // Initial capture 3 seconds after connect
-    setTimeout(() => {
-      this.performScreenshotCapture();
-    }, 3000);
   }
 
   private async performScreenshotCapture() {

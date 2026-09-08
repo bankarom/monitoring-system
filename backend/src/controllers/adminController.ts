@@ -502,20 +502,17 @@ export async function getScreenshots(req: Request, res: Response) {
         const totalKeys = agg._sum.keystrokes || 0;
         const totalClicks = agg._sum.mouseClicks || 0;
 
-        const keyScore = Math.min(1.0, totalKeys / 70);
-        const clickScore = Math.min(1.0, totalClicks / 25);
-
-        let activityPercent = Math.round((keyScore * 60) + (clickScore * 40));
-        if (totalKeys >= 70 && totalClicks >= 25) {
-          activityPercent = 100;
+        let activityPercent = 0;
+        if (!shot.isIdle && (totalKeys > 0 || totalClicks > 0)) {
+          const keyScore = (totalKeys / 70) * 60;
+          const clickScore = (totalClicks / 25) * 40;
+          activityPercent = Math.round(keyScore + clickScore);
         }
-        if (shot.isIdle || (totalKeys === 0 && totalClicks === 0)) {
-          activityPercent = 0;
-        }
+        activityPercent = Math.min(100, Math.max(0, activityPercent));
 
         return {
           ...shot,
-          activityPercent: Math.min(100, Math.max(0, activityPercent)),
+          activityPercent,
           intervalKeys: totalKeys,
           intervalClicks: totalClicks
         };

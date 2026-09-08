@@ -156,9 +156,9 @@ export const Screenshots: React.FC = () => {
                   } else if (typeof sAny.activityLevel === 'number') {
                     actLevel = sAny.activityLevel;
                   } else if (!isIdle && (totalKeys > 0 || totalClicks > 0)) {
-                    const keyScore = Math.min(1.0, totalKeys / 70);
-                    const clickScore = Math.min(1.0, totalClicks / 25);
-                    actLevel = (totalKeys >= 70 && totalClicks >= 25) ? 100 : Math.round((keyScore * 60) + (clickScore * 40));
+                    const keyScore = (totalKeys / 70) * 60;
+                    const clickScore = (totalClicks / 25) * 40;
+                    actLevel = Math.round(keyScore + clickScore);
                   } else {
                     actLevel = 0;
                   }
