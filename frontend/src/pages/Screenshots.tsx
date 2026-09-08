@@ -147,11 +147,22 @@ export const Screenshots: React.FC = () => {
                 {(() => {
                   const sAny = s as any;
                   const isIdle = sAny.isIdle || sAny.category === 'IDLE';
-                  const score = ((sAny.clicks || 0) * 2) + (sAny.keystrokes || 0);
-                  const rawCalc = Math.round((score / 150) * 100);
-                  const actLevel = typeof sAny.activityLevel === 'number'
-                    ? sAny.activityLevel
-                    : (isIdle ? 0 : (score > 0 ? Math.min(100, rawCalc) : 100));
+                  const totalKeys = typeof sAny.intervalKeys === 'number' ? sAny.intervalKeys : (sAny.keystrokes || 0);
+                  const totalClicks = typeof sAny.intervalClicks === 'number' ? sAny.intervalClicks : (sAny.clicks || sAny.mouseClicks || 0);
+
+                  let actLevel = 0;
+                  if (typeof sAny.activityPercent === 'number') {
+                    actLevel = sAny.activityPercent;
+                  } else if (typeof sAny.activityLevel === 'number') {
+                    actLevel = sAny.activityLevel;
+                  } else if (!isIdle && (totalKeys > 0 || totalClicks > 0)) {
+                    const keyScore = Math.min(1.0, totalKeys / 70);
+                    const clickScore = Math.min(1.0, totalClicks / 25);
+                    actLevel = (totalKeys >= 70 && totalClicks >= 25) ? 100 : Math.round((keyScore * 60) + (clickScore * 40));
+                  } else {
+                    actLevel = 0;
+                  }
+                  actLevel = Math.min(100, Math.max(0, actLevel));
                   const strokeColor = actLevel >= 70 ? '#10b981' : actLevel >= 30 ? '#f59e0b' : '#ef4444';
                   const radius = 12;
                   const circumference = 2 * Math.PI * radius;
