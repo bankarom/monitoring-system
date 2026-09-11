@@ -28,8 +28,9 @@ The system consists of 3 primary components:
 
 ### 2. Super Admin Web Dashboard
 - **URL:** `http://200.141.2.53`
-- **Default Super Admin Email:** `admin@improx.com`
-- **Default Super Admin Password:** `Admin@123456`
+- **Super Admin Name:** `Super Admin`
+- **Super Admin Email:** `monitoradmin@improxgroup.com1234`
+- **Super Admin Password:** `#admin0089000#`
 
 ### 3. Source Code (GitHub Repository)
 - **Repository URL:** `https://github.com/bankarom/monitoring-system.git`

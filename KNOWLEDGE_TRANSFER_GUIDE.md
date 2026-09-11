@@ -56,8 +56,9 @@ Before starting, ensure you have received access to the following 4 portals/cred
 
 ### 3. Super Admin Web Dashboard Access
 - **Dashboard URL:** `http://200.141.2.53`
-- **Default Super Admin Email:** `admin@improx.com`
-- **Default Password:** `Admin@123456` (or `#admin0089000#`)
+- **Super Admin Name:** `Super Admin`
+- **Super Admin Email:** `monitoradmin@improxgroup.com1234`
+- **Super Admin Password:** `#admin0089000#`
 
 ### 4. Database Access (PostgreSQL on VPS)
 - **Host:** `localhost:5432` (inside VPS)
