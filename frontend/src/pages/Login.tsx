@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Mail, Lock, AlertCircle, ArrowRight, ShieldCheck, UserCheck, Sparkles } from 'lucide-react';
+import { Mail, Lock, AlertCircle, ArrowRight, ShieldCheck, UserCheck, Sparkles, Download } from 'lucide-react';
 import logoImg from '../assets/logo.png';
 
 export const Login: React.FC = () => {
@@ -93,6 +93,26 @@ export const Login: React.FC = () => {
               <UserCheck className="w-4 h-4 text-sky-600 shrink-0" />
               <span>Employee Portal</span>
             </button>
+          </div>
+
+          {/* Windows Desktop Agent (.exe) CTA */}
+          <div className="mt-3 pt-3 border-t border-sky-200/60 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Download className="w-4 h-4 text-indigo-600 shrink-0" />
+              <div className="text-left">
+                <p className="text-[11px] font-black text-slate-800">Desktop Agent (.exe)</p>
+                <p className="text-[10px] text-slate-500 font-medium">Test real telemetry on PC</p>
+              </div>
+            </div>
+            <a
+              href="https://github.com/bankarom/monitoring-system/releases"
+              target="_blank"
+              rel="noreferrer"
+              className="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[11px] font-bold transition-all shrink-0 shadow-xs flex items-center gap-1"
+            >
+              <Download className="w-3 h-3" />
+              <span>Download .exe</span>
+            </a>
           </div>
         </div>
 

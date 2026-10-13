@@ -27,7 +27,6 @@ interface NavItem {
 
 const adminNavigation: NavItem[] = [
   { name: 'Overview', href: '/', icon: LayoutDashboard },
-  { name: 'Employee Portal', href: '/portal', icon: UserCheck, badge: 'PORTAL' },
   { name: 'Live Monitor', href: '/realtime', icon: Radio, badge: 'LIVE' },
   { name: 'Employees', href: '/employees', icon: Users },
   { name: 'Screenshots', href: '/screenshots', icon: Image },

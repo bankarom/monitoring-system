@@ -53,25 +53,6 @@ export const Navbar: React.FC = () => {
           {isViewingPortal ? 'Employee Workspace' : 'Management Console'}
         </h2>
 
-        {/* View Switcher Pill */}
-        {isViewingPortal ? (
-          <Link
-            to="/"
-            className="flex items-center gap-1.5 px-3 py-1 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs"
-          >
-            <LayoutDashboard className="w-3.5 h-3.5" />
-            <span>Admin Console</span>
-          </Link>
-        ) : (
-          <Link
-            to="/portal"
-            className="flex items-center gap-1.5 px-3 py-1 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold transition-all shadow-xs"
-          >
-            <UserCheck className="w-3.5 h-3.5" />
-            <span>Employee Portal</span>
-          </Link>
-        )}
-
         {isAdminOrHR && employees.length > 0 && (
           <div className="hidden md:flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1 rounded-xl">
             <span className="text-[10px] font-extrabold uppercase text-slate-400">Employee:</span>
