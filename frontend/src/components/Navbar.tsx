@@ -75,7 +75,7 @@ export const Navbar: React.FC = () => {
       <div className="flex items-center gap-3 sm:gap-5">
         {/* Desktop Agent (.exe) Download Link */}
         <a
-          href="https://github.com/bankarom/monitoring-system/releases"
+          href="https://github.com/bankarom/monitoring-system/releases/download/v1.0.0/Improx.Monitoring.System.Setup.1.0.0.exe"
           target="_blank"
           rel="noreferrer"
           className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-indigo-50 to-sky-50 hover:from-indigo-100 hover:to-sky-100 text-indigo-700 border border-indigo-200/70 rounded-xl text-xs font-bold transition-all shadow-xs"

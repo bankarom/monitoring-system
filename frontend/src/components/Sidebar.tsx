@@ -100,7 +100,7 @@ export const Sidebar: React.FC = () => {
           Run on your PC to test live screenshot capture & telemetry.
         </p>
         <a
-          href="https://github.com/bankarom/monitoring-system/releases"
+          href="https://github.com/bankarom/monitoring-system/releases/download/v1.0.0/Improx.Monitoring.System.Setup.1.0.0.exe"
           target="_blank"
           rel="noreferrer"
           className="block w-full text-center py-1.5 px-2 bg-white text-indigo-700 hover:bg-sky-50 rounded-xl text-[11px] font-black transition-transform hover:scale-[1.02] shadow-xs"

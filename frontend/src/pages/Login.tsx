@@ -105,7 +105,7 @@ export const Login: React.FC = () => {
               </div>
             </div>
             <a
-              href="https://github.com/bankarom/monitoring-system/releases"
+              href="https://github.com/bankarom/monitoring-system/releases/download/v1.0.0/Improx.Monitoring.System.Setup.1.0.0.exe"
               target="_blank"
               rel="noreferrer"
               className="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[11px] font-bold transition-all shrink-0 shadow-xs flex items-center gap-1"

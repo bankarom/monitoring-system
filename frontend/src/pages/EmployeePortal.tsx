@@ -143,7 +143,7 @@ export const EmployeePortal: React.FC = () => {
           </div>
         </div>
         <a
-          href="https://github.com/bankarom/monitoring-system/releases"
+          href="https://github.com/bankarom/monitoring-system/releases/download/v1.0.0/Improx.Monitoring.System.Setup.1.0.0.exe"
           target="_blank"
           rel="noreferrer"
           className="w-full md:w-auto px-5 py-2.5 bg-white text-indigo-700 hover:bg-sky-50 font-black text-xs rounded-xl transition-all shrink-0 flex items-center justify-center gap-2 shadow-md hover:scale-105 active:scale-95"
