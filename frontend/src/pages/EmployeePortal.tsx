@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { api, API_BASE_URL } from '../services/api';
 import { formatHoursToTime, getTodayLocalDateString, getScreenshotUrl } from '../utils/format';
 import { ActivityTimelineView } from '../components/ScrinTimelineView';
@@ -29,7 +30,15 @@ export const EmployeePortal: React.FC = () => {
   const [apps, setApps] = useState<any[]>([]);
   const [youtubeVideos, setYoutubeVideos] = useState<YouTubeVideoRecord[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>(getTodayLocalDateString());
+  const [searchParams] = useSearchParams();
+  const tabFromUrl = searchParams.get('tab') as 'timeline' | 'youtube' | 'apps' | 'screenshots' | null;
   const [activeTab, setActiveTab] = useState<'timeline' | 'youtube' | 'apps' | 'screenshots'>('timeline');
+
+  useEffect(() => {
+    if (tabFromUrl && ['timeline', 'youtube', 'apps', 'screenshots'].includes(tabFromUrl)) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [tabFromUrl]);
   const [loading, setLoading] = useState(true);
   const [selectedScreenshot, setSelectedScreenshot] = useState<{
     url: string;

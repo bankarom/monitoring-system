@@ -35,10 +35,10 @@ const adminNavigation: NavItem[] = [
 ];
 
 const employeeNavigation: NavItem[] = [
-  { name: 'My Dashboard', href: '/portal', icon: LayoutDashboard },
-  { name: 'My Screenshots', href: '/portal', icon: Image },
-  { name: 'My Activity & Apps', href: '/portal', icon: PieChart },
-  { name: 'My Timesheet', href: '/portal', icon: CalendarCheck },
+  { name: 'My Dashboard', href: '/portal?tab=timeline', icon: LayoutDashboard },
+  { name: 'My Screenshots', href: '/portal?tab=screenshots', icon: Image },
+  { name: 'My Activity & Apps', href: '/portal?tab=apps', icon: PieChart },
+  { name: 'My Timesheet', href: '/portal?tab=timeline', icon: CalendarCheck },
 ];
 
 export const Sidebar: React.FC = () => {
