@@ -18,7 +18,7 @@ class AgentApplication {
 
   private isTracking = false;
   private currentUser: any = null;
-  private serverUrl = process.env.SERVER_URL || 'http://localhost:4000';
+  private serverUrl = process.env.SERVER_URL || 'https://monitoring-system-64ho.onrender.com';
   private configFilePath: string;
 
   private currentTask = '';
