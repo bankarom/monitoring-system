@@ -4,9 +4,32 @@ import { prisma } from '../config/prisma';
 import { buildTimelineIntervals } from './adminController';
 import { extractYouTubeVideoTitle } from '../config/appCategories';
 
+export async function getEmployeeDirectory(req: AuthenticatedRequest, res: Response) {
+  try {
+    const employees = await prisma.user.findMany({
+      where: { role: 'EMPLOYEE', isActive: true },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        department: true,
+        shift: true,
+        avatar: true,
+        status: true,
+        currentTask: true,
+        currentApp: true
+      },
+      orderBy: { name: 'asc' }
+    });
+    return res.status(200).json({ success: true, employees });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+}
+
 export async function getMyProfile(req: AuthenticatedRequest, res: Response) {
   try {
-    const userId = req.user?.userId;
+    const userId = (req.query.userId as string) || req.user?.userId;
     if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
 
     const user = await prisma.user.findUnique({
@@ -25,6 +48,7 @@ export async function getMyProfile(req: AuthenticatedRequest, res: Response) {
         shift: user.shift,
         role: user.role,
         status: user.status,
+        avatar: user.avatar,
         currentTask: (user as any).currentTask || null,
         pauseReason: (user as any).pauseReason || null,
         pauseComment: (user as any).pauseComment || null,
@@ -38,7 +62,7 @@ export async function getMyProfile(req: AuthenticatedRequest, res: Response) {
 
 export async function getMyScreenshots(req: AuthenticatedRequest, res: Response) {
   try {
-    const userId = req.user?.userId;
+    const userId = (req.query.userId as string) || req.user?.userId;
     if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
 
     const dateStr = (req.query.date as string) || new Date().toISOString().split('T')[0];
@@ -101,7 +125,7 @@ export async function getMyScreenshots(req: AuthenticatedRequest, res: Response)
 
 export async function getMyTimeline(req: AuthenticatedRequest, res: Response) {
   try {
-    const userId = req.user?.userId;
+    const userId = (req.query.userId as string) || req.user?.userId;
     if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
 
     const dateStr = (req.query.date as string) || new Date().toISOString().split('T')[0];
@@ -165,7 +189,7 @@ export async function getMyTimeline(req: AuthenticatedRequest, res: Response) {
 
 export async function getMyTimesheet(req: AuthenticatedRequest, res: Response) {
   try {
-    const userId = req.user?.userId;
+    const userId = (req.query.userId as string) || req.user?.userId;
     if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
 
     const dateStr = (req.query.date as string) || new Date().toISOString().split('T')[0];

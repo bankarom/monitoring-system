@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import {
+  getEmployeeDirectory,
   getMyProfile,
   getMyScreenshots,
   getMyTimeline,
@@ -18,6 +19,7 @@ const router = Router();
 // Enforce authentication on all employee routes
 router.use(authenticateToken);
 
+router.get('/directory', getEmployeeDirectory);
 router.get('/profile', getMyProfile);
 router.get('/screenshots', getMyScreenshots);
 router.get('/timeline', getMyTimeline);

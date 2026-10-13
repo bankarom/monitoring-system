@@ -1,7 +1,11 @@
 import axios from 'axios';
 
-// Dynamically determine API URL based on current host or environment variable
-export const API_BASE_URL = import.meta.env.VITE_API_URL || `${window.location.protocol}//${window.location.hostname}:4000`;
+// Dynamically determine API URL: uses env var or defaults to live Render backend
+export const API_BASE_URL =
+  import.meta.env.VITE_API_URL ||
+  (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? `${window.location.protocol}//${window.location.hostname}:4000`
+    : 'https://monitoring-system-64ho.onrender.com');
 
 export const api = axios.create({
   baseURL: `${API_BASE_URL}/api`,
