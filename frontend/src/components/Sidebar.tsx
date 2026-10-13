@@ -10,7 +10,9 @@ import {
   Globe,
   CalendarCheck,
   Settings,
-  ShieldCheck
+  ShieldCheck,
+  Download,
+  UserCheck
 } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
@@ -25,6 +27,7 @@ interface NavItem {
 
 const adminNavigation: NavItem[] = [
   { name: 'Overview', href: '/', icon: LayoutDashboard },
+  { name: 'Employee Portal', href: '/portal', icon: UserCheck, badge: 'PORTAL' },
   { name: 'Live Monitor', href: '/realtime', icon: Radio, badge: 'LIVE' },
   { name: 'Employees', href: '/employees', icon: Users },
   { name: 'Screenshots', href: '/screenshots', icon: Image },
@@ -87,6 +90,25 @@ export const Sidebar: React.FC = () => {
           );
         })}
       </nav>
+
+      {/* Desktop Agent (.exe) CTA Card */}
+      <div className="mx-3 mb-2 p-3 rounded-2xl bg-gradient-to-br from-indigo-600 to-sky-600 text-white shadow-sm">
+        <div className="flex items-center gap-2 mb-1">
+          <Download className="w-4 h-4 text-white" />
+          <span className="text-xs font-black tracking-tight">Desktop Agent (.exe)</span>
+        </div>
+        <p className="text-[10px] text-sky-100 leading-snug mb-2 font-medium">
+          Run on your PC to test live screenshot capture & telemetry.
+        </p>
+        <a
+          href="https://github.com/bankarom/monitoring-system/releases"
+          target="_blank"
+          rel="noreferrer"
+          className="block w-full text-center py-1.5 px-2 bg-white text-indigo-700 hover:bg-sky-50 rounded-xl text-[11px] font-black transition-transform hover:scale-[1.02] shadow-xs"
+        >
+          Download .exe Agent
+        </a>
+      </div>
 
       {/* Footer Info */}
       <div className="p-4 border-t border-slate-200 text-center bg-slate-50/50">

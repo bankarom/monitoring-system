@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
-import { LogOut, Wifi, WifiOff, User as UserIcon } from 'lucide-react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { LogOut, Wifi, WifiOff, User as UserIcon, Download, LayoutDashboard, UserCheck } from 'lucide-react';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { api } from '../services/api';
 import { getStoredEmployeeId, setStoredEmployeeId } from '../utils/selection';
 import { Employee } from '../types';
@@ -17,6 +17,7 @@ export const Navbar: React.FC = () => {
   const [selectedUserId, setSelectedUserId] = useState<string>(getStoredEmployeeId());
 
   const isAdminOrHR = user?.role === 'ADMIN' || user?.department === 'HR' || user?.role === 'MANAGER';
+  const isViewingPortal = location.pathname.startsWith('/portal');
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -42,14 +43,34 @@ export const Navbar: React.FC = () => {
   const handleSelectEmployee = (id: string) => {
     setSelectedUserId(id);
     setStoredEmployeeId(id);
+    window.dispatchEvent(new CustomEvent('improx-employee-changed', { detail: id }));
   };
 
   return (
-    <header className="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between shrink-0 sticky top-0 z-20 shadow-xs">
-      <div className="flex items-center gap-4">
+    <header className="h-16 bg-white border-b border-slate-200 px-4 sm:px-6 flex items-center justify-between shrink-0 sticky top-0 z-20 shadow-xs">
+      <div className="flex items-center gap-3 sm:gap-4">
         <h2 className="text-sm font-bold text-slate-800 tracking-tight">
-          {user?.role === 'EMPLOYEE' ? 'My Personal Workspace' : 'Management Console'}
+          {isViewingPortal ? 'Employee Workspace' : 'Management Console'}
         </h2>
+
+        {/* View Switcher Pill */}
+        {isViewingPortal ? (
+          <Link
+            to="/"
+            className="flex items-center gap-1.5 px-3 py-1 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs"
+          >
+            <LayoutDashboard className="w-3.5 h-3.5" />
+            <span>Admin Console</span>
+          </Link>
+        ) : (
+          <Link
+            to="/portal"
+            className="flex items-center gap-1.5 px-3 py-1 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold transition-all shadow-xs"
+          >
+            <UserCheck className="w-3.5 h-3.5" />
+            <span>Employee Portal</span>
+          </Link>
+        )}
 
         {isAdminOrHR && employees.length > 0 && (
           <div className="hidden md:flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1 rounded-xl">
@@ -70,7 +91,18 @@ export const Navbar: React.FC = () => {
         )}
       </div>
 
-      <div className="flex items-center gap-5">
+      <div className="flex items-center gap-3 sm:gap-5">
+        {/* Desktop Agent (.exe) Download Link */}
+        <a
+          href="https://github.com/bankarom/monitoring-system/releases"
+          target="_blank"
+          rel="noreferrer"
+          className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-indigo-50 to-sky-50 hover:from-indigo-100 hover:to-sky-100 text-indigo-700 border border-indigo-200/70 rounded-xl text-xs font-bold transition-all shadow-xs"
+        >
+          <Download className="w-3.5 h-3.5 text-indigo-600" />
+          <span>Desktop Agent (.exe)</span>
+        </a>
+
         {/* Real-time Socket Indicator */}
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 border border-slate-200 text-xs">
           {isConnected ? (

@@ -49,6 +49,7 @@ const ProtectedLayout: React.FC = () => {
             ) : (
               <Routes>
                 <Route path="/" element={<Dashboard />} />
+                <Route path="/portal" element={<EmployeePortal />} />
                 <Route path="/realtime" element={<LiveGrid />} />
                 <Route path="/employees" element={<Employees />} />
                 <Route path="/screenshots" element={<Screenshots />} />

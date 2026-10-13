@@ -64,10 +64,17 @@ export const EmployeePortal: React.FC = () => {
 
   useEffect(() => {
     api.get('/employee/directory').then((res) => {
-      if (res.data?.employees) {
+      if (res.data?.employees && res.data.employees.length > 0) {
         setColleagues(res.data.employees);
+        setSelectedUserId((prev) => prev || res.data.employees[0].id);
       }
     }).catch(() => {});
+
+    const handler = (e: any) => {
+      if (e.detail) setSelectedUserId(e.detail);
+    };
+    window.addEventListener('improx-employee-changed', handler);
+    return () => window.removeEventListener('improx-employee-changed', handler);
   }, []);
 
   const [selectedScreenshot, setSelectedScreenshot] = useState<{
@@ -161,7 +168,10 @@ export const EmployeePortal: React.FC = () => {
             return (
               <button
                 key={emp.id}
-                onClick={() => setSelectedUserId(emp.id)}
+                onClick={() => {
+                  setSelectedUserId(emp.id);
+                  window.dispatchEvent(new CustomEvent('improx-employee-changed', { detail: emp.id }));
+                }}
                 className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-2 border ${
                   isSelected
                     ? 'bg-slate-900 text-white border-slate-900 shadow-xs'

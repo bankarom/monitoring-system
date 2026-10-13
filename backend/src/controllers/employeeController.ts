@@ -27,9 +27,23 @@ export async function getEmployeeDirectory(req: AuthenticatedRequest, res: Respo
   }
 }
 
+async function getTargetUserId(req: AuthenticatedRequest): Promise<string | null> {
+  if (req.query.userId) {
+    return req.query.userId as string;
+  }
+  if (req.user?.role === 'EMPLOYEE') {
+    return req.user.userId;
+  }
+  const firstEmp = await prisma.user.findFirst({
+    where: { role: 'EMPLOYEE', isActive: true },
+    orderBy: { name: 'asc' }
+  });
+  return firstEmp ? firstEmp.id : (req.user?.userId || null);
+}
+
 export async function getMyProfile(req: AuthenticatedRequest, res: Response) {
   try {
-    const userId = (req.query.userId as string) || req.user?.userId;
+    const userId = await getTargetUserId(req);
     if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
 
     const user = await prisma.user.findUnique({
@@ -62,7 +76,7 @@ export async function getMyProfile(req: AuthenticatedRequest, res: Response) {
 
 export async function getMyScreenshots(req: AuthenticatedRequest, res: Response) {
   try {
-    const userId = (req.query.userId as string) || req.user?.userId;
+    const userId = await getTargetUserId(req);
     if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
 
     const dateStr = (req.query.date as string) || new Date().toISOString().split('T')[0];
@@ -125,7 +139,7 @@ export async function getMyScreenshots(req: AuthenticatedRequest, res: Response)
 
 export async function getMyTimeline(req: AuthenticatedRequest, res: Response) {
   try {
-    const userId = (req.query.userId as string) || req.user?.userId;
+    const userId = await getTargetUserId(req);
     if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
 
     const dateStr = (req.query.date as string) || new Date().toISOString().split('T')[0];
@@ -189,7 +203,7 @@ export async function getMyTimeline(req: AuthenticatedRequest, res: Response) {
 
 export async function getMyTimesheet(req: AuthenticatedRequest, res: Response) {
   try {
-    const userId = (req.query.userId as string) || req.user?.userId;
+    const userId = await getTargetUserId(req);
     if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
 
     const dateStr = (req.query.date as string) || new Date().toISOString().split('T')[0];
@@ -237,7 +251,7 @@ export async function getMyTimesheet(req: AuthenticatedRequest, res: Response) {
 
 export async function getMyAnalytics(req: AuthenticatedRequest, res: Response) {
   try {
-    const userId = req.user?.userId;
+    const userId = await getTargetUserId(req);
     if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
 
     const dateStr = (req.query.date as string) || new Date().toISOString().split('T')[0];
@@ -419,7 +433,7 @@ export async function deleteMyOfflineTime(req: AuthenticatedRequest, res: Respon
 // YouTube & Web Browsing History for Employee Portal
 export async function getMyYouTubeHistory(req: AuthenticatedRequest, res: Response) {
   try {
-    const userId = req.user?.userId;
+    const userId = await getTargetUserId(req);
     if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
 
     const dateStr = (req.query.date as string) || new Date().toISOString().split('T')[0];
@@ -472,7 +486,7 @@ export async function getMyYouTubeHistory(req: AuthenticatedRequest, res: Respon
 
 export async function getMyDetailedReports(req: AuthenticatedRequest, res: Response) {
   try {
-    const userId = req.user?.userId;
+    const userId = await getTargetUserId(req);
     if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
 
     const { date, dateFrom, dateTo } = req.query as { date?: string; dateFrom?: string; dateTo?: string };
