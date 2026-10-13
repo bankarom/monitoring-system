@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { TimelineInterval, ActivityCategory } from '../types';
-import { API_BASE_URL } from '../services/api';
-import { formatHoursToTime } from '../utils/format';
+import { formatHoursToTime, getScreenshotUrl } from '../utils/format';
 import { ScreenshotModal } from './ScreenshotModal';
 import { AddOfflineTimeModal } from './AddOfflineTimeModal';
 import {
@@ -659,7 +658,7 @@ export const ActivityTimelineView: React.FC<ActivityTimelineViewProps> = ({
                   ) : inv.hasScreenshot ? (
                     <div className="flex flex-wrap gap-3">
                       {inv.screenshots.map((shot) => {
-                        const fullUrl = `${API_BASE_URL}${shot.filePath}`;
+                        const fullUrl = getScreenshotUrl(shot.filePath);
                         const timeStr = new Date(shot.takenAt).toLocaleTimeString([], {
                           hour: '2-digit',
                           minute: '2-digit'

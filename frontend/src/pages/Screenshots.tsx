@@ -3,7 +3,7 @@ import { api, API_BASE_URL } from '../services/api';
 import { ScreenshotItem, Employee } from '../types';
 import { ScreenshotModal } from '../components/ScreenshotModal';
 import { getStoredEmployeeId, setStoredEmployeeId } from '../utils/selection';
-import { getTodayLocalDateString } from '../utils/format';
+import { getTodayLocalDateString, getScreenshotUrl } from '../utils/format';
 import { Image as ImageIcon, Download, User, RefreshCw, AppWindow } from 'lucide-react';
 
 export const Screenshots: React.FC = () => {
@@ -127,7 +127,7 @@ export const Screenshots: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {screenshots.map((s, index) => {
-            const fullUrl = `${API_BASE_URL}${s.filePath}`;
+            const fullUrl = getScreenshotUrl(s.filePath);
             return (
               <div
                 key={s.id}
@@ -222,7 +222,7 @@ export const Screenshots: React.FC = () => {
         <ScreenshotModal
           isOpen={activeModalIndex !== null}
           onClose={() => setActiveModalIndex(null)}
-          imageUrl={`${API_BASE_URL}${currentModalScreenshot.filePath}`}
+          imageUrl={getScreenshotUrl(currentModalScreenshot.filePath)}
           title={`${currentModalScreenshot.user.name} — ${currentModalScreenshot.appName || 'Desktop'}`}
           timestamp={currentModalScreenshot.takenAt}
           onPrev={() => setActiveModalIndex((prev) => (prev !== null && prev > 0 ? prev - 1 : prev))}

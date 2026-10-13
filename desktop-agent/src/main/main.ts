@@ -18,7 +18,7 @@ class AgentApplication {
 
   private isTracking = false;
   private currentUser: any = null;
-  private serverUrl = 'http://200.141.2.53';
+  private serverUrl = process.env.SERVER_URL || 'http://localhost:4000';
   private configFilePath: string;
 
   private currentTask = '';

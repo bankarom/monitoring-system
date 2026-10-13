@@ -134,6 +134,12 @@ server.listen(config.port, async () => {
   console.log('====================================================');
 
   await seedInitialAdmin();
+  try {
+    const { seedPortfolioData } = await import('./scripts/seedPortfolioData');
+    await seedPortfolioData();
+  } catch (err) {
+    console.warn('Portfolio seeder notice:', err);
+  }
   startHeartbeatSupervisor();
 
   // Run 60-day backup archival purge on startup & every 24 hours

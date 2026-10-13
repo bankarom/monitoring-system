@@ -1,7 +1,6 @@
 import React from 'react';
 import { RealtimeEmployee } from '../types';
-import { API_BASE_URL } from '../services/api';
-import { formatHoursToTime } from '../utils/format';
+import { formatHoursToTime, getScreenshotUrl } from '../utils/format';
 import { Monitor, MousePointer, Keyboard, Clock, Globe, AppWindow, Maximize2, Tag } from 'lucide-react';
 
 interface LiveEmployeeCardProps {
@@ -27,7 +26,7 @@ export const LiveEmployeeCard: React.FC<LiveEmployeeCardProps> = ({ employee, on
       : 'bg-rose-500';
 
   const fullScreenshotUrl = employee.latestScreenshot
-    ? `${API_BASE_URL}${employee.latestScreenshot.filePath}`
+    ? getScreenshotUrl(employee.latestScreenshot.filePath)
     : null;
 
   // Format relative screenshot time (e.g., "a minute ago")

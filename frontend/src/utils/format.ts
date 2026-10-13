@@ -1,3 +1,5 @@
+import { API_BASE_URL } from '../services/api';
+
 export function formatSecondsToTime(seconds: number): string {
   if (!seconds || seconds <= 0) return '0s';
   const hrs = Math.floor(seconds / 3600);
@@ -24,4 +26,13 @@ export function getTodayLocalDateString(d: Date = new Date()): string {
   const month = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
+}
+
+export function getScreenshotUrl(filePath?: string | null): string {
+  if (!filePath) return '';
+  if (filePath.startsWith('http://') || filePath.startsWith('https://') || filePath.startsWith('data:')) {
+    return filePath;
+  }
+  const cleanPath = filePath.startsWith('/') ? filePath : `/${filePath}`;
+  return `${API_BASE_URL}${cleanPath}`;
 }

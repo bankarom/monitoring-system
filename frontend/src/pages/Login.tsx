@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Mail, Lock, AlertCircle, ArrowRight, ShieldCheck, UserCheck } from 'lucide-react';
+import { Mail, Lock, AlertCircle, ArrowRight, ShieldCheck, UserCheck, Sparkles } from 'lucide-react';
 import logoImg from '../assets/logo.png';
 
 export const Login: React.FC = () => {
@@ -11,6 +11,26 @@ export const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+
+  const handleQuickLogin = async (demoEmail: string, demoPass: string) => {
+    setEmail(demoEmail);
+    setPassword(demoPass);
+    setError(null);
+    setLoading(true);
+
+    try {
+      const user = await login(demoEmail, demoPass);
+      if (user?.role === 'EMPLOYEE') {
+        navigate('/portal');
+      } else {
+        navigate('/');
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || err.message || 'Login failed. Please check your credentials.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,8 +59,41 @@ export const Login: React.FC = () => {
           <img src={logoImg || "/logo.png"} alt="Improx Logo" className="h-10 w-auto max-w-[180px] object-contain mx-auto mb-3" />
           <h2 className="text-xl font-black text-slate-900 tracking-tight">Workplace Sign-In</h2>
           <p className="text-xs text-slate-500 mt-1 font-medium">
-            Enter your credentials to access your dashboard
+            Enter your credentials or use 1-click demo access below
           </p>
+        </div>
+
+        {/* 1-Click Portfolio Demo Section */}
+        <div className="mb-5 p-3.5 bg-gradient-to-r from-sky-50 to-indigo-50 border border-sky-100 rounded-2xl">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[11px] font-black tracking-wider uppercase text-sky-900 flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-sky-600" />
+              Live Portfolio Sandbox
+            </span>
+            <span className="text-[10px] font-bold text-sky-700 bg-white px-2 py-0.5 rounded-full border border-sky-200">
+              Instant Access
+            </span>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => handleQuickLogin('admin@demo.com', 'demo123')}
+              disabled={loading}
+              className="py-2.5 px-3 bg-white hover:bg-sky-50 text-slate-800 hover:text-sky-700 border border-slate-200 hover:border-sky-300 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 disabled:opacity-50"
+            >
+              <ShieldCheck className="w-4 h-4 text-indigo-600 shrink-0" />
+              <span>Super Admin</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleQuickLogin('alex.rivers@demo.com', 'demo123')}
+              disabled={loading}
+              className="py-2.5 px-3 bg-white hover:bg-sky-50 text-slate-800 hover:text-sky-700 border border-slate-200 hover:border-sky-300 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 disabled:opacity-50"
+            >
+              <UserCheck className="w-4 h-4 text-sky-600 shrink-0" />
+              <span>Employee Portal</span>
+            </button>
+          </div>
         </div>
 
         {error && (

@@ -11,6 +11,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
     "seed": "ts-node-dev src/utils/seed.ts",
+    "seed:portfolio": "ts-node-dev src/scripts/seedPortfolioData.ts",
     "wipe-db": "node dist/scripts/wipe.js"
   },
   "dependencies": {

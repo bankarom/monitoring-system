@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { api, API_BASE_URL } from '../services/api';
-import { formatHoursToTime, getTodayLocalDateString } from '../utils/format';
+import { formatHoursToTime, getTodayLocalDateString, getScreenshotUrl } from '../utils/format';
 import { ActivityTimelineView } from '../components/ScrinTimelineView';
 import { ScreenshotModal } from '../components/ScreenshotModal';
 import { TimelineInterval, YouTubeVideoRecord } from '../types';
@@ -294,7 +294,7 @@ export const EmployeePortal: React.FC = () => {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 gap-4">
               {screenshots.map((s) => {
-                const fullUrl = `${API_BASE_URL}${s.filePath}`;
+                const fullUrl = getScreenshotUrl(s.filePath);
                 return (
                   <div
                     key={s.id}
